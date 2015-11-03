@@ -1,7 +1,15 @@
-{% extends 'base.html' %}
-{% block title %}ReadMe{% endblock%}
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>ReadMe</title>
+    <script src="http://code.jquery.com/jquery.js"></script>
+    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://twitter.github.io/typeahead.js/releases/latest/typeahead.bundle.js"></script>
+    <link href="../static/stylesheet.css" rel="stylesheet">
+</head>
 
-{% block content%}
+<body>
 <nav class="navbar navbar-default">
   <div class="container-fluid">
     <!-- Brand and toggle get grouped for better mobile display -->
@@ -62,4 +70,5 @@ $('#prefetch .typeahead').typeahead(null, {
 });
 
 </script>
-{% endblock%}
+</body>
+</html>
