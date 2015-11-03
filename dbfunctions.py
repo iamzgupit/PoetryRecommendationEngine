@@ -1,11 +1,14 @@
 from Model import *
 from sqlalchemy import func
 from os import listdir
+from unidecode import unidecode
 
 init_app()
 
 
 def get_frequent_words():
+    """returns a dictionary of all words in the database and their frequency"""
+
     poems = db.session.query(Poem.text).all()
     word_dict = {}
     punctuation = (u'.', u',', u'?', u'!', u':', u'-', u'--', u'(', u')',
@@ -23,6 +26,8 @@ def get_frequent_words():
 
 
 def get_top_words_list(word_dict):
+    """given dict of word: freq, returns a list of 1000 most frequent words"""
+
     top_nums = sorted(word_dict.items(), key=lambda tupe: tupe[1], reverse=True)
     top_words = [word for word, occurance in top_nums[0:1000]]
     return top_words
@@ -30,6 +35,7 @@ def get_top_words_list(word_dict):
 
 def load_poems():
     """Seeds the database with poems from the Poem_Files folder"""
+
     poems = listdir("webscrape/Poem_Files")
 
     for poem in poems:
@@ -37,6 +43,8 @@ def load_poems():
 
 
 def delete_link_tables(delete_id):
+    """given a poem_id, removes tables linking it to subject, term, and region"""
+
     poem_subs = (PoemSubject.query.filter(PoemSubject.poem_id
                                           == delete_id).all())
     for poem_sub in poem_subs:
@@ -66,6 +74,8 @@ def delete_link_tables(delete_id):
 
 
 def clean_database():
+    """removes duplicate poems, provided they have the same information"""
+
     duplicates = (db.session.query(Poem.title, Poem.poet_id)
                             .group_by(Poem.title, Poem.poet_id)
                             .having(func.count(Poem.poem_id) > 1).all())
@@ -97,6 +107,8 @@ def clean_database():
 
 
 def clean_list_text(fileread, filewrite):
+    """given a file with a word on each line, writes formatted text to new file"""
+
     file1 = open(fileread).read()
     file2 = open(filewrite, "w")
     words = file1.split("\r")
@@ -113,3 +125,19 @@ def clean_list_text(fileread, filewrite):
     for word in new_words:
         file2.write(word)
     file2.close()
+
+
+def grab_poem_author_list():
+    poems = Poem.query.all()
+    f = open("poemsearch.text", "w")
+    for poem in poems:
+        title = unidecode(poem.title)
+        if '"' in title:
+            title = title.replace('"', '\\"')
+        if poem.poet:
+            poet = unidecode(poem.poet.name)
+            content = '"' + title + " by " + poet + '", '
+        else:
+            print "{}: {} has no poet".format(poem.poem_id, title)
+            content = '"' + title + '", '
+        f.write(content)

@@ -1,7 +1,9 @@
+"""This file contains the model for the Metrics db table and class"""
+
 from flask_sqlalchemy import SQLAlchemy
 from Model_Context import *
 from Model_Poem import *
-from word_list import *
+from word_lists import *
 
 db = SQLAlchemy()
 
@@ -15,6 +17,8 @@ class Metrics(db.Model):
                         db.ForeignKey('poems.poem_id'),
                         primary_key=True,
                         nullable=False)
+    poet_id = db.Column(db.Integer,
+                        db.ForeignKey('poets.poet_id'))
     wl_mean = db.Column(db.Float)
     wl_median = db.Column(db.Float)
     wl_mode = db.Column(db.Float)
@@ -38,6 +42,7 @@ class Metrics(db.Model):
     abs_percent = db.Column(db.Float)
     male_percent = db.Column(db.Float)
     female_percent = db.Column(db.Float)
+
     assonance = db.Column(db.Integer)  # TO DEFINE
     consonance = db.Column(db.Integer)  # TO DEFINE
     alliteration = db.Column(db.Integer)  # TO DEFINE
@@ -47,9 +52,10 @@ class Metrics(db.Model):
 
     # Will add more metrics
     poem = db.relationship('Poem', backref='metrics')
-    #include functions to return major_lex, minor_lex and sentiment data
 
     def find_matches(self):
+        """returns a list with (poem_id, match percent) for every other poem"""
+
         poem = Poem.query.get(self.poem_id)
         other_poems = Poem.query.filter(Poem.poem_id != self.poem_id,
                                         Poem.poet_id != poem.poet_id).all()
@@ -78,6 +84,7 @@ class Metrics(db.Model):
 
     @classmethod
     def get_metrics(poem_id):
+        """given poem id, calculates req. data and creates row in metrics"""
 
         text = (db.session.query(Poem.text)
                           .filter(Poem.poem_id == poem_id).one())[0]
@@ -167,8 +174,38 @@ class Metrics(db.Model):
 
     @staticmethod
     def _get_freq_data(word_list):
-        word_list = Poem._clean_word_list(text)
-        num_words = len(word_list)
+        """returns a list with fequency data for a given list of words
+
+        i_freq is the number of times "i" occurs on it's own (i.e. not as part
+            of another word) as a percentage of overall words in the poem.
+        you_freq is the number of times "you" occurs on it's own as a percentage
+            of overall words in the poem.
+        the_freq, is_freq, and a_freq follow the same model, but for "the",
+            "is", and "a" respectively.
+
+            >>> x = ['this', 'is', 'a', 'sample', 'text', '.', 'normally',
+                     'this', 'would', 'come', 'from', 'a', 'poem', '.',
+                     'but', 'i', 'am', 'feeding', 'this', 'in', 'to',
+                     'test', 'the', 'function', '.']
+            >>> freq_data = Metrics._get_freq_data(x)
+            >>> i_freq, you_freq, the_freq, is_freq, a_freq = freq_data
+            >>> i_freq
+            0.045454545454545456
+            >>> you_freq
+            0.0
+            >>> the_freq
+            0.045454545454545456
+            >>> is_freq
+            0.045454545454545456
+            >>> a_freq
+            0.09090909090909091]
+
+        this method is called by Metrics.get_metrics to create a new instance
+        of the metrics class and will not need to be used directly.
+        """
+
+        just_words_list = [w for w in word_list if w.isalpha()]
+        num_words = float(len(just_words_list))
         i_freq = word_list.count("i")/num_words
         you_freq = word_list.count("you")/num_words
         the_freq = word_list.count("the")/num_words
@@ -179,15 +216,39 @@ class Metrics(db.Model):
 
     @staticmethod
     def _clean_word_list(text):
-        punctuation = (".", ",", '"', "!", "?", ":", "-", "\n", "\r", "\t")
+        """returns a list of lowercase words and puncuation for a given text
+
+            >>> text = '\t\t\t Here is some odd sample text: \
+                        \n\n I    like to eat cake.'
+            >>> Metrics._clean_word_list
+            ['here', 'is', 'some', 'odd', 'sample', 'text', ':', 'i', 'like',
+            'to', 'eat', 'cake', '.']
+
+        this method is called by Metrics.get_metrics to create a new instance
+        of the metrics class and will not need to be used directly.
+        """
+
+        punctuation = (".", ",", '"', "!", "?", ":", "-")
         for punc in punctuation:
-            text = text.replace(punc, " ")
-        word_list = text.split(" ")
+            space_punc = " " + punc
+            text = text.replace(punc, space_punc)
+        word_list = text.split()
         word_list = [w.lower() for w in word_list]
         return word_list
 
     @staticmethod
     def _get_percent_in(poem_word_list, data_word_list):
+        """given 2 lists, returns percent of words from the 1st in the 2nd
+
+            >>> x = ['this', 'would', 'come', 'from', 'a', 'poem']
+            >>> y = ['this', 'would', 'come', 'from', 'word_lists.py']
+            >>> Metrics._get_percent_in(x, y)
+            0.6666666666666666
+
+        this method is called by Metrics.get_metrics to create a new instance
+        of the metrics class and will not need to be used directly.
+        """
+
         total = len(poem_word_list)
         count = 0
         for word in poem_word_list:
@@ -197,6 +258,17 @@ class Metrics(db.Model):
 
     @staticmethod
     def _get_percent_out(poem_word_list, data_word_list):
+        """given 2 lists, returns percent of words from the 1st not in the 2nd
+
+            >>> x = ['this', 'would', 'come', 'from', 'a', 'poem']
+            >>> y = ['this', 'would', 'come', 'from', 'word_lists.py']
+            >>> Metrics._get_percent_out(x, y)
+            0.3333333333333333
+
+        this method is called by Metrics.get_metrics to create a new instance
+        of the metrics class and will not need to be used directly.
+        """
+
         total = len(poem_word_list)
         count = 0
         for word in poem_word_list:
