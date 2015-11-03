@@ -1,54 +1,7 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>ReadMe</title>
-    <script src="http://code.jquery.com/jquery.js"></script>
-<!--     // <script src="https://twitter.github.io/typeahead.js/releases/latest/typeahead.bundle.js"></script> -->
-    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css" rel="stylesheet">
-    <script src="js/typeahead.min.js"></script>
-    <style>
-        .container-fluid {
-            background-color: white;
-            border-color: white;
-        }
+{% extends 'base.html' %}
+{% block title %}ReadMe{% endblock%}
 
-        .navbar {
-            border-color: white;
-        }
-
-        .main-search {
-            margin-top: 220px;
-        }
-
-        #search {
-            width:100%;
-            height: 40px;
-            margin: 0 auto;
-        }
-
-        .search-option {
-            margin: 0 auto;
-            font-size: small;
-        }
-
-        .right-align {
-            text-align: right;
-        }
-
-        a {
-            color: gray;
-        }
-
-        a:hover {
-            color: black;
-            text-decoration: none;
-        }
-
-    </style>
-</head>
-
-<body>
+{% block content%}
 <nav class="navbar navbar-default">
   <div class="container-fluid">
     <!-- Brand and toggle get grouped for better mobile display -->
@@ -72,7 +25,7 @@
 <div class="row main-search">
     <div class="col-md-6 col-md-offset-3">
         <div id="prefetch">
-        <input id="search" class="typeahead" type="text" placeholder="Poem by Title or Author">
+        <input id="search" class="typeahead" type="text" placeholder="Search for a Poem by Title or Author">
         </div>
     </div>
 </div>
@@ -87,20 +40,26 @@
 </div>
 
 <script>
+
 var poems = new Bloodhound({
-  datumTokenizer: Bloodhound.tokenizers.whitespace,
-  queryTokenizer: Bloodhound.tokenizers.whitespace,
-  // url points to a json file that contains an array of poem names
-  prefetch: '../static/poems.json'
+    prefetch: {
+        url: 'static/searchpoems.json',
+        transform: function(response) {
+            console.log(response);
+            return response;
+        }
+    },
+    datumTokenizer: Bloodhound.tokenizers.obj.whitespace('title'),
+    queryTokenizer: Bloodhound.tokenizers.whitespace,
 });
 
-// passing in `null` for the `options` arguments will result in the default
-// options being used
 $('#prefetch .typeahead').typeahead(null, {
   name: 'poems',
-  source: poems
+  displayKey: 'title',
+  hint: true,
+  minLength: 3,
+  source: poems.ttAdapter()
 });
 
 </script>
-
-</container>
+{% endblock%}

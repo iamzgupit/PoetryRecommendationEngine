@@ -42,15 +42,17 @@ class Metrics(db.Model):
     abs_percent = db.Column(db.Float)
     male_percent = db.Column(db.Float)
     female_percent = db.Column(db.Float)
+    alliteration = db.Column(db.Float)
+    positive = db.Column(db.Float)
+    negative = db.Column(db.Float)
+    active_percent = db.Column(db.Float)
+    passive_percent = db.Column(db.Float)
 
+    #FIXME DEFINE THESE FUNCTIONS
     assonance = db.Column(db.Integer)  # TO DEFINE
     consonance = db.Column(db.Integer)  # TO DEFINE
-    alliteration = db.Column(db.Integer)  # TO DEFINE
-    positive = db.Column(db.Integer)  # TO DEFINE
-    negative = db.Column(db.Integer)  # TO DEFINE
-    RHYME = db.Column(db.Integer)  # TO DEFINE
+    rhyme = db.Column(db.Integer)  # TO DEFINE
 
-    # Will add more metrics
     poem = db.relationship('Poem', backref='metrics')
 
     def find_matches(self):
@@ -99,12 +101,17 @@ class Metrics(db.Model):
         freq_data = Metrics._get_freq_data(word_list)
         i_freq, you_freq, the_freq, is_freq, a_freq = freq_data
 
-        common_percent = Metrics._get_percent_out(word_list, COMMON_WORDS)
-        poem_percent = Metrics._get_percent_out(word_list, POEM_WORDS)
-        object_percent = Metrics._get_percent_in(word_list, OBJECT_WORDS)
-        abs_percent = Metrics._get_percent_in(word_list, ABST_WORDS)
-        male_percent = Metrics._get_percent_in(word_list, MALE_WORDS)
-        female_percent = Metrics._get_percent_in(word_list, FEMALE_WORDS)
+        common_percent = Metrics._get_percent_out(word_list, COMMON_W)
+        poem_percent = Metrics._get_percent_out(word_list, POEM_W)
+        object_percent = Metrics._get_percent_in(word_list, OBJECTS)
+        abs_percent = Metrics._get_percent_in(word_list, ABSTRACT)
+        male_percent = Metrics._get_percent_in(word_list, MALE)
+        female_percent = Metrics._get_percent_in(word_list, FEMALE)
+        active_percent = Metrics._get_percent_in(word_list, ACTIVE)
+        passive_percent = Metrics._get_percent_in(word_list, PASSIVE)
+        positive = Metrics._get_percent_in(word_list, POSITIVE)
+        negative = Metrics._get_percent_in(word_list, NEGATIVE)
+        alliteration = Metrics._get_alliteration_score(text)
 
         data = Metrics(poem_id=poem_id, wl_mean=wl_mean, wl_median=wl_median,
                        wl_mode=wl_mode, wl_range=wl_range, ll_mean=ll_mean,
@@ -114,7 +121,11 @@ class Metrics(db.Model):
                        the_freq=the_freq, is_freq=is_freq, a_freq=a_freq,
                        common_percent=common_percent, poem_percent=poem_percent,
                        object_percent=object_percent, abs_percent=abs_percent,
-                       male_percent=male_percent, female_percent=female_percent)
+                       male_percent=male_percent, female_percent=female_percent,
+                       active_percent=active_percent,
+                       passive_percent=passive_percent,
+                       positive=positive, negative=negative,
+                       alliteration=alliteration)
 
         db.session.add(data)
 
@@ -275,6 +286,47 @@ class Metrics(db.Model):
             if word not in data_word_list:
                 count += 1
         return float(count)/float(total)
+
+    @staticmethod
+    def _get_alliteration_score(text):
+        """given a text, returns alliteration score as a float
+
+        Alliteration score is incremented every time multiple words in the
+        same line start with the same letter. Final score is the alliteration
+        count divided by the overall number of words in the poem
+        """
+
+        lines = text.splt("/n")
+        allit_count = 0
+        total = 0
+        for line in lines:
+            line = line.strip()
+            words = [w for w in Poem._clean_word_list(line) if w.isalpha()]
+            letters = []
+            total += len(words)
+            for word in words:
+                let = word[0]
+                if let not in letters:
+                    letters.append(let)
+                    count = line.count(let)
+                    if count > 1:
+                        allit_count += (count - 1)
+                else:
+                    continue
+
+        return allit_count / float(total)
+
+    @staticmethod
+    def _get_consonance_score(text):
+        pass
+
+    @staticmethod
+    def _get_assonance_score(text):
+        pass
+
+    @staticmethod
+    def _get_rhyme_score(text):
+        pass
 
 
 if __name__ == "__main__":

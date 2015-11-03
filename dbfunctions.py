@@ -131,13 +131,15 @@ def grab_poem_author_list():
     poems = Poem.query.all()
     f = open("poemsearch.text", "w")
     for poem in poems:
+        start = '{\"title\": \"'
+        end = '\", \"id\": ' + str(poem.poem_id) + '},\n'
         title = unidecode(poem.title)
         if '"' in title:
             title = title.replace('"', '\\"')
         if poem.poet:
             poet = unidecode(poem.poet.name)
-            content = '"' + title + " by " + poet + '", '
+            content = start + title + " by " + poet + end
         else:
             print "{}: {} has no poet".format(poem.poem_id, title)
-            content = '"' + title + '", '
+            content = start + title + end
         f.write(content)
