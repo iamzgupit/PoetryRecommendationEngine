@@ -37,7 +37,8 @@ class Poem(db.Model):
                 info["author"] = "anonymous"
             search_params.append(info)
 
-        return search_params
+        search = {"search": search_params}
+        return search
 
     @staticmethod
     def _find_content(word_list, start_word, stop_word):
@@ -786,8 +787,7 @@ def connect_to_db(app):
 
 
 if __name__ == "__main__" or __name__ == "__console__":
-    from flask import Flask
-    app = Flask(__name__)
+    from server import app
 
     connect_to_db(app)
     print "Connected to DB."

@@ -1,6 +1,6 @@
 from flask import (Flask, render_template, redirect, jsonify,
                    request, flash, session)
-from Model import Poem
+from Model import Poem, connect_to_db
 
 
 app = Flask(__name__)
@@ -11,10 +11,16 @@ app.secret_key = "TEMPORARY SECRET KEY"
 @app.route('/')
 def homepage():
     """displays homepage with search bar"""
+
+    return render_template("homepage.html")
+
+
+@app.route('/search.json')
+def get_search_criteria():
+    """returns a list of dictionaries w/title, author, poem_id """
     search_critera = Poem.create_search_params()
 
-    return render_template("homepage.html", poems=jsonify(search_critera))
-
+    return jsonify(search_critera)
 
 if __name__ == "__main__":
     # We have to set debug=True here, since it has to be True at the point

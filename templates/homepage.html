@@ -32,7 +32,7 @@
 <div class="container">
 <div class="row main-search">
     <div class="col-md-6 col-md-offset-3">
-        <div id="prefetch">
+        <div id="bloodhound">
         <input id="search" class="typeahead" type="text" placeholder="Search for a Poem by Title or Author">
         </div>
     </div>
@@ -49,25 +49,48 @@
 
 <script>
 
-var poems = new Bloodhound({
-    prefetch: {
-        url: 'static/searchpoems.json',
-        transform: function(response) {
-            console.log(response);
-            return response;
-        }
-    },
-    datumTokenizer: Bloodhound.tokenizers.obj.whitespace('title'),
-    queryTokenizer: Bloodhound.tokenizers.whitespace,
-});
+var searchCriteria = []
 
-$('#prefetch .typeahead').typeahead(null, {
-  name: 'poems',
-  displayKey: 'title',
-  hint: true,
-  minLength: 3,
-  source: poems.ttAdapter()
-});
+function unpack(data) {
+    searchCriteria = data.search
+    console.log(searchCriteria)
+    setSearch()
+}
+
+$.get('/search.json', unpack)
+
+function setSearch() {
+    var poems = new Bloodhound({
+        // prefetch: {
+        //     url: 'static/searchpoems.json',
+        //     transform: function(response) {
+        //         console.log(response);
+        //         return response;
+        //     }
+        // },
+        datumTokenizer: Bloodhound.tokenizers.obj.whitespace('title'),
+        queryTokenizer: Bloodhound.tokenizers.whitespace,
+        local: searchCriteria
+    });
+
+    $('#bloodhound .typeahead').typeahead({
+        hint: true,
+        highlight: true,
+        minLength: 3
+    }, {
+        name: 'poems',
+        displayKey: 'title',
+        source: poems.ttAdapter()
+    });
+};
+
+// $('#prefetch .typeahead').typeahead(null, {
+//   name: 'poems',
+//   displayKey: 'title',
+//   hint: true,
+//   minLength: 3,
+//   source: poems.ttAdapter()
+// });
 
 </script>
 </body>
