@@ -49,7 +49,7 @@
             color: #999;
         }
 
-        .tt-menu { /* UPDATE: newer versions use tt-menu instead of tt-dropdown-menu */
+        .tt-menu {
 /*            width: 100%;*/
             background-color: #fff;
             border: 1px solid #ccc;
@@ -59,6 +59,6 @@
         }
 
         .tt-suggestion {
-            font-size: 18px;
-            line-height: 24px;
+            font-size: 14px;
+            padding: 5px 8px;
         }

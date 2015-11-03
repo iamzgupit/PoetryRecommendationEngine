@@ -1,9 +1,12 @@
+from flask_sqlalchemy import SQLAlchemy
 from Model import *
 from sqlalchemy import func
 from os import listdir
 from unidecode import unidecode
+from server import app
 
-init_app()
+
+db = SQLAlchemy()
 
 
 def get_frequent_words():
@@ -143,3 +146,9 @@ def grab_poem_author_list():
             print "{}: {} has no poet".format(poem.poem_id, title)
             content = start + title + end
         f.write(content)
+
+
+if __name__ == "__main__" or __name__ == "__console__":
+
+    connect_to_db(app)
+    print "Connected to DB."

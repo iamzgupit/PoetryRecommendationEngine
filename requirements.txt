@@ -2,12 +2,15 @@ beautifulsoup4==4.4.1
 blessings==1.6
 bpython==0.14.2
 curtsies==0.1.19
+fanstatic==0.16
 Flask==0.10.1
 Flask-SQLAlchemy==2.1
 greenlet==0.4.9
 html5lib==0.9999999
 itsdangerous==0.24
 Jinja2==2.8
+js.jquery==1.9.1
+js.typeahead==0.9.2
 MarkupSafe==0.23
 nltk==3.1
 numpy==1.10.1
@@ -19,5 +22,6 @@ selenium==2.48.0
 six==1.10.0
 SQLAlchemy==1.0.9
 Unidecode==0.4.18
+WebOb==1.5.1
 Werkzeug==0.10.4
 wheel==0.24.0
