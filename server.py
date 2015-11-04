@@ -22,6 +22,12 @@ def get_search_criteria():
 
     return jsonify(search_critera)
 
+
+@app.route('/<int:poem_id>')
+def display_search_results(poem_id):
+
+    return render_template("searchresults.html")
+
 if __name__ == "__main__":
     # We have to set debug=True here, since it has to be True at the point
     # that we invoke the DebugToolbarExtension

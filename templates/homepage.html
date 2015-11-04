@@ -4,8 +4,19 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>ReadMe</title>
     <script src="http://code.jquery.com/jquery.js"></script>
+
     <link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css" rel="stylesheet">
+
     <script src="https://twitter.github.io/typeahead.js/releases/latest/typeahead.bundle.js"></script>
+    <script>
+        function unpack(data) {
+            searchCriteria = data.search
+            console.log(searchCriteria)
+            setSearch()
+        }
+        
+        $.get('/search.json', unpack)
+    </script>
     <link href="../static/stylesheet.css" rel="stylesheet">
 </head>
 
@@ -14,7 +25,7 @@
   <div class="container-fluid">
     <!-- Brand and toggle get grouped for better mobile display -->
     <div class="navbar-header">
-      <a class="navbar-brand" href="#">ReadMe</a>
+      <a class="navbar-brand" href="/">ReadMe</a>
     </div>
       <ul class="nav navbar-nav">
         <li><a href="#">About</a></li>
@@ -31,9 +42,9 @@
 
 <div class="container">
 <div class="row main-search">
-    <div class="col-md-6 col-md-offset-3">
+    <div class="col-md-8 col-md-offset-2">
         <div id="bloodhound">
-        <input id="search" class="typeahead" type="text" placeholder="Search for a Poem by Title or Author">
+        <input id="search" class="typeahead" type="text" placeholder="Search for a Poem by Title or Author"> <button id="search-button" disabled="disabled">Search</button>
         </div>
     </div>
 </div>
@@ -50,6 +61,8 @@
 <script>
 
 var searchCriteria = []
+var poemID = 0
+var button = $("#search-button")
 
 function unpack(data) {
     searchCriteria = data.search
@@ -57,17 +70,9 @@ function unpack(data) {
     setSearch()
 }
 
-$.get('/search.json', unpack)
-
 function setSearch() {
     var poems = new Bloodhound({
-        // prefetch: {
-        //     url: 'static/searchpoems.json',
-        //     transform: function(response) {
-        //         console.log(response);
-        //         return response;
-        //     }
-        // },
+
         datumTokenizer: Bloodhound.tokenizers.obj.whitespace('title'),
         queryTokenizer: Bloodhound.tokenizers.whitespace,
         local: searchCriteria
@@ -84,13 +89,31 @@ function setSearch() {
     });
 };
 
-// $('#prefetch .typeahead').typeahead(null, {
-//   name: 'poems',
-//   displayKey: 'title',
-//   hint: true,
-//   minLength: 3,
-//   source: poems.ttAdapter()
-// });
+$("#search").on('input', checkId);
+$('.typeahead').on('typeahead:selected', checkId);
+$('.typeahead').on('typeahead:autocompleted', checkId);
+$("#search-button").on('click', startSearch);
+
+function startSearch() {
+    url = "/" + poemID.toString()
+    window.location.href = url;
+};
+
+
+function checkId() {
+    poemID = 0;
+    button.attr('disabled','disabled');
+    for (i = 0; i < searchCriteria.length; i++) {
+        x = searchCriteria[i];
+        if (x.title == $("#search").val()) {
+            console.log(x.id);
+            poemID = x.id;
+            button.removeAttr('disabled')
+            break;
+        };
+    };
+};
+
 
 </script>
 </body>
