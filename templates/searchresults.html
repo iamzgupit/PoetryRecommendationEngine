@@ -4,17 +4,18 @@
 
 <div class="row main-content">
     <div class="col-md-8 col-md-offset-1 reading">
-        <h2 class="title main"> Title of Main Content</h2>
-        <p class="poem-content">
-            CONTENT CONTENT<br>
-            CONTENT<br>
-        </p>
+        <h2 class="title main"> {{ main_poem.title }}</h2>
+        <h4 class="author main"> by {{ main_poem.poet.name }}</h4>
+        <br>
+        <div class="poem-content">
+            {{ main_poem.formatted_text|safe }}
+        </div>
     </div> <!-- end of first column -->
     <div class="col-md-2">
         <div class="row results">
-            <h5 class="title">Title Goes here</h5>
-            <h6 class="author">By Author</h6>
-            <p class="main-poem">Main Poem</p>
+            <h5 class="title">{{ main_poem.title }}</h5>
+            <h6 class="author">By {{ main_poem.poet.name }}</h6>
+            <p class="main-poem">Matched Poem</p>
         </div>
         <div class="row results">
             <h5 class="title">Title Goes here</h5>
