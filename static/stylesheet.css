@@ -11,12 +11,36 @@
             margin-top: 220px;
         }
 
+        .main-content {
+            margin-top: 150px;
+        }
+
+        .large-content {
+            margin-top: 95px;
+        }
+
         #search {
             width: 600px;
             height: 40px;
             margin: 0 auto;
         }
 
+        .user-form {
+            padding-bottom: 40px;
+        }
+
+        .centered {
+            margin: auto;
+        }
+
+        .input-title {
+            width: 600px;
+        }
+
+        .input-poem {
+            width: 600px;
+            height: 600px;
+        }
         .search-option {
             margin: 0 auto;
             font-size: small;

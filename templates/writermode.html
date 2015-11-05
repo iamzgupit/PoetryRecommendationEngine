@@ -1,0 +1,46 @@
+{% extends 'base.html' %}
+
+{% block title%}
+ReadMe: Writer Mode
+{% endblock %}
+
+{% block content %}
+<div class="container">
+<div class="row large-content">
+    <div class="col-md-8 col-md-offset-2">
+        <h4>Writer Mode</h4>
+        <br>
+        <p>Put your own work in below and we will run the same matching algorithm to recommend poetry for you to read based on your writing style. User poems will not be saved.</p>
+        <br>
+        <div class="row user-form">
+            <div class="col-md-10 col-md-offset-1">
+                <form method="POST" action='/writer-mode/interim' id="poem-submission">
+                    <label>Title: </label><br>
+                        <input class="input-title" type="text" name="title" placeholder="Sonnet 130 (Shakespeare)">
+                    <br><br>
+                    <label>Poem: </label><br>
+                        <textarea class="input-poem" name="text" placeholder="My mistress' eyes are nothing like the sun;
+Coral is far more red than her lips' red;
+If snow be white, why then her breasts are dun;
+If hair be wires, black wires grow on her head.
+I have seen roses demasked, red and white,
+But no such roses see I in her cheeks;
+And in some perfumes is there more delight
+Than in the breath that from my mistress reeks.
+I love to hear her speak, yet well I know
+That music hath a far more pleasing sound;
+I grant I never saw a goddess go;
+My mistress when she walks treads on the ground.
+    And yet, by heaven, I think my love as rare
+    As any she belied with false compare." ></textarea>
+                    <br><br>
+                    <span class="centered">
+                        <input type="submit" value="Submit">
+                    </span>
+                </form>
+            </div> <!-- end of column -->
+        </div> <!-- end of user-form row -->
+    </div> <!-- end of column -->
+</div> <!-- end of main-search row -->
+</div> <!-- end of container -->
+{% endblock %}

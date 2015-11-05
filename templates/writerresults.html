@@ -1,23 +1,23 @@
 {% extends 'base.html' %}
 {% block title%}
-ReadMe: Recommendations
+ReadMe: Writer Mode Recommendations
 {% endblock %}
 {% block content %}
 <div class="container">
 
 <div class="row main-content">
     <div class="col-md-8 col-md-offset-1 reading">
-        <h2 class="title main"> {{ main_poem.title }}</h2>
-        <h4 class="author main"> by {{ main_poem.poet.name }}</h4>
+        <h2 class="title main"> {{ title }}</h2>
+        <h4 class="author main"> by User </h4>
         <br>
         <div class="poem-content">
-            {{ main_poem.formatted_text|safe }}
+            {{ text }}
         </div>
     </div> <!-- end of first column -->
     <div class="col-md-2">
         <div class="row results">
-            <h5 class="title">{{ main_poem.title }}</h5>
-            <h6 class="author">By {{ main_poem.poet.name }}</h6>
+            <h5 class="title">{{ title }}</h5>
+            <h6 class="author">By User</h6>
             <p class="main-poem">Matched Poem</p>
         </div>
         <div class="row results">

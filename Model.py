@@ -1,6 +1,9 @@
 from flask_sqlalchemy import SQLAlchemy
 from unidecode import unidecode
 from bs4 import BeautifulSoup
+from word_lists import (COMMON_W, POEM_W, ABSTRACT, OBJECTS, MALE, FEMALE,
+                        ACTIVE, PASSIVE, POSITIVE, NEGATIVE)
+from requests import get
 
 db = SQLAlchemy()
 
@@ -111,6 +114,16 @@ class Poem(db.Model):
     def _clean_listobj(list_obj):
         """ given a beautiful soup list object, returns clean list of strings
 
+            >>> class Fake(object):
+            ...    __init___(self, text):
+            ...        self.text = text
+            >>>
+            >>> a = Fake("here \r is \t\t some fake text    ")
+            >>> b = Fake("and some more.")
+            >>> fake_list = [a, b]
+            >>> Metrics._clean_listobj(fake_list)
+            ['this', 'is', 'some', 'fake', 'text', 'and', 'some', 'more', '.']
+
         This is called by parse and will never need to be used directly
         """
 
@@ -131,7 +144,7 @@ class Poem(db.Model):
         """ given an html string, will return a string of just the text
 
         >>> html_string = "<div>hello there <em>Patrick</em></div>"
-        >>>Poem._get_text(html_string)
+        >>> Poem._get_text(html_string)
         u'hello there Patrick'
 
         BeautifulSoup's get_text and .text functions seem to malfunction
@@ -463,8 +476,6 @@ class Metrics(db.Model):
                         db.ForeignKey('poems.poem_id'),
                         primary_key=True,
                         nullable=False)
-    poet_id = db.Column(db.Integer,
-                        db.ForeignKey('poets.poet_id'))
     wl_mean = db.Column(db.Float)
     wl_median = db.Column(db.Float)
     wl_mode = db.Column(db.Float)
@@ -473,9 +484,9 @@ class Metrics(db.Model):
     ll_median = db.Column(db.Float)
     ll_mode = db.Column(db.Float)
     ll_range = db.Column(db.Float)
-    pl_char = db.Column(db.Integer)
-    pl_lines = db.Column(db.Integer)
-    pl_words = db.Column(db.Integer)
+    pl_char = db.Column(db.Float)
+    pl_lines = db.Column(db.Float)
+    pl_words = db.Column(db.Float)
     lex_div = db.Column(db.Float)
     the_freq = db.Column(db.Float)
     i_freq = db.Column(db.Float)
@@ -493,14 +504,12 @@ class Metrics(db.Model):
     negative = db.Column(db.Float)
     active_percent = db.Column(db.Float)
     passive_percent = db.Column(db.Float)
-
-    #FIXME DEFINE THESE FUNCTIONS
-    assonance = db.Column(db.Integer)  # TO DEFINE
-    consonance = db.Column(db.Integer)  # TO DEFINE
-    rhyme = db.Column(db.Integer)  # TO DEFINE
+    end_repeat = db.Column(db.Float)
+    rhyme = db.Column(db.Float)
 
     poem = db.relationship('Poem', backref='metrics')
 
+#FIXME INCOMPLETE AND NO DOCTEST
     def find_matches(self):
         """returns a list with (poem_id, match percent) for every other poem"""
 
@@ -518,18 +527,50 @@ class Metrics(db.Model):
         # RETURN LIST OF TUPLES (poem_id, match_percent) SORTED HIGH -> LOW
         # CONTROL FOR ONLY TAKE THE HIGHEST POEM FOR EACH POET
 
+#FIXME NO DOCTEST
     def get_context_data(self):
-        return []
+        """Returns a list with nested lists with context data for a poem"""
 
-    def get_major_lex_data(self):
-        return []
+        poem = self.poem
+        subjects = [sub.subject for sub in poem.subjects]
+        terms = [term.term for term in poem.terms]
+        regions = [region.region for region in poem.regions]
+        poet_birth = poem.poet.birth_year
 
-    def get_minor_lex_data(self):
-        return []
+        return [poet_birth, regions, terms, subjects]
 
+#FIXME NO DOCTEST
+    def get_macro_lex_data(self):
+        """Returns a list of macro lexical data for a poem"""
+
+        macro_lex = [self.wl_mean, self.wl_median, self.wl_mode,
+                     self.wl_range, self.ll_mean, self.ll_median,
+                     self.ll_mode, self.ll_range, self.pl_char,
+                     self.pl_lines, self.pl_words, self.lex_div]
+        return macro_lex
+
+#FIXME NO DOCTEST
+    def get_micro_lex_data(self):
+        """Returns a list of micro lexical data for a poem"""
+
+        micro_lex = [self.the_freq, self.i_freq, self.you_freq, self.end_repeat,
+                     self.is_freq, self.a_freq, self.alliteration, self.rhyme,
+                     self.end_repeat]
+
+        return micro_lex
+
+#FIXME NO DOCTEST
     def get_sentiment_data(self):
-        return []
+        """Returns a list of sentiment data for a poem"""
 
+        sentiment_data = [self.common_percent, self.poem_percent,
+                          self.object_percent, self.abs_percent,
+                          self.male_percent, self.female_percent,
+                          self.positive, self.negative, self.active_percent,
+                          self.passive_percent]
+        return sentiment_data
+
+#FIXME NO DOCTEST
     @classmethod
     def get_metrics(poem_id):
         """given poem id, calculates req. data and creates row in metrics"""
@@ -558,6 +599,7 @@ class Metrics(db.Model):
         positive = Metrics._get_percent_in(word_list, POSITIVE)
         negative = Metrics._get_percent_in(word_list, NEGATIVE)
         alliteration = Metrics._get_alliteration_score(text)
+        rhyme = Metrics._get_rhyme_score(text)
 
         data = Metrics(poem_id=poem_id, wl_mean=wl_mean, wl_median=wl_median,
                        wl_mode=wl_mode, wl_range=wl_range, ll_mean=ll_mean,
@@ -571,13 +613,47 @@ class Metrics(db.Model):
                        active_percent=active_percent,
                        passive_percent=passive_percent,
                        positive=positive, negative=negative,
-                       alliteration=alliteration)
+                       alliteration=alliteration, rhyme=rhyme)
 
         db.session.add(data)
 
     @staticmethod
     def _get_wl_data(word_list):
-        num_words = len(word_list)
+        """given a list of words, returns data about words as list of floats.
+
+        Specifically, given the list of all the words in a poem, returns a list
+        with the mean word length (wl_mean), the median word length (wl_median),
+        the mode word length (wl_mode), the range of word lengths (wl_range),
+        the total number of words (num_words), and the lexical diversity
+        (lex_div), which is the number of unique words in the poem divided
+        by the total number of words.
+
+            >>> word_list = ['This', 'is', 'a', 'sample', 'word', 'list', '.',
+                             'Imagine', 'this', 'list', 'is', 'more', 'poetic',
+                             'than', 'it', 'is', 'in', 'reality', ',', 'please',
+                             '.']
+            >>> wl_data = Poem._get_wl_data(word_list)
+            >>> wl_mean, wl_median, wl_mode = wl_data[0:3]
+            >>> wl_range, num_words, lex_div = wl_data[3:]
+            >>> wl_mean
+            3
+            >>> wl_median
+            4
+            >>> wl_mode
+            4
+            >>> wl_range
+            6
+            >>> num_words
+            21
+            >>> lex_div
+            0.8333333333333334
+
+        This function is called by Poem.parse, and will not need to be used
+        directly."""
+
+        words = [word for word in word_list if word.isalpha]
+        num_words = len(words)
+        lengths = sorted([len(word) for word in words])
 
         wl_range = max(lengths) - min(lengths)
         wl_mean = sum(lengths) / num_words
@@ -597,12 +673,15 @@ class Metrics(db.Model):
                 break
 
         unique = set(word_list)
-        lex_div = len(unique) / num_words
+        lex_div = len(unique) / float(num_words)
 
         return [wl_mean, wl_median, wl_mode, wl_range, num_words, lex_div]
 
+#FIXME NO DOCTEST
     @staticmethod
     def _get_ll_data(text):
+        """"""
+
         line_list = text.split("\n")
         lengths = sorted([len(l) for l in line_list])
         num_lines = len(line_list)
@@ -737,42 +816,160 @@ class Metrics(db.Model):
     def _get_alliteration_score(text):
         """given a text, returns alliteration score as a float
 
+        >>> text = "Here is some sample text to savor! \n I hope you have a \
+                    healthy and happy day!"
+        >>> Metrics._get_alliteration_score(text)
+        0.6428571428571429
+
+        alternatively if we have not alliteration:
+
+        >>> text = "Here you will find sample text. \n No alliteration present."
+        >>> Metrics._get_alliteration_score(text)
+        0.0
+
         Alliteration score is incremented every time multiple words in the
         same line start with the same letter. Final score is the alliteration
         count divided by the overall number of words in the poem
         """
 
-        lines = text.splt("/n")
+        lines = text.split("\n")
         allit_count = 0
         total = 0
+
         for line in lines:
             line = line.strip()
-            words = [w for w in Poem._clean_word_list(line) if w.isalpha()]
-            letters = []
-            total += len(words)
-            for word in words:
-                let = word[0]
-                if let not in letters:
-                    letters.append(let)
-                    count = line.count(let)
+            used_letters = []
+
+            words = [w for w in Metrics._clean_word_list(line) if w.isalpha()]
+            long_words = [w for w in words if len(w) > 1]
+
+            first_letters = [w for w in words if len(w) == 1]
+            first_letters = [w[0] for w in long_words if w[1] != "h"]
+            first_letters.extend([w[0:2] for w in long_words if w[1] == "h"])
+
+            total += len(first_letters)
+
+            for let in first_letters:
+                if let not in used_letters:
+                    used_letters.append(let)
+                    count = first_letters.count(let)
                     if count > 1:
-                        allit_count += (count - 1)
-                else:
-                    continue
+                        allit_count += count
 
         return allit_count / float(total)
 
     @staticmethod
-    def _get_consonance_score(text):
-        pass
+    def _get_rhyme_list(word):
+        """ given word, returns set of rhyming words
+
+        Scrapes rhyming words from www.rhymezone.com, controls for appropriate
+        values and returns the set.
+
+            >>> rhymes = Metrics._get_rhyme_list("tester")
+            >>> results = set(['fester', 'fresher', 'leicester', 'professor',
+                               'semester', 'taster', 'nester', 'mister',
+                               'connector', 'lessor', 'molester', 'pester',
+                               'better', 'checker', 'ester', 'sequester',
+                               'nestor', 'ever', 'dresser', 'pepper', 'esther',
+                               'bold', 'refresher', 'fiesta', 'jester', 'testa',
+                               'pressure', 'western', 'letter', 'trimester',
+                               'investor', 'feather', 'nectar', 'director',
+                               'polyester', 'buster', 'wrecker', 'sylvester',
+                               'wester', 'lesser', 'chester', 'enter',
+                               'webster', 'protector', 'temper', 'gesture'])
+            >>> rhymes == results
+            True
+
+        This function is called by Metrics.get_metrics and will not need to be
+        used directly.
+        """
+
+        word = word.strip()
+        BEG_URL = "http://www.rhymezone.com/r/rhyme.cgi?Word="
+        FIN_URL = "&typeofrhyme=perfect&org1=syl&org2=l&org3=y"
+        url = BEG_URL + word + FIN_URL
+        html_text = get(url).text
+        soup = BeautifulSoup(html_text, "html.parser")
+        words = soup.find_all("b")
+        rough_word_list = [unidecode(w.text).strip() for w in words]
+        word_list = [w for w in rough_word_list
+                     if "[" not in w
+                     and len(w) < 10
+                     and w != word]
+
+        return set(word_list)
 
     @staticmethod
-    def _get_assonance_score(text):
-        pass
+    def _get_end_words(text):
+        """given a string, returns all a list of words at the end of each line
+
+            >>> text = "hello how are you \n\nI am fine thanks\nare you fine too"
+            >>> end_words = Metrics._get_end_words(text)
+            >>> end_words
+            ['you', 'thanks', 'too']
+
+        will cut off punction and return all words lowercase:
+
+            >>> text = "here is some more sample Text! \n\n it is GREAT?"
+            >>> end_words = Metrics._get_end_words(text)
+            >>> end_words
+            ['text', 'great']
+
+        called by Metrics._get_rhyme_score, which in turn is called within
+        Metrics.get_metrics, and will not need to be used directly.
+        """
+        lines = text.split("\n")
+        end_words = []
+        for line in lines:
+            words = Metrics._clean_word_list(line)
+            words = [w.lower() for w in words if w.isalpha]
+            if words:
+                last_word = words[-1]
+                end_words.append(last_word)
+
+        return [w.lower() for w in end_words]
 
     @staticmethod
     def _get_rhyme_score(text):
-        pass
+        """given a text, returns rhyme score as an integer
+                >>> text = "Here is some sample text!\n\n \
+                            This is good sample Text!\n\nWho know what \
+                            will happen next?"
+                >>> Metrics._get_end_rhyme_score(text)
+                0.6666666666666666
+        This function is called by Metrics.get_metrics and will not need to be
+        used directly.
+        """
+
+        end_words = Metrics._get_end_words(text)
+        total = float(len(end_words))
+        rhymes = 0
+        for word in end_words:
+            other_words = [w for w in end_words if w != word]
+            rhyme_words = Metrics._get_rhyme_list(word)
+            for word in other_words:
+                if word in rhyme_words:
+                    rhymes += 1
+
+        return rhymes/total
+
+    @staticmethod
+    def _get_end_rep_score(text):
+        """given a text, returns the unique line endings / total line endings
+
+                >>> text = "Here is some sample text!\n\n \
+                            This is good sample Text!\n\nWho know what \
+                            will happen next?"
+                >>> Metrics._get_end_rep_score(text)
+                0.6666666666666666
+
+        This function is called by Metrics.get_metrics and will not need to be
+        used directly.
+        """
+
+        end_words = Metrics._get_end_words(text)
+        unique = set(end_words)
+        return len(unique) / float(len(end_words))
 
 
 #HELPER FUNCTIONS
