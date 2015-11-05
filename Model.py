@@ -26,6 +26,7 @@ class Poem(db.Model):
     # us to use the same model for user-submitted poetry
     poet = db.relationship('Poet', backref='poems')
 
+#FIXME: NO DOCTEST
     @staticmethod
     def create_search_params():
         search_params = []
@@ -165,6 +166,7 @@ class Poem(db.Model):
         string = string.strip()
         return unidecode(string)
 
+#FIXME: NO DOCTEST
     @staticmethod
     def _find_author(soup_object, poem_id):
         author_info = soup_object.find("span", class_="author")
@@ -188,6 +190,7 @@ class Poem(db.Model):
 
         return author
 
+#FIXME: NO DOCTEST
     @staticmethod
     def _find_birth_year(soup_object, poem_id):
         rough_birth_year = soup_object.find("span", class_="birthyear")
@@ -212,6 +215,7 @@ class Poem(db.Model):
 
         return birth_year
 
+#FIXME: NO DOCTEST
     @staticmethod
     def _create_poet(soup_object, poem_id):
 
@@ -233,6 +237,7 @@ class Poem(db.Model):
 
         return poet_id
 
+#FIXME: NO DOCTEST
     @staticmethod
     def _get_copyright(soup_object):
 
@@ -248,6 +253,7 @@ class Poem(db.Model):
 
         return copyright
 
+#FIXME: NO DOCTEST
     @staticmethod
     def _set_regions(context, poem_id):
         regions = []
@@ -269,6 +275,7 @@ class Poem(db.Model):
             db.session.add(poem_region)
             db.session.commit()
 
+#FIXME: NO DOCTEST
     @staticmethod
     def _set_terms(context, poem_id):
         if "Poetic Terms" in context:
@@ -289,6 +296,7 @@ class Poem(db.Model):
             db.session.add(poem_term)
             db.session.commit()
 
+#FIXME: NO DOCTEST
     @staticmethod
     def _set_subjects(context, poem_id):
         if "SUBJECT" in context:
@@ -310,6 +318,7 @@ class Poem(db.Model):
             db.session.add(poem_subject)
             db.session.commit()
 
+#FIXME: NO DOCTEST
     @staticmethod
     def _set_context(soup_object, poem_id):
         rough_context = soup_object.find_all("p", class_="section")
@@ -319,6 +328,7 @@ class Poem(db.Model):
         Poem._set_terms(context, poem_id)
         Poem._set_subjects(context, poem_id)
 
+#FIXME: NO DOCTEST
     @classmethod
     def parse(cls, file_name):
         """given a text file containing html content, creates Poem object"""
@@ -504,8 +514,13 @@ class Metrics(db.Model):
     negative = db.Column(db.Float)
     active_percent = db.Column(db.Float)
     passive_percent = db.Column(db.Float)
-    end_repeat = db.Column(db.Float)
+    end_repeat = db.Column(db.Float) # NEEDS TO BE INTEGRATED
     rhyme = db.Column(db.Float)
+    stanzas = db.Column(db.Float)
+    sl_mean = db.Column(db.Float)
+    sl_median = db.Column(db.Float)
+    sl_mode = db.Column(db.Float)
+    sl_range = db.Column(db.Float)
 
     poem = db.relationship('Poem', backref='metrics')
 
@@ -572,56 +587,92 @@ class Metrics(db.Model):
 
 #FIXME NO DOCTEST
     @classmethod
-    def get_metrics(poem_id):
-        """given poem id, calculates req. data and creates row in metrics"""
+    def get_metrics(cls, poem_id):
+        """given poem id, returns instance of Metrics class w/data calculated"""
 
-        text = (db.session.query(Poem.text)
-                          .filter(Poem.poem_id == poem_id).one())[0]
-        word_list = Poem._clean_word_list(text)
+        text_set = (db.session.query(Poem.text)
+                      .filter(Poem.poem_id == poem_id).first())
 
-        wl_data = Metrics._get_wl_data(word_list)
-        wl_mean, wl_median, wl_mode, wl_range, pl_words, lex_div = wl_data
+        if not text_set:
+            print "There is no poem at this ID"
+            return None
 
-        ll_data = Metrics._get_ll_data(text)
-        ll_mean, ll_median, ll_mode, ll_range, pl_lines, pl_char = ll_data
+        text = text_set[0]
 
-        freq_data = Metrics._get_freq_data(word_list)
-        i_freq, you_freq, the_freq, is_freq, a_freq = freq_data
+        word_list = cls._clean_word_list(text)
+        line_dict = cls._get_clean_line_data(text)
 
-        common_percent = Metrics._get_percent_out(word_list, COMMON_W)
-        poem_percent = Metrics._get_percent_out(word_list, POEM_W)
-        object_percent = Metrics._get_percent_in(word_list, OBJECTS)
-        abs_percent = Metrics._get_percent_in(word_list, ABSTRACT)
-        male_percent = Metrics._get_percent_in(word_list, MALE)
-        female_percent = Metrics._get_percent_in(word_list, FEMALE)
-        active_percent = Metrics._get_percent_in(word_list, ACTIVE)
-        passive_percent = Metrics._get_percent_in(word_list, PASSIVE)
-        positive = Metrics._get_percent_in(word_list, POSITIVE)
-        negative = Metrics._get_percent_in(word_list, NEGATIVE)
-        alliteration = Metrics._get_alliteration_score(text)
-        rhyme = Metrics._get_rhyme_score(text)
+        wl_data = cls._get_wl_data(word_list)
 
-        data = Metrics(poem_id=poem_id, wl_mean=wl_mean, wl_median=wl_median,
-                       wl_mode=wl_mode, wl_range=wl_range, ll_mean=ll_mean,
-                       ll_median=ll_median, ll_mode=ll_mode, ll_range=ll_range,
-                       pl_char=pl_char, pl_lines=pl_lines, pl_words=pl_words,
-                       lex_div=lex_div, i_freq=i_freq, you_freq=you_freq,
-                       the_freq=the_freq, is_freq=is_freq, a_freq=a_freq,
-                       common_percent=common_percent, poem_percent=poem_percent,
-                       object_percent=object_percent, abs_percent=abs_percent,
-                       male_percent=male_percent, female_percent=female_percent,
-                       active_percent=active_percent,
-                       passive_percent=passive_percent,
-                       positive=positive, negative=negative,
-                       alliteration=alliteration, rhyme=rhyme)
+        wl_mean = wl_data["wl_mean"]
+        wl_median = wl_data["wl_median"]
+        wl_mode = wl_data["wl_mode"]
+        wl_range = wl_data["wl_range"]
+        pl_words = wl_data["pl_words"]
+        lex_div = wl_data["lex_div"]
 
-        db.session.add(data)
+        ll_data = cls._get_ll_data(line_dict)
+
+        ll_mean = ll_data["ll_mean"]
+        ll_median = ll_data["ll_median"]
+        ll_mode = ll_data["ll_mode"]
+        ll_range = ll_data["ll_range"]
+        pl_lines = ll_data["pl_lines"]
+        pl_char = ll_data["pl_char"]
+
+        sl_data = cls._get_stanza_data(line_dict)
+
+        stanzas = sl_data["stanzas"]
+        sl_mean = sl_data["sl_mean"]
+        sl_median = sl_data["sl_median"]
+        sl_mode = sl_data["sl_mode"]
+        sl_range = sl_data["sl_range"]
+
+        freq_data = cls._get_freq_data(word_list)
+
+        i_freq = freq_data["i_freq"]
+        you_freq = freq_data["you_freq"]
+        the_freq = freq_data["the_freq"]
+        is_freq = freq_data["is_freq"]
+        a_freq = freq_data["a_freq"]
+
+        alliteration = cls._get_alliteration_score(line_dict)
+        rhyme = cls._get_rhyme_score(line_dict)
+        end_repeat = cls._get_end_rep_score(line_dict)
+
+        common_percent = cls._get_percent_out(word_list, COMMON_W)
+        poem_percent = cls._get_percent_out(word_list, POEM_W)
+        object_percent = cls._get_percent_in(word_list, OBJECTS)
+        abs_percent = cls._get_percent_in(word_list, ABSTRACT)
+        male_percent = cls._get_percent_in(word_list, MALE)
+        female_percent = cls._get_percent_in(word_list, FEMALE)
+        active_percent = cls._get_percent_in(word_list, ACTIVE)
+        passive_percent = cls._get_percent_in(word_list, PASSIVE)
+        positive = cls._get_percent_in(word_list, POSITIVE)
+        negative = cls._get_percent_in(word_list, NEGATIVE)
+
+        data = cls(poem_id=poem_id, wl_mean=wl_mean, wl_median=wl_median,
+                   wl_mode=wl_mode, wl_range=wl_range, ll_mean=ll_mean,
+                   ll_median=ll_median, ll_mode=ll_mode, ll_range=ll_range,
+                   pl_char=pl_char, pl_lines=pl_lines, pl_words=pl_words,
+                   lex_div=lex_div, i_freq=i_freq, you_freq=you_freq,
+                   the_freq=the_freq, is_freq=is_freq, a_freq=a_freq,
+                   common_percent=common_percent, poem_percent=poem_percent,
+                   object_percent=object_percent, abs_percent=abs_percent,
+                   male_percent=male_percent, female_percent=female_percent,
+                   active_percent=active_percent, stanzas=stanzas,
+                   passive_percent=passive_percent, sl_range=sl_range,
+                   positive=positive, negative=negative, sl_mode=sl_mode,
+                   alliteration=alliteration, rhyme=rhyme, sl_mean=sl_mean,
+                   sl_median=sl_median, end_repeat=end_repeat)
+
+        return data
 
     @staticmethod
     def _get_wl_data(word_list):
-        """given a list of words, returns data about words as list of floats.
+        """given a list of words, returns float data about words as dict.
 
-        Specifically, given the list of all the words in a poem, returns a list
+        Specifically, given the list of all the words in a poem, returns a dict
         with the mean word length (wl_mean), the median word length (wl_median),
         the mode word length (wl_mode), the range of word lengths (wl_range),
         the total number of words (num_words), and the lexical diversity
@@ -633,20 +684,11 @@ class Metrics(db.Model):
                              'than', 'it', 'is', 'in', 'reality', ',', 'please',
                              '.']
             >>> wl_data = Poem._get_wl_data(word_list)
-            >>> wl_mean, wl_median, wl_mode = wl_data[0:3]
-            >>> wl_range, num_words, lex_div = wl_data[3:]
-            >>> wl_mean
-            3
-            >>> wl_median
-            4
-            >>> wl_mode
-            4
-            >>> wl_range
-            6
-            >>> num_words
-            21
-            >>> lex_div
-            0.8333333333333334
+            >>> expected = {"wl_mean": 3, "wl_median": 4, "wl_mode": 4,
+                            "wl_range": 6, "pl_words": 21,
+                            "lex_div": 0.8333333333333334}
+            >>> wl_data == expected
+            True
 
         This function is called by Poem.parse, and will not need to be used
         directly."""
@@ -657,60 +699,206 @@ class Metrics(db.Model):
 
         wl_range = max(lengths) - min(lengths)
         wl_mean = sum(lengths) / num_words
-        if num_words % 2 == 0:
-            wl_median = (lengths[num_words/2] + lengths[(num_words/2) + 1])/2
-        else:
-            wl_median = lengths[num_words/2]
-        #FIXME YOU COUNTER HERE AND FOR OTHER .get STATEMENTS
-        len_dict = {}
-        for length in lengths:
-            len_dict[length] = len_dict.get(length, 0) + 1
-
-        maximum = max(len_dict.values())
-        for length in len_dict:
-            if len_dict[length] == maximum:
-                wl_mode = length
-                break
+        wl_median = Metrics._get_median(lengths)
+        wl_mode = Metrics._get_mode(lengths)
 
         unique = set(word_list)
         lex_div = len(unique) / float(num_words)
 
-        return [wl_mean, wl_median, wl_mode, wl_range, num_words, lex_div]
+        return {"wl_mean": wl_mean, "wl_median": wl_median, "wl_mode": wl_mode,
+                "wl_range": wl_range, "pl_words": num_words, "lex_div": lex_div}
 
-#FIXME NO DOCTEST
     @staticmethod
-    def _get_ll_data(text):
-        """"""
+    def _get_clean_line_data(text):
+        """takes string, returns dict w/["all_lines"]=all lines,"no_breaks"]=only lines w/ content
+
+                >>> text = "Here is some sample text! \n It can be difficult to\
+                 think of good sample text...\n\n yellow dog boat?"
+                >>> line_data = Metrics._get_clean_line_data(text)
+                >>> results = {'all_lines': ['Here is some sample text!',
+                                             'It can be difficult to think of \
+                                             good sample text...',
+                                             '',
+                                             'yellow dog boat?'],
+                               'no_breaks': ['Here is some sample text!',
+                                             'It can be difficult to think of \
+                                             good sample text...',
+                                             'yellow dog boat?']}
+                >>> line_data == results
+                True
+
+        This function is called within Metrics.get_metrics and will not need
+        to be used directly.
+        """
 
         line_list = text.split("\n")
-        lengths = sorted([len(l) for l in line_list])
-        num_lines = len(line_list)
+        clean_lines = [l.strip() for l in line_list]
+        just_lines = [line for line in clean_lines if len(line) > 0]
 
-        ll_range = max(lengths) - min(lengths)
-        ll_mean = sum(lengths) / num_lines
+        return {"all_lines": clean_lines, "no_breaks": just_lines}
 
-        if num_lines % 2 == 0:
-            ll_median = (lengths[num_lines/2] + lengths[(num_lines/2) + 1])/2
+    @staticmethod
+    def _get_median(list_of_numbers):
+        """given a list of numbers, returns the median as a float
+
+                >>> numbers = [5, 5, 10, 0]
+                >>> Metrics._get_median(numbers)
+                5
+
+        if given an empty list, will return 0:
+                >>> numbers = []
+                >>> Metrics._get_median(numbers)
+                0
+
+        This function is called within Metrics._get_stanza_data,
+        Metrics._get_ll_data, and Metrics._get_wl_data which are in turn called
+        by Metrics.get_metrics -- it will not need to be used directly.
+        """
+        if list_of_numbers:
+            length = len(list_of_numbers)
+            list_of_numbers = sorted(list_of_numbers)
+            if length == 2:
+                median = sum(list_of_numbers) / 2
+            elif length % 2 == 0:
+                median = (list_of_numbers[length / 2]
+                          + list_of_numbers[(length / 2) - 1]) / 2
+            else:
+                median = list_of_numbers[length / 2]
         else:
-            ll_median = lengths[num_lines/2]
+            median = 0
 
-        len_dict = {}
-        for length in lengths:
-            len_dict[length] = len_dict.get(length, 0) + 1
+        return median
 
-        maximum = max(len_dict.values())
-        for length in len_dict:
-            if len_dict[length] == maximum:
-                ll_mode = length
-                break
+    @staticmethod
+    def _get_mode(list_of_numbers):
+        """Given a list of numbers, returns the mode as a float.
 
+            >>> numbers = [1, 2, 6, 3, 2]
+            >>> Metrics._get_mode(numbers)
+            2
+
+        If all number occur the same number of times, it will give the highest
+        number in the list:
+
+            >>> numbers = [1, 2, 3, 5]
+            >> Metrics._get_mode(numbers)
+            5
+
+        if two numbers occur equally frequently, it will give the highest of
+        the two:
+
+            >>> numbers = [1, 3, 1, 5, 2, 5]
+            >>> Metrics._get_mode(numbers)
+            5
+
+        if fed an empty list, will return 0:
+
+            >>> numbers = []
+            >>> Metrics._get_mode(numbers)
+            0
+
+        This function is called within Metrics._get_stanza_data,
+        Metrics._get_ll_data, and Metrics._get_wl_data which are in turn called
+        by Metrics.get_metrics -- it will not need to be used directly.
+        """
+        if list_of_numbers:
+            num_dict = {}
+            for num in list_of_numbers:
+                num_dict[num] = num_dict.get(num, 0) + 1
+
+            mode_list = []
+            maximum = max(num_dict.values())
+            for num in num_dict:
+                if num_dict[num] == maximum:
+                    mode_list.append(float(num))
+
+            mode = max(mode_list)
+        else:
+            mode = 0
+
+        return mode
+
+    @staticmethod
+    def _get_stanza_data(line_dict):
+        """returns dict w/ stanza data (floats) for string list as value for
+        ["all_lines"] in line_data dict.
+
+                >>> line_dict = {'all_lines': ['Here is some sample text!',
+                                               'It can be difficult to think \
+                                               of good sample text...',
+                                               '',
+                                               'yellow dog boat?']}
+                >>> stanza_data = Metrics._get_stanza_data(line_dict)
+                >>> expected = {'sl_median': 1.0, 'sl_mean': 1.5,
+                                'stanzas': 2.0, 'sl_mode': 2.0, 'sl_range': 1.0}
+                >>> stanza_data == expected
+                True
+
+        This function is called by Metrics.get_metrics and will not need to be
+        used directly.
+        """
+
+        all_lines = line_dict["all_lines"]
+        stanzas = 0
+        stanza_lengths = []
+        stanza_length = 0
+        for line in all_lines:
+            if len(line) != 0:
+                stanza_length += 1
+            else:
+                stanzas += 1
+                stanza_lengths.append(stanza_length)
+                stanza_length = 0
+        if stanza_length > 0:
+            stanza_lengths.append(stanza_length)
+            stanzas += 1
+
+        stanzas = float(stanzas)
+        sl_mean = sum(stanza_lengths) / stanzas
+        sl_range = float(max(stanza_lengths)) - min(stanza_lengths)
+        sl_median = float(Metrics._get_median(stanza_lengths))
+        sl_mode = float(Metrics._get_mode(stanza_lengths))
+
+        return {"stanzas": stanzas, "sl_mean": sl_mean, "sl_median": sl_median,
+                "sl_mode": sl_mode, "sl_range": sl_range}
+
+    @staticmethod
+    def _get_ll_data(line_dict):
+        """returns dict w/ line data (floats) for string list as value for
+        ["no_breaks"] in line_dict.
+
+                >>> line_dict = {'no_breaks': ['Here is some sample text!',
+                                              'It can be difficult to think of \
+                                              good sample text...',
+                                              'yellow dog boat?']}
+                >>> line_data = Metrics._get_ll_data(line_dict)
+                >>> expected = {'ll_median': 25.0, 'pl_lines': 3,
+                                'll_mode': 51.0, 'pl_char': 92.0,
+                                'll_mean': 30.666666666666668,
+                                'll_range': 35.0}
+                >>> line_data == expected
+                True
+
+        This function is called by Metrics.get_metrics and will not need to be
+        used directly.
+        """
+
+        lengths = sorted([float(len(l)) for l in line_dict["no_breaks"]])
+
+        num_lines = len(lengths)  # the same as len(line_data["no_breaks"])
+        ll_range = (max(lengths)) - min(lengths)
+        ll_mean = sum(lengths) / num_lines
+        ll_median = Metrics._get_median(lengths)
+        ll_mode = Metrics._get_mode(lengths)
         pl_char = sum(lengths)
 
-        return [ll_mean, ll_median, ll_mode, ll_range, num_lines, pl_char]
+        return {"ll_mean": ll_mean, "ll_median": ll_median, "ll_mode": ll_mode,
+                "ll_range": ll_range, "pl_lines": num_lines, "pl_char": pl_char
+                }
 
     @staticmethod
     def _get_freq_data(word_list):
-        """returns a list with fequency data for a given list of words
+        """returns a dict with fequency data for a given list of words
 
         i_freq is the number of times "i" occurs on it's own (i.e. not as part
             of another word) as a percentage of overall words in the poem.
@@ -724,17 +912,13 @@ class Metrics(db.Model):
                      'but', 'i', 'am', 'feeding', 'this', 'in', 'to',
                      'test', 'the', 'function', '.']
             >>> freq_data = Metrics._get_freq_data(x)
-            >>> i_freq, you_freq, the_freq, is_freq, a_freq = freq_data
-            >>> i_freq
-            0.045454545454545456
-            >>> you_freq
-            0.0
-            >>> the_freq
-            0.045454545454545456
-            >>> is_freq
-            0.045454545454545456
-            >>> a_freq
-            0.09090909090909091]
+            >>> expected = {"i_freq": 0.045454545454545456,
+            ...             "you_freq": 0.0,
+            ...             "the_freq": 0.045454545454545456,
+            ...             "is_freq": 0.045454545454545456,
+            ...             "a_freq": 0.09090909090909091}
+            >>> freq_data == expected
+            True
 
         this method is called by Metrics.get_metrics to create a new instance
         of the metrics class and will not need to be used directly.
@@ -748,7 +932,8 @@ class Metrics(db.Model):
         is_freq = word_list.count("is")/num_words
         a_freq = word_list.count("a")/num_words
 
-        return [i_freq, you_freq, the_freq, is_freq, a_freq]
+        return {"i_freq": i_freq, "you_freq": you_freq, "the_freq": the_freq,
+                "is_freq": is_freq, "a_freq": a_freq}
 
     @staticmethod
     def _clean_word_list(text):
@@ -813,7 +998,7 @@ class Metrics(db.Model):
         return float(count)/float(total)
 
     @staticmethod
-    def _get_alliteration_score(text):
+    def _get_alliteration_score(line_dict):
         """given a text, returns alliteration score as a float
 
         >>> text = "Here is some sample text to savor! \n I hope you have a \
@@ -832,12 +1017,11 @@ class Metrics(db.Model):
         count divided by the overall number of words in the poem
         """
 
-        lines = text.split("\n")
+        lines = line_dict["no_breaks"]
         allit_count = 0
         total = 0
 
         for line in lines:
-            line = line.strip()
             used_letters = []
 
             words = [w for w in Metrics._clean_word_list(line) if w.isalpha()]
@@ -900,7 +1084,7 @@ class Metrics(db.Model):
         return set(word_list)
 
     @staticmethod
-    def _get_end_words(text):
+    def _get_end_words(line_dict):
         """given a string, returns all a list of words at the end of each line
 
             >>> text = "hello how are you \n\nI am fine thanks\nare you fine too"
@@ -918,7 +1102,7 @@ class Metrics(db.Model):
         called by Metrics._get_rhyme_score, which in turn is called within
         Metrics.get_metrics, and will not need to be used directly.
         """
-        lines = text.split("\n")
+        lines = line_dict["no_breaks"]
         end_words = []
         for line in lines:
             words = Metrics._clean_word_list(line)
@@ -930,7 +1114,7 @@ class Metrics(db.Model):
         return [w.lower() for w in end_words]
 
     @staticmethod
-    def _get_rhyme_score(text):
+    def _get_rhyme_score(line_dict):
         """given a text, returns rhyme score as an integer
                 >>> text = "Here is some sample text!\n\n \
                             This is good sample Text!\n\nWho know what \
@@ -941,7 +1125,7 @@ class Metrics(db.Model):
         used directly.
         """
 
-        end_words = Metrics._get_end_words(text)
+        end_words = Metrics._get_end_words(line_dict)
         total = float(len(end_words))
         rhymes = 0
         for word in end_words:
@@ -954,7 +1138,7 @@ class Metrics(db.Model):
         return rhymes/total
 
     @staticmethod
-    def _get_end_rep_score(text):
+    def _get_end_rep_score(line_dict):
         """given a text, returns the unique line endings / total line endings
 
                 >>> text = "Here is some sample text!\n\n \
@@ -967,9 +1151,29 @@ class Metrics(db.Model):
         used directly.
         """
 
-        end_words = Metrics._get_end_words(text)
+        end_words = Metrics._get_end_words(line_dict)
         unique = set(end_words)
         return len(unique) / float(len(end_words))
+
+
+#FIXME: HOW DO I DEFINE THIS RELATIONSHIP SINCE IT LINKS TO POEMS TWICE
+class PoemMatch(db.Model):
+    """ connects poem to its matches """
+
+    __tablename__ = "poem_matches"
+
+    pm_id = db.Column(db.Integer, autoincrement=True, primary_key=True)
+    primary_poem_id = db.Column(db.Integer,
+                                db.ForeignKey('poems.poem_id'),
+                                nullable=False)
+    match_poem_id = db.Column(db.Integer,
+                              db.ForeignKey('poems.poem_id'),
+                              nullable=False)
+    match_percent = db.Column(db.Float,
+                              nullable=False)
+
+    # poem = db.relationship("Poem", backref="matches")
+    # matches = db.relationship("Poem", backref="matched_to")
 
 
 #HELPER FUNCTIONS
