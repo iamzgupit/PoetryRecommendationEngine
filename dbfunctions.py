@@ -1,12 +1,9 @@
-from flask_sqlalchemy import SQLAlchemy
+# from flask_sqlalchemy import SQLAlchemy
 from Model import *
 from sqlalchemy import func
 from os import listdir
 from unidecode import unidecode
 from server import app
-
-
-db = SQLAlchemy()
 
 
 def get_frequent_words():
@@ -146,6 +143,19 @@ def grab_poem_author_list():
             print "{}: {} has no poet".format(poem.poem_id, title)
             content = start + title + end
         f.write(content)
+
+
+def seed_metrics():
+    poem_ids = db.session.query(Poem.poem_id).all()
+    i = 1
+    for poem_id_tup in poem_ids:
+        poem_id = poem_id_tup[0]
+        metric = Metrics.get_metrics(poem_id)
+        print metric.poem_id
+        print "Number: {}".format(i)
+        i += 1
+        db.session.add(metric)
+        db.session.commit()
 
 
 if __name__ == "__main__" or __name__ == "__console__":

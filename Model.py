@@ -1,6 +1,7 @@
 from flask_sqlalchemy import SQLAlchemy
 from unidecode import unidecode
 from bs4 import BeautifulSoup
+from math import sqrt
 from word_lists import (COMMON_W, POEM_W, ABSTRACT, OBJECTS, MALE, FEMALE,
                         ACTIVE, PASSIVE, POSITIVE, NEGATIVE)
 from requests import get
@@ -8,6 +9,7 @@ from requests import get
 db = SQLAlchemy()
 
 
+#FIXME LATER: MAKE SURE THAT RELATIONSHIP TO MATCHES/MATCHED_TO WORKS
 class Poem(db.Model):
     """Poem Object"""
 
@@ -26,7 +28,15 @@ class Poem(db.Model):
     # us to use the same model for user-submitted poetry
     poet = db.relationship('Poet', backref='poems')
 
-#FIXME: NO DOCTEST
+    matches = db.relationship("Poem",
+                              secondary="poem_matches",
+                              foreign_keys="PoemMatch.primary_poem_id")
+
+    matched_to = db.relationship("Poem",
+                                 secondary="poem_matches",
+                                 foreign_keys="PoemMatch.match_poem_id")
+
+#FIXME: NO DOCTEST DIFFICULT TO TEST
     @staticmethod
     def create_search_params():
         search_params = []
@@ -49,7 +59,7 @@ class Poem(db.Model):
         """returns index of start_word, stop_word in word_list as [start, stop]
 
         >>> word_list = ["hello", "dog", "how", "are", "you"]
-        >>> _find_content(word_list, "dog", "you")
+        >>> Poem._find_content(word_list, "dog", "you")
         [1, 4]
 
         we can then use this to parse a list and receive the words starting
@@ -83,19 +93,16 @@ class Poem(db.Model):
         followed by values of that term up until another term is introduced,
         in all-caps
 
-            >>> info = [u'Subjects', u'Men & Women', u'Philosophy', u'Love',
-                        u'Living', u'Romantic Love', 'Classic Love',
-                        u'Desire', u'Realistic and Complicated', u'The Mind',
-                        u'Poetic Terms', u'Free Verse', u'Metaphor',
-                        u'SUBJECT', u'Men and Women', u'Philosophy',
-                        u'Arts and Sciences']
-            >>> start, stop = Poem._find_term(info, 'poetic terms')
+            >>> info = ['Subjects', 'Philosophy', 'Love', 'Living',\
+                        'Poetic Terms', 'Free Verse', 'Metaphor', 'SUBJECT',\
+                        'Men and Women']
+            >>> start, stop = Poem._find_term(info, "poetic terms")
             >>> start
-            11
+            5
             >>> stop
-            13
+            7
             >>> info[start:stop]
-            [u'Free Verse', u'Metaphor']
+            ['Free Verse', 'Metaphor']
 
         This function is called by parse and will never need to be used directly
         """
@@ -116,14 +123,16 @@ class Poem(db.Model):
         """ given a beautiful soup list object, returns clean list of strings
 
             >>> class Fake(object):
-            ...    __init___(self, text):
+            ...    def __init__(self, text):
             ...        self.text = text
+            ...    def get_text(self):
+            ...        return self.text
             >>>
-            >>> a = Fake("here \r is \t\t some fake text    ")
+            >>> a = Fake("here is \t\tsome fake text    ")
             >>> b = Fake("and some more.")
             >>> fake_list = [a, b]
-            >>> Metrics._clean_listobj(fake_list)
-            ['this', 'is', 'some', 'fake', 'text', 'and', 'some', 'more', '.']
+            >>> Poem._clean_listobj(fake_list)
+            ['here', 'is', 'some', 'fake', 'text', 'and', 'some', 'more', '.']
 
         This is called by parse and will never need to be used directly
         """
@@ -133,11 +142,24 @@ class Poem(db.Model):
             clean = item.get_text()
             clean = clean.replace("\r", '')
             clean = clean.replace("\t", '')
-            clean_split = clean.split("\n")
-            for word in clean_split:
+            punctuation = [".", ",", ":", ";", "-", "--", '"', "!", "?"]
+            for punc in punctuation:
+                if punc in clean:
+                    clean = clean.replace(punc, " " + punc)
+            rough_word_list = clean.split(" ")
+
+            word_list = [w for w in rough_word_list if "\n" not in w]
+            rough_word_breaks = [w for w in rough_word_list if "\n" in w]
+
+            for word in rough_word_breaks:
+                words = word.split("\n")
+                word_list.extend(words)
+
+            for word in word_list:
                 word = word.strip().strip(",")
                 if len(word) >= 1:
                     new_list.append(word)
+
         return new_list
 
     @staticmethod
@@ -146,7 +168,7 @@ class Poem(db.Model):
 
         >>> html_string = "<div>hello there <em>Patrick</em></div>"
         >>> Poem._get_text(html_string)
-        u'hello there Patrick'
+        'hello there Patrick'
 
         BeautifulSoup's get_text and .text functions seem to malfunction
         on one or two poems. This is called by parse and will never need
@@ -164,9 +186,11 @@ class Poem(db.Model):
                 text.append(l)
         string = "".join(text)
         string = string.strip()
-        return unidecode(string)
+        if isinstance(string, unicode):
+            string = unidecode(string)
+        return string
 
-#FIXME: NO DOCTEST
+#FIXME: NO DOCTEST DIFFICULT TO TEST
     @staticmethod
     def _find_author(soup_object, poem_id):
         author_info = soup_object.find("span", class_="author")
@@ -190,7 +214,7 @@ class Poem(db.Model):
 
         return author
 
-#FIXME: NO DOCTEST
+#FIXME: NO DOCTEST DIFFICULT TO TEST
     @staticmethod
     def _find_birth_year(soup_object, poem_id):
         rough_birth_year = soup_object.find("span", class_="birthyear")
@@ -215,7 +239,7 @@ class Poem(db.Model):
 
         return birth_year
 
-#FIXME: NO DOCTEST
+#FIXME: NO DOCTEST DIFFICULT TO TEST
     @staticmethod
     def _create_poet(soup_object, poem_id):
 
@@ -237,7 +261,7 @@ class Poem(db.Model):
 
         return poet_id
 
-#FIXME: NO DOCTEST
+#FIXME: NO DOCTEST DIFFICULT TO TEST
     @staticmethod
     def _get_copyright(soup_object):
 
@@ -253,7 +277,7 @@ class Poem(db.Model):
 
         return copyright
 
-#FIXME: NO DOCTEST
+#FIXME: NO DOCTEST DIFFICULT TO TEST
     @staticmethod
     def _set_regions(context, poem_id):
         regions = []
@@ -275,7 +299,7 @@ class Poem(db.Model):
             db.session.add(poem_region)
             db.session.commit()
 
-#FIXME: NO DOCTEST
+#FIXME: NO DOCTEST DIFFICULT TO TEST
     @staticmethod
     def _set_terms(context, poem_id):
         if "Poetic Terms" in context:
@@ -296,7 +320,7 @@ class Poem(db.Model):
             db.session.add(poem_term)
             db.session.commit()
 
-#FIXME: NO DOCTEST
+#FIXME: NO DOCTEST DIFFICULT TO TEST
     @staticmethod
     def _set_subjects(context, poem_id):
         if "SUBJECT" in context:
@@ -318,7 +342,7 @@ class Poem(db.Model):
             db.session.add(poem_subject)
             db.session.commit()
 
-#FIXME: NO DOCTEST
+#FIXME: NO DOCTEST DIFFICULT TO TEST - RETURNS NOTHING
     @staticmethod
     def _set_context(soup_object, poem_id):
         rough_context = soup_object.find_all("p", class_="section")
@@ -328,7 +352,7 @@ class Poem(db.Model):
         Poem._set_terms(context, poem_id)
         Poem._set_subjects(context, poem_id)
 
-#FIXME: NO DOCTEST
+#FIXME: NO DOCTEST DIFFICULT TO TEST
     @classmethod
     def parse(cls, file_name):
         """given a text file containing html content, creates Poem object"""
@@ -514,7 +538,7 @@ class Metrics(db.Model):
     negative = db.Column(db.Float)
     active_percent = db.Column(db.Float)
     passive_percent = db.Column(db.Float)
-    end_repeat = db.Column(db.Float) # NEEDS TO BE INTEGRATED
+    end_repeat = db.Column(db.Float)
     rhyme = db.Column(db.Float)
     stanzas = db.Column(db.Float)
     sl_mean = db.Column(db.Float)
@@ -524,25 +548,142 @@ class Metrics(db.Model):
 
     poem = db.relationship('Poem', backref='metrics')
 
-#FIXME INCOMPLETE AND NO DOCTEST
-    def find_matches(self):
+#FIXME NO DOCTEST COMPLICATED TO TEST
+    def find_matches(self, per_macro=0.35, per_micro=0.3, per_sent=0.2,
+                     per_con=0.15, unique_auth=True, new_auth=True):
+
         """returns a list with (poem_id, match percent) for every other poem"""
 
         poem = Poem.query.get(self.poem_id)
-        other_poems = Poem.query.filter(Poem.poem_id != self.poem_id,
-                                        Poem.poet_id != poem.poet_id).all()
-        for other_poem in other_poems:
-            other_metrics = other_poems.metrics
-            subjects = [sub.subject for sub in other_poems.subject]
-            terms = [term.term for term in other_poems.term]
-            regions = [region.region for region in other_poem.regions]
-        # PEARSON CALCULATION EXAMINES METRICS FOR EACH POEM
-        # CHECK SUBJECTS SHARED, POETIC TERMS SHARED, REGIONS SHARED
-        # CHECK WORDS SHARED
-        # RETURN LIST OF TUPLES (poem_id, match_percent) SORTED HIGH -> LOW
-        # CONTROL FOR ONLY TAKE THE HIGHEST POEM FOR EACH POET
 
-#FIXME NO DOCTEST
+        if new_auth:
+            other_poems = Poem.query.filter(Poem.poem_id != self.poem_id,
+                                            Poem.poet_id != poem.poet_id).all()
+        else:
+            other_poems = Poem.query.filter(Poem.poem_id != self.poem_id).all()
+
+        macro_lex = self.get_macro_lex_data()
+        micro_lex = self.get_micro_lex_data()
+        sentiment = self.get_sentiment_data()
+
+        matches = []
+        for other_poem in other_poems:
+            other_metrics = other_poem.metrics
+
+            o_macro_lex = other_metrics.get_macro_lex_data()
+            o_micro_lex = other_metrics.get_micro_lex_data()
+
+            temp_micro = [n for n in micro_lex]
+            word_per = self._get_word_compare(other_metrics)
+            temp_micro.append(word_per)
+
+            o_word_per = other_metrics._get_word_compare(self)
+            o_micro_lex.append(o_word_per)
+
+            o_sentiment = other_metrics.get_sentiment_data()
+
+            context = self._get_context_compare(other_poem)
+            o_context = other_metrics._get_context_compare(self)
+
+            dist_raw = Metrics._get_euc_raw(macro_lex, o_macro_lex, per_macro)
+            dist_raw += Metrics._get_euc_raw(temp_micro, o_micro_lex, per_micro)
+            dist_raw += Metrics._get_euc_raw(sentiment, o_sentiment, per_sent)
+            dist_raw += Metrics._get_euc_raw(context, o_context, per_con)
+
+            euc_distance = sqrt(dist_raw)
+            matches.append((other_metrics.poem_id, other_poem.poet_id, euc_distance))
+
+        sorted_matches = sorted(matches, key=lambda tup: tup[2])
+
+        if unique_auth:
+            final_matches = []
+            used_poets = []
+            for match in sorted_matches:
+                poem_id, poet_id, euc_distance = match
+                if poet_id not in used_poets:
+                    final_matches.append(match)
+                    used_poets.append(poet_id)
+                else:
+                    continue
+        else:
+            final_matches = sorted_matches
+
+        return final_matches
+
+    @staticmethod
+    def _get_euc_raw(list_one, list_two, weight):
+        """ takes 2 lists of #s their weight(percent as 0.xx), returns float.
+
+        The square root of this float is float (without the weight put in) would
+        be the euclidean distance between the two objects (list1 and list 2). we
+        weight this number to allow for different catagories to take priority in
+        our final calculatuation, which will be the sqrt of the sum of all the
+        floats this function returns. We'll be finding matching poems based on
+        the smalled euclidean distance.
+
+                >>> list_one =[5, 6, 7, 2]
+                >>> list_two = [3, 2, 8, 1]
+                >>> weight = 0.5
+                >>> Metrics._get_euc_raw(list_one, list_two, weight)
+                11.0
+
+        All of our numbers, however, will be between 0 and 1:
+
+                >>> list_one = [0.5, 0.23, 0.34]
+                >>> list_two = [0.4, 0.35, 0.21]
+                >>> weight = 0.60
+                >>> Metrics._get_euc_raw(list_one, list_two, weight)
+                0.024779999999999996
+
+        This function is called within Metrics.find_matches and will not need
+        to be used directly.
+        """
+        temp_total = 0.0
+        for i in range(len(list_one)):
+            temp_total += ((list_one[i] - list_two[i]) ** 2)
+
+        return temp_total * weight
+
+#FIXME NO DOCTEST COMPLICATED TO TEST
+    def _get_word_compare(self, other):
+        """returns the percentage of words from self in other"""
+
+        raw_words = Metrics._get_clean_word_list(self.poem.text)
+        words = [w for w in raw_words if w.isalpha()]
+        raw_other_words = Metrics._get_clean_word_list(other.poem.text)
+        other_words = [w for w in raw_other_words if w.isalpha()]
+
+        word_per = Metrics._get_percent_in(words, other_words)
+
+        return word_per
+
+#FIXME NO DOCTEST COMPLICATED TO TEST
+    def _get_context_compare(self, other):
+        """"returns a list of how close their context data is
+
+        """
+
+        self_context = self.get_context_data()
+        other_context = other.get_context_data()
+
+        regions = self_context["regions"]
+        other_regions = other_context["regions"]
+
+        reg_per = Metrics._get_percent_in(regions, other_regions)
+
+        terms = self_context["terms"]
+        other_terms = other_context["terms"]
+
+        term_per = Metrics._get_percent_in(terms, other_terms)
+
+        subs = self_context["subjects"]
+        other_subs = self_context["subjects"]
+
+        sub_per = Metrics._get_percent_in(subs, other_subs)
+
+        return [reg_per, term_per, sub_per]
+
+#FIXME NO DOCTEST COMPLICATED TO TEST
     def get_context_data(self):
         """Returns a list with nested lists with context data for a poem"""
 
@@ -550,23 +691,65 @@ class Metrics(db.Model):
         subjects = [sub.subject for sub in poem.subjects]
         terms = [term.term for term in poem.terms]
         regions = [region.region for region in poem.regions]
-        poet_birth = poem.poet.birth_year
 
-        return [poet_birth, regions, terms, subjects]
+        return {"regions": regions, "terms": terms, "subjects": subjects}
 
-#FIXME NO DOCTEST
-    def get_macro_lex_data(self):
-        """Returns a list of macro lexical data for a poem"""
+    def _get_macro_lex_data(self):
+        """Returns a list of macro lexical data for a given poem
+
+                >>> fake = Metrics(poem_id=0,\
+                                   wl_mean=1,\
+                                   wl_median=2,\
+                                   wl_mode=3,\
+                                   wl_range=4,\
+                                   ll_mean=5,\
+                                   ll_median=6,\
+                                   ll_mode=7,\
+                                   ll_range=8,\
+                                   pl_char=9,\
+                                   pl_lines=10,\
+                                   pl_words=11,\
+                                   lex_div=12,\
+                                   stanzas=13,\
+                                   sl_mean=14,\
+                                   sl_median=15,\
+                                   sl_mode=16,\
+                                   sl_range=17)
+                >>>
+                >>> fake._get_macro_lex_data()
+                [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17]
+
+        This function is called in Metrics.find_matches and will not need to be
+        used directly."""
 
         macro_lex = [self.wl_mean, self.wl_median, self.wl_mode,
                      self.wl_range, self.ll_mean, self.ll_median,
                      self.ll_mode, self.ll_range, self.pl_char,
-                     self.pl_lines, self.pl_words, self.lex_div]
+                     self.pl_lines, self.pl_words, self.lex_div,
+                     self.stanzas, self.sl_mean, self.sl_mean, self.sl_median,
+                     self.sl_mode, self.sl_range]
         return macro_lex
 
-#FIXME NO DOCTEST
-    def get_micro_lex_data(self):
-        """Returns a list of micro lexical data for a poem"""
+    def _get_micro_lex_data(self):
+        """Returns a list of micro lexical data for a given poem
+
+                >>> fake = Metrics(poem_id=0,\
+                                   the_freq=1,\
+                                   i_freq=2,\
+                                   you_freq=3,\
+                                   end_repeat=4,\
+                                   is_freq=5,\
+                                   a_freq=6,\
+                                   alliteration=7,\
+                                   rhyme=8,\
+                                   end_repeat=9)
+                >>>
+                >>> fake._get_micro_lex_data()
+                [1, 2, 3, 4, 5, 6, 7, 8, 9]
+
+        This function is called in Metrics.find_matches and will not need to be
+        used directly.
+        """
 
         micro_lex = [self.the_freq, self.i_freq, self.you_freq, self.end_repeat,
                      self.is_freq, self.a_freq, self.alliteration, self.rhyme,
@@ -574,9 +757,27 @@ class Metrics(db.Model):
 
         return micro_lex
 
-#FIXME NO DOCTEST
-    def get_sentiment_data(self):
-        """Returns a list of sentiment data for a poem"""
+    def _get_sentiment_data(self):
+        """Returns a list of sentiment data for a given poem
+
+                >>> fake = Metrics(poem_id=0,\
+                                   common_percent=1,\
+                                   poem_percent=2,\
+                                   object_percent=3,\
+                                   abs_percent=4,\
+                                   male_percent=5,\
+                                   female_percent=6,\
+                                   positive=7,\
+                                   negative=8,\
+                                   active_percent=9,\
+                                   passive_percent=10)
+                >>>
+                >>> fake._get_sentiment_data()
+                [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+
+        This function is called in Metrics.find_matches and will not need to be
+        used directly.
+        """
 
         sentiment_data = [self.common_percent, self.poem_percent,
                           self.object_percent, self.abs_percent,
@@ -585,7 +786,7 @@ class Metrics(db.Model):
                           self.passive_percent]
         return sentiment_data
 
-#FIXME NO DOCTEST
+#FIXME NO DOCTEST COMPLICATED TO TEST
     @classmethod
     def get_metrics(cls, poem_id):
         """given poem id, returns instance of Metrics class w/data calculated"""
@@ -679,14 +880,14 @@ class Metrics(db.Model):
         (lex_div), which is the number of unique words in the poem divided
         by the total number of words.
 
-            >>> word_list = ['This', 'is', 'a', 'sample', 'word', 'list', '.',
-                             'Imagine', 'this', 'list', 'is', 'more', 'poetic',
-                             'than', 'it', 'is', 'in', 'reality', ',', 'please',
+            >>> word_list = ['This', 'is', 'a', 'sample', 'word', 'list', '.',\
+                             'Imagine', 'this', 'list', 'is', 'more', 'poetic',\
+                             'than', 'it', 'is', 'in', 'reality', ',', 'please',\
                              '.']
-            >>> wl_data = Poem._get_wl_data(word_list)
-            >>> expected = {"wl_mean": 3, "wl_median": 4, "wl_mode": 4,
-                            "wl_range": 6, "pl_words": 21,
-                            "lex_div": 0.8333333333333334}
+            >>> wl_data = Metrics._get_wl_data(word_list)
+            >>> expected = {'wl_mode': 4.0, 'wl_range': 6, 'wl_median': 4,\
+                            'pl_words': 21, 'wl_mean': 3,\
+                            'lex_div': 0.8095238095238095}
             >>> wl_data == expected
             True
 
@@ -712,17 +913,17 @@ class Metrics(db.Model):
     def _get_clean_line_data(text):
         """takes string, returns dict w/["all_lines"]=all lines,"no_breaks"]=only lines w/ content
 
-                >>> text = "Here is some sample text! \n It can be difficult to\
-                 think of good sample text...\n\n yellow dog boat?"
+                >>> text = 'Here is some sample text!\\nIt can be difficult to'\
+                           + ' think of good sample text...\\n\\n yellow dog boat?'
                 >>> line_data = Metrics._get_clean_line_data(text)
-                >>> results = {'all_lines': ['Here is some sample text!',
-                                             'It can be difficult to think of \
-                                             good sample text...',
-                                             '',
-                                             'yellow dog boat?'],
-                               'no_breaks': ['Here is some sample text!',
-                                             'It can be difficult to think of \
-                                             good sample text...',
+                >>> results = {'all_lines': ['Here is some sample text!',\
+                                             'It can be difficult to think of'\
+                                             + ' good sample text...',\
+                                             '',\
+                                             'yellow dog boat?'],\
+                               'no_breaks': ['Here is some sample text!',\
+                                             'It can be difficult to think of'\
+                                             + ' good sample text...',\
                                              'yellow dog boat?']}
                 >>> line_data == results
                 True
@@ -775,27 +976,27 @@ class Metrics(db.Model):
 
             >>> numbers = [1, 2, 6, 3, 2]
             >>> Metrics._get_mode(numbers)
-            2
+            2.0
 
         If all number occur the same number of times, it will give the highest
         number in the list:
 
             >>> numbers = [1, 2, 3, 5]
-            >> Metrics._get_mode(numbers)
-            5
+            >>> Metrics._get_mode(numbers)
+            5.0
 
         if two numbers occur equally frequently, it will give the highest of
         the two:
 
             >>> numbers = [1, 3, 1, 5, 2, 5]
             >>> Metrics._get_mode(numbers)
-            5
+            5.0
 
         if fed an empty list, will return 0:
 
             >>> numbers = []
             >>> Metrics._get_mode(numbers)
-            0
+            0.0
 
         This function is called within Metrics._get_stanza_data,
         Metrics._get_ll_data, and Metrics._get_wl_data which are in turn called
@@ -814,7 +1015,7 @@ class Metrics(db.Model):
 
             mode = max(mode_list)
         else:
-            mode = 0
+            mode = 0.0
 
         return mode
 
@@ -823,13 +1024,13 @@ class Metrics(db.Model):
         """returns dict w/ stanza data (floats) for string list as value for
         ["all_lines"] in line_data dict.
 
-                >>> line_dict = {'all_lines': ['Here is some sample text!',
-                                               'It can be difficult to think \
-                                               of good sample text...',
-                                               '',
+                >>> line_dict = {'all_lines': ['Here is some sample text!',\
+                                               'It can be difficult to think\
+                                               of good sample text...',\
+                                               '',\
                                                'yellow dog boat?']}
                 >>> stanza_data = Metrics._get_stanza_data(line_dict)
-                >>> expected = {'sl_median': 1.0, 'sl_mean': 1.5,
+                >>> expected = {'sl_median': 1.0, 'sl_mean': 1.5,\
                                 'stanzas': 2.0, 'sl_mode': 2.0, 'sl_range': 1.0}
                 >>> stanza_data == expected
                 True
@@ -867,14 +1068,14 @@ class Metrics(db.Model):
         """returns dict w/ line data (floats) for string list as value for
         ["no_breaks"] in line_dict.
 
-                >>> line_dict = {'no_breaks': ['Here is some sample text!',
-                                              'It can be difficult to think of \
-                                              good sample text...',
-                                              'yellow dog boat?']}
-                >>> line_data = Metrics._get_ll_data(line_dict)
-                >>> expected = {'ll_median': 25.0, 'pl_lines': 3,
-                                'll_mode': 51.0, 'pl_char': 92.0,
-                                'll_mean': 30.666666666666668,
+                >>> ldict = {'no_breaks': ['Here is some sample text!',\
+                                           'It can be difficult to think of ' +\
+                                           'good sample text...',\
+                                           'yellow dog boat?']}
+                >>> line_data = Metrics._get_ll_data(ldict)
+                >>> expected = {'ll_median': 25.0, 'pl_lines': 3,\
+                                'll_mode': 51.0, 'pl_char': 92.0,\
+                                'll_mean': 30.666666666666668,\
                                 'll_range': 35.0}
                 >>> line_data == expected
                 True
@@ -907,16 +1108,16 @@ class Metrics(db.Model):
         the_freq, is_freq, and a_freq follow the same model, but for "the",
             "is", and "a" respectively.
 
-            >>> x = ['this', 'is', 'a', 'sample', 'text', '.', 'normally',
-                     'this', 'would', 'come', 'from', 'a', 'poem', '.',
-                     'but', 'i', 'am', 'feeding', 'this', 'in', 'to',
+            >>> x = ['this', 'is', 'a', 'sample', 'text', '.', 'normally',\
+                     'this', 'would', 'come', 'from', 'a', 'poem', '.',\
+                     'but', 'i', 'am', 'feeding', 'this', 'in', 'to',\
                      'test', 'the', 'function', '.']
             >>> freq_data = Metrics._get_freq_data(x)
-            >>> expected = {"i_freq": 0.045454545454545456,
-            ...             "you_freq": 0.0,
-            ...             "the_freq": 0.045454545454545456,
-            ...             "is_freq": 0.045454545454545456,
-            ...             "a_freq": 0.09090909090909091}
+            >>> expected = {"i_freq": 0.045454545454545456,\
+                            "you_freq": 0.0,\
+                            "the_freq": 0.045454545454545456,\
+                            "is_freq": 0.045454545454545456,\
+                            "a_freq": 0.09090909090909091}
             >>> freq_data == expected
             True
 
@@ -939,11 +1140,13 @@ class Metrics(db.Model):
     def _clean_word_list(text):
         """returns a list of lowercase words and puncuation for a given text
 
-            >>> text = '\t\t\t Here is some odd sample text: \
-                        \n\n I    like to eat cake.'
-            >>> Metrics._clean_word_list
-            ['here', 'is', 'some', 'odd', 'sample', 'text', ':', 'i', 'like',
-            'to', 'eat', 'cake', '.']
+            >>> text = '\\t\\t\\t Here is some odd sample text: '\
+                       + '\\n\\n I    like to eat cake.'
+            >>> clean_list = Metrics._clean_word_list(text)
+            >>> expected = ['here', 'is', 'some', 'odd', 'sample', 'text', ':',\
+                            'i', 'like', 'to', 'eat', 'cake', '.']
+            >>> clean_list == expected
+            True
 
         this method is called by Metrics.get_metrics to create a new instance
         of the metrics class and will not need to be used directly.
@@ -1001,15 +1204,16 @@ class Metrics(db.Model):
     def _get_alliteration_score(line_dict):
         """given a text, returns alliteration score as a float
 
-        >>> text = "Here is some sample text to savor! \n I hope you have a \
-                    healthy and happy day!"
-        >>> Metrics._get_alliteration_score(text)
+        >>> ldict = {'no_breaks': ['Here is some sample text to savor!',\
+                                   'I hope you have a healthy and happy day!']}
+        >>> Metrics._get_alliteration_score(ldict)
         0.6428571428571429
 
         alternatively if we have not alliteration:
 
-        >>> text = "Here you will find sample text. \n No alliteration present."
-        >>> Metrics._get_alliteration_score(text)
+        >>> ldict = {'no_breaks': ['Here you will find sample text.',\
+                                   'No alliteration present.']}
+        >>> Metrics._get_alliteration_score(ldict)
         0.0
 
         Alliteration score is incremented every time multiple words in the
@@ -1050,16 +1254,16 @@ class Metrics(db.Model):
         values and returns the set.
 
             >>> rhymes = Metrics._get_rhyme_list("tester")
-            >>> results = set(['fester', 'fresher', 'leicester', 'professor',
-                               'semester', 'taster', 'nester', 'mister',
-                               'connector', 'lessor', 'molester', 'pester',
-                               'better', 'checker', 'ester', 'sequester',
-                               'nestor', 'ever', 'dresser', 'pepper', 'esther',
-                               'bold', 'refresher', 'fiesta', 'jester', 'testa',
-                               'pressure', 'western', 'letter', 'trimester',
-                               'investor', 'feather', 'nectar', 'director',
-                               'polyester', 'buster', 'wrecker', 'sylvester',
-                               'wester', 'lesser', 'chester', 'enter',
+            >>> results = set(['fester', 'fresher', 'leicester', 'professor',\
+                               'semester', 'taster', 'nester', 'mister',\
+                               'connector', 'lessor', 'molester', 'pester',\
+                               'better', 'checker', 'ester', 'sequester',\
+                               'nestor', 'ever', 'dresser', 'pepper', 'esther',\
+                               'bold', 'refresher', 'fiesta', 'jester', 'testa',\
+                               'pressure', 'western', 'letter', 'trimester',\
+                               'investor', 'feather', 'nectar', 'director',\
+                               'polyester', 'buster', 'wrecker', 'sylvester',\
+                               'wester', 'lesser', 'chester', 'enter',\
                                'webster', 'protector', 'temper', 'gesture'])
             >>> rhymes == results
             True
@@ -1087,16 +1291,17 @@ class Metrics(db.Model):
     def _get_end_words(line_dict):
         """given a string, returns all a list of words at the end of each line
 
-            >>> text = "hello how are you \n\nI am fine thanks\nare you fine too"
-            >>> end_words = Metrics._get_end_words(text)
+            >>> ldict = {'no_breaks': ['hello how are you', 'I am fine thanks',\
+                                       'are you fine too']}
+            >>> end_words = Metrics._get_end_words(ldict)
             >>> end_words
             ['you', 'thanks', 'too']
 
         will cut off punction and return all words lowercase:
 
-            >>> text = "here is some more sample Text! \n\n it is GREAT?"
-            >>> end_words = Metrics._get_end_words(text)
-            >>> end_words
+            >>> ldict = {'no_breaks': ['here is some sample TEXT!',\
+                                       'it is GREAT?']}
+            >>> Metrics._get_end_words(ldict)
             ['text', 'great']
 
         called by Metrics._get_rhyme_score, which in turn is called within
@@ -1106,7 +1311,7 @@ class Metrics(db.Model):
         end_words = []
         for line in lines:
             words = Metrics._clean_word_list(line)
-            words = [w.lower() for w in words if w.isalpha]
+            words = [w.lower() for w in words if w.isalpha()]
             if words:
                 last_word = words[-1]
                 end_words.append(last_word)
@@ -1116,11 +1321,13 @@ class Metrics(db.Model):
     @staticmethod
     def _get_rhyme_score(line_dict):
         """given a text, returns rhyme score as an integer
-                >>> text = "Here is some sample text!\n\n \
-                            This is good sample Text!\n\nWho know what \
-                            will happen next?"
-                >>> Metrics._get_end_rhyme_score(text)
-                0.6666666666666666
+
+                >>> ldict = {'no_breaks': ['Here is some sample text!',\
+                                           'This is good sample Text?',\
+                                           'Who know what will happen next?']}
+                >>> Metrics._get_rhyme_score(ldict)
+                1.0
+
         This function is called by Metrics.get_metrics and will not need to be
         used directly.
         """
@@ -1129,7 +1336,7 @@ class Metrics(db.Model):
         total = float(len(end_words))
         rhymes = 0
         for word in end_words:
-            other_words = [w for w in end_words if w != word]
+            other_words = set([w for w in end_words if w != word])
             rhyme_words = Metrics._get_rhyme_list(word)
             for word in other_words:
                 if word in rhyme_words:
@@ -1141,10 +1348,10 @@ class Metrics(db.Model):
     def _get_end_rep_score(line_dict):
         """given a text, returns the unique line endings / total line endings
 
-                >>> text = "Here is some sample text!\n\n \
-                            This is good sample Text!\n\nWho know what \
-                            will happen next?"
-                >>> Metrics._get_end_rep_score(text)
+                >>> ldict = {'no_breaks': ['Here is some sample text!',\
+                                           'This is good sample Text!',\
+                                           'Who know what will happen next?']}
+                >>> Metrics._get_end_rep_score(ldict)
                 0.6666666666666666
 
         This function is called by Metrics.get_metrics and will not need to be
@@ -1156,7 +1363,6 @@ class Metrics(db.Model):
         return len(unique) / float(len(end_words))
 
 
-#FIXME: HOW DO I DEFINE THIS RELATIONSHIP SINCE IT LINKS TO POEMS TWICE
 class PoemMatch(db.Model):
     """ connects poem to its matches """
 
@@ -1172,8 +1378,8 @@ class PoemMatch(db.Model):
     match_percent = db.Column(db.Float,
                               nullable=False)
 
-    # poem = db.relationship("Poem", backref="matches")
-    # matches = db.relationship("Poem", backref="matched_to")
+    poem = db.relationship("Poem", backref="pmatches", foreign_keys="PoemMatch.primary_poem_id")
+    match = db.relationship("Poem", backref="pmatched_to", foreign_keys="PoemMatch.match_poem_id")
 
 
 #HELPER FUNCTIONS
