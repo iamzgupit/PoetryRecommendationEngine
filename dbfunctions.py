@@ -145,10 +145,10 @@ def grab_poem_author_list():
         f.write(content)
 
 
-def seed_metrics():
+def seed_metrics(start):
     poem_ids = db.session.query(Poem.poem_id).all()
-    i = 1
-    for poem_id_tup in poem_ids:
+    i = start
+    for poem_id_tup in poem_ids[start:]:
         poem_id = poem_id_tup[0]
         metric = Metrics.get_metrics(poem_id)
         print metric.poem_id
@@ -156,7 +156,7 @@ def seed_metrics():
         i += 1
         db.session.add(metric)
         db.session.commit()
-
+        print "DONE\n"
 
 if __name__ == "__main__" or __name__ == "__console__":
 

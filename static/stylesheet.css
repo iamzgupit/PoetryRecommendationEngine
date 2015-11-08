@@ -25,6 +25,10 @@
             margin: 0 auto;
         }
 
+        .poem-content {
+            padding-bottom: 50px;
+        }
+
         .user-form {
             padding-bottom: 40px;
         }

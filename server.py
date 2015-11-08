@@ -1,6 +1,7 @@
 from flask import (Flask, render_template, redirect, jsonify,
-                   request, flash, session)
-from Model import Poem, connect_to_db
+                   request, session)
+from random import choice
+from Model import Poem, connect_to_db, db
 
 
 app = Flask(__name__)
@@ -21,6 +22,17 @@ def get_search_criteria():
     search_critera = Poem.create_search_params()
 
     return jsonify(search_critera)
+
+
+@app.route('/random')
+def get_random_poem():
+    """redirects to the search page for a random poem"""
+    poem_ids = db.session.query(Poem.poem_id).all()
+    chosen_id = choice(poem_ids)
+    poem = str(chosen_id[0])
+    url = "/" + poem
+
+    return redirect(url)
 
 
 @app.route('/<int:poem_id>')

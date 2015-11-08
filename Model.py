@@ -510,47 +510,48 @@ class Metrics(db.Model):
                         db.ForeignKey('poems.poem_id'),
                         primary_key=True,
                         nullable=False)
-    wl_mean = db.Column(db.Float)
-    wl_median = db.Column(db.Float)
-    wl_mode = db.Column(db.Float)
-    wl_range = db.Column(db.Float)
-    ll_mean = db.Column(db.Float)
-    ll_median = db.Column(db.Float)
-    ll_mode = db.Column(db.Float)
-    ll_range = db.Column(db.Float)
-    pl_char = db.Column(db.Float)
-    pl_lines = db.Column(db.Float)
-    pl_words = db.Column(db.Float)
-    lex_div = db.Column(db.Float)
-    the_freq = db.Column(db.Float)
-    i_freq = db.Column(db.Float)
-    you_freq = db.Column(db.Float)
-    is_freq = db.Column(db.Float)
-    a_freq = db.Column(db.Float)
-    common_percent = db.Column(db.Float)
-    poem_percent = db.Column(db.Float)
-    object_percent = db.Column(db.Float)
-    abs_percent = db.Column(db.Float)
-    male_percent = db.Column(db.Float)
-    female_percent = db.Column(db.Float)
-    alliteration = db.Column(db.Float)
-    positive = db.Column(db.Float)
-    negative = db.Column(db.Float)
-    active_percent = db.Column(db.Float)
-    passive_percent = db.Column(db.Float)
-    end_repeat = db.Column(db.Float)
-    rhyme = db.Column(db.Float)
-    stanzas = db.Column(db.Float)
-    sl_mean = db.Column(db.Float)
-    sl_median = db.Column(db.Float)
-    sl_mode = db.Column(db.Float)
-    sl_range = db.Column(db.Float)
+
+    wl_mean = db.Column(db.Float)  # > 1
+    wl_median = db.Column(db.Float)  # > 1
+    wl_mode = db.Column(db.Float)  # > 1
+    wl_range = db.Column(db.Float)  # > 1
+    ll_mean = db.Column(db.Float)  # > 1
+    ll_median = db.Column(db.Float)  # > 1
+    ll_mode = db.Column(db.Float)  # > 1
+    ll_range = db.Column(db.Float)  # > 1
+    pl_char = db.Column(db.Float)  # > 1
+    pl_lines = db.Column(db.Float)  # > 1
+    pl_words = db.Column(db.Float)  # > 1
+    lex_div = db.Column(db.Float)  # PERCENTAGE
+    the_freq = db.Column(db.Float)  # PERCENTAGE
+    i_freq = db.Column(db.Float)  # PERCENTAGE
+    you_freq = db.Column(db.Float)  # PERCENTAGE
+    is_freq = db.Column(db.Float)  # PERCENTAGE
+    a_freq = db.Column(db.Float)  # PERCENTAGE
+    common_percent = db.Column(db.Float)  # PERCENTAGE
+    poem_percent = db.Column(db.Float)  # PERCENTAGE
+    object_percent = db.Column(db.Float)  # PERCENTAGE
+    abs_percent = db.Column(db.Float)  # PERCENTAGE
+    male_percent = db.Column(db.Float)  # PERCENTAGE
+    female_percent = db.Column(db.Float)  # PERCENTAGE
+    alliteration = db.Column(db.Float)  # PERCENTAGE
+    positive = db.Column(db.Float)  # PERCENTAGE
+    negative = db.Column(db.Float)  # PERCENTAGE
+    active_percent = db.Column(db.Float)  # PERCENTAGE
+    passive_percent = db.Column(db.Float)  # PERCENTAGE
+    end_repeat = db.Column(db.Float)  # PERCENTAGE
+    rhyme = db.Column(db.Float)  # PERCENTAGE
+    stanzas = db.Column(db.Float)  # > 1
+    sl_mean = db.Column(db.Float)  # > 1
+    sl_median = db.Column(db.Float)  # > 1
+    sl_mode = db.Column(db.Float)  # > 1
+    sl_range = db.Column(db.Float)  # > 1
 
     poem = db.relationship('Poem', backref='metrics')
 
 #FIXME NO DOCTEST COMPLICATED TO TEST
     def find_matches(self, per_macro=0.35, per_micro=0.3, per_sent=0.2,
-                     per_con=0.15, unique_auth=True, new_auth=True):
+                     per_con=0.15, unique_auth=True, new_auth=True, limit=10):
 
         """returns a list with (poem_id, match percent) for every other poem"""
 
@@ -562,38 +563,8 @@ class Metrics(db.Model):
         else:
             other_poems = Poem.query.filter(Poem.poem_id != self.poem_id).all()
 
-        macro_lex = self.get_macro_lex_data()
-        micro_lex = self.get_micro_lex_data()
-        sentiment = self.get_sentiment_data()
-
-        matches = []
-        for other_poem in other_poems:
-            other_metrics = other_poem.metrics
-
-            o_macro_lex = other_metrics.get_macro_lex_data()
-            o_micro_lex = other_metrics.get_micro_lex_data()
-
-            temp_micro = [n for n in micro_lex]
-            word_per = self._get_word_compare(other_metrics)
-            temp_micro.append(word_per)
-
-            o_word_per = other_metrics._get_word_compare(self)
-            o_micro_lex.append(o_word_per)
-
-            o_sentiment = other_metrics.get_sentiment_data()
-
-            context = self._get_context_compare(other_poem)
-            o_context = other_metrics._get_context_compare(self)
-
-            dist_raw = Metrics._get_euc_raw(macro_lex, o_macro_lex, per_macro)
-            dist_raw += Metrics._get_euc_raw(temp_micro, o_micro_lex, per_micro)
-            dist_raw += Metrics._get_euc_raw(sentiment, o_sentiment, per_sent)
-            dist_raw += Metrics._get_euc_raw(context, o_context, per_con)
-
-            euc_distance = sqrt(dist_raw)
-            matches.append((other_metrics.poem_id, other_poem.poet_id, euc_distance))
-
-        sorted_matches = sorted(matches, key=lambda tup: tup[2])
+        sorted_matches = self._calc_matches(other_poems, per_macro, per_micro,
+                                            per_sent, per_con)
 
         if unique_auth:
             final_matches = []
@@ -608,7 +579,62 @@ class Metrics(db.Model):
         else:
             final_matches = sorted_matches
 
-        return final_matches
+        return final_matches[:limit]
+
+#FIXME NO DOCTEST DIFFICULT TO TEST
+    def _calc_matches(self, other_poems, per_macro, per_micro, per_sent,
+                      per_con):
+        """given self and other poem objects, returns list with match closeness"""
+
+        macro_lex = self.get_macro_lex_data()
+        micro_lex = self.get_micro_lex_data()
+        sentiment = self.get_sentiment_data()
+
+        matches = []
+        for other_poem in other_poems:
+
+            other_metrics = other_poem.metrics
+
+            o_macro_lex = other_metrics.get_macro_lex_data()
+            o_micro_lex = other_metrics.get_micro_lex_data()
+
+            # We are adding the percentage of words from one poem in another
+            # to our micro lexical data -- this requires making a temporary
+            # micro_lex catagory for our main poem, since lists are mutable and
+            # we want this percentage to be different for each poem we're
+            # comparing
+            temp_micro = [n for n in micro_lex]
+            word_per = self._get_word_compare(other_metrics)
+            temp_micro.append(word_per)
+
+            o_word_per = other_metrics._get_word_compare(self)
+            o_micro_lex.append(o_word_per)
+
+            o_sentiment = other_metrics.get_sentiment_data()
+
+            context, o_context = self._create_context_lists(other_poem)
+
+            dist_raw = 0
+            if context and o_context:
+                dist_raw += Metrics._get_euc_raw(context, o_context, per_con)
+            else:
+                add_per = per_con / 3
+                per_macro += add_per
+                per_micro += add_per
+                per_sent += add_per
+
+            dist_raw = Metrics._get_euc_raw(macro_lex, o_macro_lex, per_macro)
+            dist_raw += Metrics._get_euc_raw(temp_micro, o_micro_lex, per_micro)
+            dist_raw += Metrics._get_euc_raw(sentiment, o_sentiment, per_sent)
+
+            euc_distance = sqrt(dist_raw)
+            matches.append((other_metrics.poem_id,
+                            other_poem.poet_id,
+                            euc_distance))
+
+        sorted_matches = sorted(matches, key=lambda tup: tup[2])
+
+        return sorted_matches
 
     @staticmethod
     def _get_euc_raw(list_one, list_two, weight):
@@ -658,41 +684,87 @@ class Metrics(db.Model):
         return word_per
 
 #FIXME NO DOCTEST COMPLICATED TO TEST
+    def _create_context_lists(self, other_poem):
+        """Returns list w/ [percent shared context data], [ideal]"""
+
+        raw_context = self._get_context_compare(other_poem)
+        context = []
+        o_context = []
+        if raw_context["sub_per"]:
+            context.append(raw_context["sub_per"])
+            o_context.append(1)
+        if raw_context["term_per"]:
+            context.append(raw_context["term_per"])
+            o_context.append(1)
+        if raw_context["reg_per"]:
+            context.append(raw_context["reg_per"])
+            o_context.append(1)
+        if raw_context["birth_per"][0]:
+            context.append(raw_context["birth_per"][0])
+            o_context.append(raw_context["birth_per"][1])
+
+        return [context, o_context]
+
+#FIXME NO DOCTEST COMPLICATED TO TEST
     def _get_context_compare(self, other):
         """"returns a list of how close their context data is
 
         """
 
-        self_context = self.get_context_data()
-        other_context = other.get_context_data()
+        self_context = self._get_context_data()
+        other_context = other._get_context_data()
 
         regions = self_context["regions"]
         other_regions = other_context["regions"]
-
-        reg_per = Metrics._get_percent_in(regions, other_regions)
+        if regions and other_regions:
+            reg_per = Metrics._get_percent_in(regions, other_regions)
+        else:
+            reg_per = None
 
         terms = self_context["terms"]
         other_terms = other_context["terms"]
 
-        term_per = Metrics._get_percent_in(terms, other_terms)
+        if terms and other_terms:
+            term_per = Metrics._get_percent_in(terms, other_terms)
+        else:
+            reg_per = None
 
         subs = self_context["subjects"]
-        other_subs = self_context["subjects"]
+        other_subs = other_context["subjects"]
 
-        sub_per = Metrics._get_percent_in(subs, other_subs)
+        if subs and other_subs:
+            sub_per = Metrics._get_percent_in(subs, other_subs)
+        else:
+            sub_per = None
 
-        return [reg_per, term_per, sub_per]
+        birthyear = self_context["birthyear"]
+        other_birthyear = other_context["birthyear"]
+
+        if birthyear and other_birthyear:
+            birth_per = birthyear / 2015
+            other_birthper = birthyear / 2015
+        else:
+            birth_per = None
+            other_birthper = None
+
+        return {"reg_per": reg_per, "term_per": term_per,
+                "sub_per": sub_per, "birth_per": [birth_per, other_birthper]}
 
 #FIXME NO DOCTEST COMPLICATED TO TEST
-    def get_context_data(self):
+    def _get_context_data(self):
         """Returns a list with nested lists with context data for a poem"""
 
         poem = self.poem
         subjects = [sub.subject for sub in poem.subjects]
         terms = [term.term for term in poem.terms]
         regions = [region.region for region in poem.regions]
+        if poem.poet:
+            birthyear = poem.poet.birth_year
+        else:
+            birthyear = None
 
-        return {"regions": regions, "terms": terms, "subjects": subjects}
+        return {"regions": regions, "terms": terms,
+                "subjects": subjects, "birthyear": birthyear}
 
     def _get_macro_lex_data(self):
         """Returns a list of macro lexical data for a given poem
@@ -726,7 +798,7 @@ class Metrics(db.Model):
                      self.wl_range, self.ll_mean, self.ll_median,
                      self.ll_mode, self.ll_range, self.pl_char,
                      self.pl_lines, self.pl_words, self.lex_div,
-                     self.stanzas, self.sl_mean, self.sl_mean, self.sl_median,
+                     self.stanzas, self.sl_mean, self.sl_median,
                      self.sl_mode, self.sl_range]
         return macro_lex
 
@@ -737,23 +809,21 @@ class Metrics(db.Model):
                                    the_freq=1,\
                                    i_freq=2,\
                                    you_freq=3,\
-                                   end_repeat=4,\
-                                   is_freq=5,\
-                                   a_freq=6,\
-                                   alliteration=7,\
-                                   rhyme=8,\
-                                   end_repeat=9)
+                                   is_freq=4,\
+                                   a_freq=5,\
+                                   alliteration=6,\
+                                   rhyme=7,\
+                                   end_repeat=8)
                 >>>
                 >>> fake._get_micro_lex_data()
-                [1, 2, 3, 4, 5, 6, 7, 8, 9]
+                [1, 2, 3, 4, 5, 6, 7, 8]
 
         This function is called in Metrics.find_matches and will not need to be
         used directly.
         """
 
-        micro_lex = [self.the_freq, self.i_freq, self.you_freq, self.end_repeat,
-                     self.is_freq, self.a_freq, self.alliteration, self.rhyme,
-                     self.end_repeat]
+        micro_lex = [self.the_freq, self.i_freq, self.you_freq, self.is_freq,
+                     self.a_freq, self.alliteration, self.rhyme, self.end_repeat]
 
         return micro_lex
 
@@ -1288,6 +1358,21 @@ class Metrics(db.Model):
         return set(word_list)
 
     @staticmethod
+    def _o_get_rhyme_list(word):
+        word = word.strip()
+        BEG_URL = 'http://www.rhymer.com/RhymingDictionary/'
+        FIN_URL = '.html'
+        url = BEG_URL + word + FIN_URL
+        html_text = get(url).text
+        soup = BeautifulSoup(html_text, "html.parser")
+        words = soup.find_all("td")
+        rough_word_list = [unidecode(w.text).strip() for w in words]
+        word_list = [w for w in rough_word_list
+                     if len(w) > 0 and '(' not in w and w != word]
+
+        return set(word_list)
+
+    @staticmethod
     def _get_end_words(line_dict):
         """given a string, returns all a list of words at the end of each line
 
@@ -1337,7 +1422,7 @@ class Metrics(db.Model):
         rhymes = 0
         for word in end_words:
             other_words = set([w for w in end_words if w != word])
-            rhyme_words = Metrics._get_rhyme_list(word)
+            rhyme_words = Metrics._o_get_rhyme_list(word)
             for word in other_words:
                 if word in rhyme_words:
                     rhymes += 1
@@ -1388,7 +1473,7 @@ def connect_to_db(app):
 
     # Configure to use our SQLite database
     app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///poetry.db'
-    app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = True
+    app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     db.app = app
     db.init_app(app)
 
