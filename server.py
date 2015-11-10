@@ -57,8 +57,44 @@ def display_search_results(poem_id):
         else:
             source = '/static/parchment.jpg'
 
+    match_poems = Poem.query.all()[0:5]
+    mp1, mp2, mp3, mp4, mp5 = match_poems
+
     return render_template("searchresults.html", main_poem=main_poem,
-                           wikipedia_url=wikipedia_url, source=source)
+                           wikipedia_url=wikipedia_url, source=source, mp1=mp1,
+                           mp2=mp2, mp3=mp3, mp4=mp4, mp5=mp5)
+
+
+@app.route('/<int:poem_id>/<int:index>')
+def display_search_results(poem_id, index):
+    main_poem = Poem.query.get(poem_id)
+    match_poems = Poem.query.all()[0:5]
+
+    match_poem = match_poems[index]
+    match_poems[index] = None
+    mp1, mp2, mp3, mp4, mp5 = match_poems
+
+    name = match_poem.poet.name.replace(" ", "_")
+    wikipedia_url = "https://en.wikipedia.org/wiki/" + name
+    page = get(wikipedia_url).text
+    if "does not have an article with this exact name" in page:
+        wikipedia_url = None
+        source = None
+    else:
+        soup = BeautifulSoup(page, "html5lib")
+        info_box = soup.find("table", class_="infobox vcard")
+        image = info_box.find("img")
+        if image:
+            attrib = image.attrs
+            source = attrib['src']
+            source = "https:" + source
+        else:
+            source = '/static/parchment.jpg'
+
+
+    return render_template("displaymatches.html", main_poem=main_poem,
+                           match_poem=match_poem, wikipedia_url=wikipedia_url,
+                           source=source, mp1=mp1, mp2=mp2, mp3=mp3, mp4=mp4, mp5=mp5)
 
 
 @app.route('/about')
