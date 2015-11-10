@@ -87,13 +87,17 @@ def display_search_poems(poem_id, index):
     else:
         soup = BeautifulSoup(page, "html5lib")
         info_box = soup.find("table", class_="infobox vcard")
-        image = info_box.find("img")
-        if image:
-            attrib = image.attrs
-            source = attrib['src']
-            source = "https:" + source
+        if info_box:
+            image = info_box.find("img")
+            if image:
+                attrib = image.attrs
+                source = attrib['src']
+                source = "https:" + source
+            else:
+                source = '/static/parchment.jpg'
         else:
-            source = '/static/parchment.jpg'
+            wikipedia_url = None
+            source = None
 
     return render_template("displaymatches.html", main_poem=main_poem,
                            match_poem=match_poem, wikipedia_url=wikipedia_url,

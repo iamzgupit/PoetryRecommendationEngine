@@ -1,11 +1,8 @@
-# from flask_sqlalchemy import SQLAlchemy
 from Model import *
 from sqlalchemy import func
 from os import listdir
 from unidecode import unidecode
 from server import app
-import numpy as np
-from sklearn.decomposition import RandomizedPCA
 
 
 def get_frequent_words():
@@ -173,36 +170,6 @@ def adjust_rhyme():
         db.session.commit()
         print "{} complete".format(i)
         i += 1
-
-
-def get_ml_variance():
-    raw_metrics = Metrics.query.all()
-    all_metrics = []
-    for m in raw_metrics:
-        all_metrics.append([m.wl_mean, m.wl_median, m.wl_mode, m.wl_range,
-                            m.ll_mean, m.ll_median, m.ll_mode, m.ll_range,
-                            m.pl_char, m.pl_lines, m.pl_words, m.lex_div,
-                            m.the_freq, m.i_freq, m.you_freq, m.is_freq,
-                            m.a_freq, m.common_percent, m.poem_percent,
-                            m.object_percent, m.abs_percent, m.male_percent,
-                            m.female_percent, m.alliteration, m.positive,
-                            m.negative, m.active_percent, m.passive_percent,
-                            m.end_repeat, m.rhyme, m.stanzas, m.sl_mean,
-                            m.sl_median, m.sl_mode, m.sl_range])
-    data = np.array(all_metrics)
-    pca = RandomizedPCA(n_components=35, whiten=True)
-    pca.fit(data)
-    print pca.explained_variance_ratio_
-
-# [  9.63973737e-01   3.35155465e-02   1.78117297e-03   3.68090851e-04
-#    1.27025061e-04   1.00111644e-04   8.03295687e-05   2.75744985e-05
-#    1.41952128e-05   1.05897709e-05   9.60569984e-07   3.81784085e-07
-#    1.07884992e-07   9.44188097e-08   4.56788163e-08   2.33864150e-08
-#    9.21608821e-09   1.23578710e-09   8.84722099e-10   7.90984024e-10
-#    3.13185658e-10   1.06834283e-10   8.75120614e-11   6.47962597e-11
-#    4.19705780e-11   3.61739033e-11   3.27787487e-11   3.02876905e-11
-#    2.64453772e-11   2.44798604e-11   2.37591868e-11   2.05148627e-11
-#    1.82355638e-11   1.48625529e-11   1.15061962e-11]
 
 
 if __name__ == "__main__" or __name__ == "__console__":
