@@ -9,15 +9,17 @@ def get_ml_variance():
     raw_metrics = Metrics.query.all()
     all_metrics = []
     for m in raw_metrics:
-        all_metrics.append([m.common_percent, m.poem_percent, m.object_percent,
-                            m.abs_percent, m.male_percent, m.female_percent,
-                            m.positive, m.negative, m.active_percent,
-                            m.passive_percent])
+        all_metrics.append([m.passive_percent, m.common_percent, m.poem_percent,
+                            m.object_percent, m.abs_percent, m.male_percent,
+                            m.female_percent, m.positive, m.negative, m.active_percent])
 
+    print len(all_metrics)
     data = np.array(all_metrics)
-    pca = RandomizedPCA(n_components=35, whiten=True)
+    pca = RandomizedPCA(n_components=10, whiten=True)
     pca.fit(data)
     print pca.explained_variance_ratio_
+
+    return pca
 
 
 # ALL_DATA = [wl_mean, wl_median, wl_mode, wl_range,
@@ -223,7 +225,7 @@ def get_metrics_dist():
 
 
 # END_REPEAT:
-# Standard Deviation: 0.0979925904811
+# Standard Deviation: 0.098068600398
 # Bottom 10th Percentile:
 #           0.117647058824 to 0.825. Mean: 0.705225473892
 # Bottom 20th Percentile:
@@ -240,24 +242,24 @@ def get_metrics_dist():
 #           1.0 to 1.0. Mean: 1.0
 
 # ACTIVE_PERCENT:
-# Standard Deviation: 0.0269906086091
+# Standard Deviation: 0.027017727425
 # Bottom 10th Percentile:
 #           0.0 to 0.0366972477064. Mean: 0.0254223813509
 # Bottom 20th Percentile:
-#           0.0 to 0.046875. Mean: 0.0337527824403
+#           0.0 to 0.046875. Mean: 0.0337545401333
 # Low Twentieth Percentile:
-#           0.046875 to 0.0595238095238. Mean: 0.0534799106274
+#           0.046875 to 0.0595238095238. Mean: 0.0535184009218
 # Mid Twentieth Percentile:
-#           0.0595238095238 to 0.0710059171598. Mean: 0.0652843461424
+#           0.0595238095238 to 0.0711610486891. Mean: 0.065384567915
 # High Twentieth Percentile:
-#           0.0710059171598 to 0.0869565217391. Mean: 0.0781610823219
+#           0.071186440678 to 0.0873015873016. Mean: 0.0783607664635
 # Top Twentieth Percentile:
-#           0.0869565217391 to 0.393939393939. Mean: 0.107056887689
+#           0.0873015873016 to 0.393939393939. Mean: 0.107332316188
 # Top Tenth Percentile:
-#           0.10101010101 to 0.393939393939. Mean: 0.121111510052
+#           0.101694915254 to 0.393939393939. Mean: 0.121711066502
 
 # LL_MEDIAN:
-# Standard Deviation: 394.995121143
+# Standard Deviation: 211.785127484
 # Bottom 10th Percentile:
 #           4.0 to 22.5. Mean: 17.7997118156
 # Bottom 20th Percentile:
@@ -269,80 +271,80 @@ def get_metrics_dist():
 # High Twentieth Percentile:
 #           40.0 to 44.0. Mean: 41.8844305622
 # Top Twentieth Percentile:
-#           44.0 to 15958.0. Mean: 252.08090379
+#           44.0 to 3817.0. Mean: 177.836538462
 # Top Tenth Percentile:
-#           50.0 to 15958.0. Mean: 462.55899705
+#           50.0 to 3817.0. Mean: 316.405775076
 
 # RHYME:
-# Standard Deviation: 0.85941680649
+# Standard Deviation: 0.859779282966
 # Bottom 10th Percentile:
 #           0.0 to 0.0. Mean: 0.0
 # Bottom 20th Percentile:
-#           0.0 to 0.153846153846. Mean: 0.0507905477025
+#           0.0 to 0.16. Mean: 0.053044674017
 # Low Twentieth Percentile:
-#           0.153846153846 to 0.375. Mean: 0.263923746258
+#           0.16 to 0.380952380952. Mean: 0.267136341233
 # Mid Twentieth Percentile:
-#           0.375 to 0.666666666667. Mean: 0.515118699871
+#           0.380952380952 to 0.666666666667. Mean: 0.519262742637
 # High Twentieth Percentile:
-#           0.666666666667 to 1.09375. Mean: 0.864231108637
+#           0.666666666667 to 1.10344827586. Mean: 0.870452542971
 # Top Twentieth Percentile:
-#           1.09375 to 16.1904761905. Mean: 1.93202589352
+#           1.10416666667 to 16.1904761905. Mean: 1.94436019922
 # Top Tenth Percentile:
-#           1.57142857143 to 16.1904761905. Mean: 2.58017143068
+#           1.58823529412 to 16.1904761905. Mean: 2.61072380886
 
 # MALE_PERCENT:
-# Standard Deviation: 0.0200324168659
+# Standard Deviation: 0.0200436382321
 # Bottom 10th Percentile:
 #           0.0 to 0.0. Mean: 0.0
 # Bottom 20th Percentile:
 #           0.0 to 0.0. Mean: 0.0
 # Low Twentieth Percentile:
-#           0.0 to 0.0016694490818. Mean: 3.77131202055e-05
+#           0.0 to 0.0017667844523. Mean: 4.29271317664e-05
 # Mid Twentieth Percentile:
-#           0.00167224080268 to 0.00956937799043. Mean: 0.00582174149919
+#           0.0017667844523 to 0.00961538461538. Mean: 0.00588099144154
 # High Twentieth Percentile:
-#           0.00956937799043 to 0.023598820059. Mean: 0.015582125828
+#           0.00961538461538 to 0.0238095238095. Mean: 0.0157535813688
 # Top Twentieth Percentile:
-#           0.023598820059 to 0.181818181818. Mean: 0.0466029462119
+#           0.0238365493757 to 0.181818181818. Mean: 0.0469105444502
 # Top Tenth Percentile:
-#           0.0405405405405 to 0.181818181818. Mean: 0.0624860409863
+#           0.0412844036697 to 0.181818181818. Mean: 0.0631000988783
 
 # A_FREQ:
-# Standard Deviation: 0.0196315788557
+# Standard Deviation: 0.0196459687614
 # Bottom 10th Percentile:
 #           0.0 to 0.0. Mean: 0.0
 # Bottom 20th Percentile:
 #           0.0 to 0.0089485458613. Mean: 0.00267703950237
 # Low Twentieth Percentile:
-#           0.00896860986547 to 0.0174418604651. Mean: 0.0133347896458
+#           0.00896860986547 to 0.0174927113703. Mean: 0.0133388925748
 # Mid Twentieth Percentile:
-#           0.0174672489083 to 0.025826446281. Mean: 0.0215697175503
+#           0.0174966352624 to 0.0258823529412. Mean: 0.0215987918382
 # High Twentieth Percentile:
-#           0.025855513308 to 0.0372670807453. Mean: 0.0308619564197
+#           0.0259067357513 to 0.0375. Mean: 0.0309792704726
 # Top Twentieth Percentile:
-#           0.0373134328358 to 0.272727272727. Mean: 0.0538863300151
+#           0.0375 to 0.272727272727. Mean: 0.0540897988091
 # Top Tenth Percentile:
-#           0.0480225988701 to 0.272727272727. Mean: 0.0659606356134
+#           0.0483870967742 to 0.272727272727. Mean: 0.0664644846026
 
 # NEGATIVE:
-# Standard Deviation: 0.0221575735251
+# Standard Deviation: 0.0221821617927
 # Bottom 10th Percentile:
 #           0.0 to 0.0161290322581. Mean: 0.00813804986751
 # Bottom 20th Percentile:
-#           0.0 to 0.0235294117647. Mean: 0.0141217512048
+#           0.0 to 0.0235294117647. Mean: 0.0141245203192
 # Low Twentieth Percentile:
-#           0.0235294117647 to 0.0333333333333. Mean: 0.0285815711402
+#           0.0235525024534 to 0.0334346504559. Mean: 0.0286233814033
 # Mid Twentieth Percentile:
-#           0.0333333333333 to 0.0428540818513. Mean: 0.0380000544679
+#           0.0334346504559 to 0.0429184549356. Mean: 0.03809765579
 # High Twentieth Percentile:
-#           0.0428571428571 to 0.05625. Mean: 0.0488185473603
+#           0.0429252782194 to 0.0565217391304. Mean: 0.049003524114
 # Top Twentieth Percentile:
-#           0.05625 to 0.393939393939. Mean: 0.0735128207265
+#           0.0565217391304 to 0.393939393939. Mean: 0.0737657337424
 # Top Tenth Percentile:
-#           0.0683760683761 to 0.393939393939. Mean: 0.0857657193578
+#           0.0689655172414 to 0.393939393939. Mean: 0.0862864765626
 
 # LL_MODE:
-# Standard Deviation: 417.574509705
+# Standard Deviation: 249.347590188
 # Bottom 10th Percentile:
 #           1.0 to 22.0. Mean: 14.911623439
 # Bottom 20th Percentile:
@@ -354,63 +356,63 @@ def get_metrics_dist():
 # High Twentieth Percentile:
 #           41.0 to 47.0. Mean: 44.040365209
 # Top Twentieth Percentile:
-#           47.0 to 15958.0. Mean: 275.040816327
+#           47.0 to 7314.0. Mean: 199.732741617
 # Top Tenth Percentile:
-#           55.0 to 15958.0. Mean: 505.038348083
+#           55.0 to 7314.0. Mean: 357.292806484
 
 # SL_MEDIAN:
-# Standard Deviation: 13.7374715734
+# Standard Deviation: 13.7515599589
 # Bottom 10th Percentile:
 #           0.0 to 1.0. Mean: 0.932756964457
 # Bottom 20th Percentile:
 #           0.0 to 1.0. Mean: 0.966362325805
 # Low Twentieth Percentile:
-#           1.0 to 3.0. Mean: 2.21864488227
+#           1.0 to 4.0. Mean: 2.25708793849
 # Mid Twentieth Percentile:
-#           3.0 to 6.0. Mean: 4.36520903412
+#           4.0 to 6.0. Mean: 4.39884670831
 # High Twentieth Percentile:
-#           6.0 to 13.0. Mean: 8.39019702066
+#           6.0 to 13.0. Mean: 8.49111004325
 # Top Twentieth Percentile:
-#           13.0 to 383.0. Mean: 26.3168124393
+#           13.0 to 383.0. Mean: 26.5138067061
 # Top Tenth Percentile:
-#           20.0 to 383.0. Mean: 37.4444444444
+#           21.0 to 383.0. Mean: 37.9574468085
 
 # PL_CHAR:
-# Standard Deviation: 2235.90563102
+# Standard Deviation: 2222.05127405
 # Bottom 10th Percentile:
-#           16.0 to 352.0. Mean: 231.126801153
+#           16.0 to 352.0. Mean: 231.13832853
 # Bottom 20th Percentile:
-#           16.0 to 505.0. Mean: 331.729456992
+#           16.0 to 505.0. Mean: 331.808745795
 # Low Twentieth Percentile:
-#           505.0 to 696.0. Mean: 598.999519462
+#           505.0 to 696.0. Mean: 599.091302259
 # Mid Twentieth Percentile:
-#           696.0 to 1047.0. Mean: 861.21912542
+#           696.0 to 1048.0. Mean: 861.388274868
 # High Twentieth Percentile:
-#           1048.0 to 1785.0. Mean: 1352.36328688
+#           1048.0 to 1788.0. Mean: 1353.05189813
 # Top Twentieth Percentile:
-#           1786.0 to 45726.0. Mean: 4117.42954325
+#           1788.0 to 45726.0. Mean: 4097.77613412
 # Top Tenth Percentile:
-#           2814.0 to 45726.0. Mean: 6077.89970501
+#           2821.0 to 45726.0. Mean: 6092.19554205
 
 # POEM_PERCENT:
-# Standard Deviation: 0.0836857664727
+# Standard Deviation: 0.083696050997
 # Bottom 10th Percentile:
-#           0.0 to 0.277419354839. Mean: 0.233442470757
+#           0.0 to 0.277456647399. Mean: 0.233448421424
 # Bottom 20th Percentile:
-#           0.0 to 0.311111111111. Mean: 0.26446644886
+#           0.0 to 0.311463590483. Mean: 0.264532997609
 # Low Twentieth Percentile:
-#           0.311203319502 to 0.354166666667. Mean: 0.333889670801
+#           0.311475409836 to 0.354392892399. Mean: 0.334097986516
 # Mid Twentieth Percentile:
-#           0.354166666667 to 0.391608391608. Mean: 0.372537469989
+#           0.354430379747 to 0.392045454545. Mean: 0.372854688381
 # High Twentieth Percentile:
-#           0.391666666667 to 0.440633245383. Mean: 0.414532784517
+#           0.392045454545 to 0.441340782123. Mean: 0.415072438599
 # Top Twentieth Percentile:
-#           0.440677966102 to 0.851851851852. Mean: 0.494764675777
+#           0.441358024691 to 0.851851851852. Mean: 0.495394425146
 # Top Tenth Percentile:
-#           0.480769230769 to 0.851851851852. Mean: 0.531941639646
+#           0.481927710843 to 0.851851851852. Mean: 0.533285428408
 
 # FEMALE_PERCENT:
-# Standard Deviation: 0.0176758613144
+# Standard Deviation: 0.0176761701517
 # Bottom 10th Percentile:
 #           0.0 to 0.0. Mean: 0.0
 # Bottom 20th Percentile:
@@ -418,33 +420,33 @@ def get_metrics_dist():
 # Low Twentieth Percentile:
 #           0.0 to 0.0. Mean: 0.0
 # Mid Twentieth Percentile:
-#           0.0 to 0.00412912912913. Mean: 0.00103224878297
+#           0.0 to 0.00418410041841. Mean: 0.00104977486555
 # High Twentieth Percentile:
-#           0.00413223140496 to 0.0145695364238. Mean: 0.00833965411112
+#           0.00418410041841 to 0.0147601476015. Mean: 0.00842878175625
 # Top Twentieth Percentile:
-#           0.014598540146 to 0.169811320755. Mean: 0.0372714782134
+#           0.0147783251232 to 0.169811320755. Mean: 0.0375332288788
 # Top Tenth Percentile:
-#           0.0298507462687 to 0.169811320755. Mean: 0.0539656792494
+#           0.0304182509506 to 0.169811320755. Mean: 0.0546107337705
 
 # IS_FREQ:
-# Standard Deviation: 0.0126965760437
+# Standard Deviation: 0.0127069145259
 # Bottom 10th Percentile:
 #           0.0 to 0.0. Mean: 0.0
 # Bottom 20th Percentile:
 #           0.0 to 0.0. Mean: 0.0
 # Low Twentieth Percentile:
-#           0.0 to 0.00304414003044. Mean: 0.000340675431445
+#           0.0 to 0.00307692307692. Mean: 0.000348380055275
 # Mid Twentieth Percentile:
-#           0.0030487804878 to 0.00884955752212. Mean: 0.00612340718674
+#           0.00308641975309 to 0.00892857142857. Mean: 0.00615425143906
 # High Twentieth Percentile:
-#           0.00885826771654 to 0.0165745856354. Mean: 0.0121732872782
+#           0.00892857142857 to 0.0166666666667. Mean: 0.0122444574531
 # Top Twentieth Percentile:
-#           0.0165745856354 to 0.25. Mean: 0.0288525358342
+#           0.0166666666667 to 0.25. Mean: 0.0290138805556
 # Top Tenth Percentile:
-#           0.0245901639344 to 0.25. Mean: 0.0380460129288
+#           0.0248447204969 to 0.25. Mean: 0.0384402804989
 
 # LL_MEAN:
-# Standard Deviation: 396.832045433
+# Standard Deviation: 215.252967282
 # Bottom 10th Percentile:
 #           4.27272727273 to 23.0. Mean: 18.3196430913
 # Bottom 20th Percentile:
@@ -456,63 +458,63 @@ def get_metrics_dist():
 # High Twentieth Percentile:
 #           39.2666666667 to 43.8888888889. Mean: 41.623586093
 # Top Twentieth Percentile:
-#           43.8918918919 to 15958.0. Mean: 255.850913259
+#           43.8918918919 to 3817.0. Mean: 181.662317301
 # Top Tenth Percentile:
-#           50.027027027 to 15958.0. Mean: 470.444855471
+#           50.027027027 to 3817.0. Mean: 324.531325242
 
 # ABS_PERCENT:
-# Standard Deviation: 0.0154605217225
+# Standard Deviation: 0.0154775422153
 # Bottom 10th Percentile:
 #           0.0 to 0.00452488687783. Mean: 0.000388773446333
 # Bottom 20th Percentile:
-#           0.0 to 0.00952380952381. Mean: 0.00390305864059
+#           0.0 to 0.00952380952381. Mean: 0.00390523790826
 # Low Twentieth Percentile:
-#           0.00952380952381 to 0.0161943319838. Mean: 0.0130496753455
+#           0.00952380952381 to 0.0162412993039. Mean: 0.0130655411158
 # Mid Twentieth Percentile:
-#           0.0162119414788 to 0.0225. Mean: 0.0193042735842
+#           0.0162412993039 to 0.0225563909774. Mean: 0.0193393668897
 # High Twentieth Percentile:
-#           0.0225225225225 to 0.03125. Mean: 0.0264237471785
+#           0.0225563909774 to 0.0314465408805. Mean: 0.0265161109766
 # Top Twentieth Percentile:
-#           0.03125 to 0.25. Mean: 0.0443509598232
+#           0.0314606741573 to 0.25. Mean: 0.0445395841317
 # Top Tenth Percentile:
-#           0.04 to 0.25. Mean: 0.0537644973705
+#           0.0403225806452 to 0.25. Mean: 0.0541793529521
 
 # PL_LINES:
-# Standard Deviation: 55.1454028022
+# Standard Deviation: 55.1884394942
 # Bottom 10th Percentile:
-#           1.0 to 10.0. Mean: 5.82228626321
+#           1.0 to 11.0. Mean: 6.10374639769
 # Bottom 20th Percentile:
-#           1.0 to 14.0. Mean: 9.29072561269
+#           1.0 to 14.0. Mean: 9.47669389716
 # Low Twentieth Percentile:
-#           14.0 to 20.0. Mean: 16.4555502162
+#           14.0 to 20.0. Mean: 16.5420470927
 # Mid Twentieth Percentile:
-#           20.0 to 29.0. Mean: 23.9082172033
+#           20.0 to 29.0. Mean: 24.037962518
 # High Twentieth Percentile:
-#           29.0 to 48.0. Mean: 36.7280153772
+#           29.0 to 48.0. Mean: 37.0019221528
 # Top Twentieth Percentile:
-#           48.0 to 893.0. Mean: 106.856656948
+#           48.0 to 893.0. Mean: 107.727317554
 # Top Tenth Percentile:
-#           75.0 to 893.0. Mean: 155.683382498
+#           77.0 to 893.0. Mean: 158.106382979
 
 # WL_MODE:
-# Standard Deviation: 1.26897057158
+# Standard Deviation: 1.26912772704
 # Bottom 10th Percentile:
 #           1.0 to 1.0. Mean: 1.0
 # Bottom 20th Percentile:
 #           1.0 to 1.0. Mean: 1.0
 # Low Twentieth Percentile:
-#           1.0 to 3.0. Mean: 2.48726573763
+#           1.0 to 3.0. Mean: 2.49687650168
 # Mid Twentieth Percentile:
 #           3.0 to 3.0. Mean: 3.0
 # High Twentieth Percentile:
-#           3.0 to 4.0. Mean: 3.49303219606
+#           3.0 to 4.0. Mean: 3.50312349832
 # Top Twentieth Percentile:
-#           4.0 to 55.0. Mean: 4.2055393586
+#           4.0 to 55.0. Mean: 4.20857988166
 # Top Tenth Percentile:
-#           4.0 to 55.0. Mean: 4.41592920354
+#           4.0 to 55.0. Mean: 4.42857142857
 
 # WL_RANGE:
-# Standard Deviation: 2.33532210916
+# Standard Deviation: 2.33004529284
 # Bottom 10th Percentile:
 #           3.0 to 8.0. Mean: 7.30451488953
 # Bottom 20th Percentile:
@@ -520,16 +522,16 @@ def get_metrics_dist():
 # Low Twentieth Percentile:
 #           9.0 to 10.0. Mean: 9.2931283037
 # Mid Twentieth Percentile:
-#           10.0 to 11.0. Mean: 10.234502643
+#           10.0 to 11.0. Mean: 10.2359442576
 # High Twentieth Percentile:
-#           11.0 to 12.0. Mean: 11.2801537722
+#           11.0 to 12.0. Mean: 11.2839980778
 # Top Twentieth Percentile:
-#           12.0 to 126.0. Mean: 13.20505345
+#           12.0 to 126.0. Mean: 13.2036489152
 # Top Tenth Percentile:
-#           13.0 to 126.0. Mean: 14.2586037365
+#           13.0 to 126.0. Mean: 14.2725430598
 
 # WL_MEDIAN:
-# Standard Deviation: 0.52544930663
+# Standard Deviation: 0.525349379794
 # Bottom 10th Percentile:
 #           1.0 to 3.0. Mean: 2.96061479347
 # Bottom 20th Percentile:
@@ -537,67 +539,67 @@ def get_metrics_dist():
 # Low Twentieth Percentile:
 #           3.0 to 3.0. Mean: 3.0
 # Mid Twentieth Percentile:
-#           3.0 to 4.0. Mean: 3.85679961557
+#           3.0 to 4.0. Mean: 3.86352715041
 # High Twentieth Percentile:
 #           4.0 to 4.0. Mean: 4.0
 # Top Twentieth Percentile:
-#           4.0 to 7.0. Mean: 4.05247813411
+#           4.0 to 7.0. Mean: 4.05276134122
 # Top Tenth Percentile:
-#           4.0 to 7.0. Mean: 4.10619469027
+#           4.0 to 7.0. Mean: 4.10840932118
 
 # POSITIVE:
-# Standard Deviation: 0.0247032407919
+# Standard Deviation: 0.0247248075374
 # Bottom 10th Percentile:
-#           0.0 to 0.0190839694656. Mean: 0.0108047531475
+#           0.0 to 0.0191082802548. Mean: 0.0108054231067
 # Bottom 20th Percentile:
-#           0.0 to 0.026455026455. Mean: 0.0169847272297
+#           0.0 to 0.0265060240964. Mean: 0.0169969191088
 # Low Twentieth Percentile:
-#           0.026455026455 to 0.0373626373626. Mean: 0.032176872349
+#           0.026512013256 to 0.0374414976599. Mean: 0.0322387297404
 # Mid Twentieth Percentile:
-#           0.0373692077728 to 0.047619047619. Mean: 0.0424653061236
+#           0.0374531835206 to 0.0478260869565. Mean: 0.0425723792903
 # High Twentieth Percentile:
-#           0.047619047619 to 0.0625. Mean: 0.0545061729062
+#           0.0478260869565 to 0.0625. Mean: 0.0546982644912
 # Top Twentieth Percentile:
-#           0.0625 to 0.262247838617. Mean: 0.0832302742083
+#           0.0625 to 0.262247838617. Mean: 0.0835296629853
 # Top Tenth Percentile:
-#           0.0769230769231 to 0.262247838617. Mean: 0.0980860837316
+#           0.0774647887324 to 0.262247838617. Mean: 0.0987259726828
 
 # PL_WORDS:
-# Standard Deviation: 480.817308743
+# Standard Deviation: 478.667245826
 # Bottom 10th Percentile:
-#           4.0 to 78.0. Mean: 51.6330451489
+#           4.0 to 78.0. Mean: 51.6407300672
 # Bottom 20th Percentile:
-#           4.0 to 110.0. Mean: 73.1883709755
+#           4.0 to 110.0. Mean: 73.2075925036
 # Low Twentieth Percentile:
-#           110.0 to 152.0. Mean: 130.554541086
+#           110.0 to 152.0. Mean: 130.574723691
 # Mid Twentieth Percentile:
-#           152.0 to 227.0. Mean: 186.615569438
+#           152.0 to 227.0. Mean: 186.651609803
 # High Twentieth Percentile:
-#           227.0 to 383.0. Mean: 292.538683325
+#           227.0 to 383.0. Mean: 292.701105238
 # Top Twentieth Percentile:
-#           383.0 to 9301.0. Mean: 885.375607386
+#           383.0 to 9301.0. Mean: 882.442800789
 # Top Tenth Percentile:
-#           603.0 to 9301.0. Mean: 1306.06981318
+#           608.0 to 9301.0. Mean: 1311.63931104
 
 # OBJECT_PERCENT:
-# Standard Deviation: 0.0191627452151
+# Standard Deviation: 0.0191788607923
 # Bottom 10th Percentile:
-#           0.0 to 0.0106382978723. Mean: 0.00448982316819
+#           0.0 to 0.0106951871658. Mean: 0.00449078884032
 # Bottom 20th Percentile:
-#           0.0 to 0.0167597765363. Mean: 0.00927612284957
+#           0.0 to 0.0167785234899. Mean: 0.00928366290955
 # Low Twentieth Percentile:
-#           0.0167597765363 to 0.0253164556962. Mean: 0.0212909825323
+#           0.0167785234899 to 0.0253807106599. Mean: 0.0213141730085
 # Mid Twentieth Percentile:
-#           0.0253164556962 to 0.0333333333333. Mean: 0.0292208800568
+#           0.0253807106599 to 0.0333333333333. Mean: 0.0292731923675
 # High Twentieth Percentile:
-#           0.0333333333333 to 0.044776119403. Mean: 0.0385016566216
+#           0.0333333333333 to 0.045045045045. Mean: 0.0386321218443
 # Top Twentieth Percentile:
-#           0.044776119403 to 0.272727272727. Mean: 0.0606845562716
+#           0.045045045045 to 0.272727272727. Mean: 0.0608963144996
 # Top Tenth Percentile:
-#           0.0555555555556 to 0.272727272727. Mean: 0.0717875040416
+#           0.056 to 0.272727272727. Mean: 0.0722701651813
 
 # YOU_FREQ:
-# Standard Deviation: 0.0157287859518
+# Standard Deviation: 0.0157465747403
 # Bottom 10th Percentile:
 #           0.0 to 0.0. Mean: 0.0
 # Bottom 20th Percentile:
@@ -605,16 +607,16 @@ def get_metrics_dist():
 # Low Twentieth Percentile:
 #           0.0 to 0.0. Mean: 0.0
 # Mid Twentieth Percentile:
-#           0.0 to 0.00262467191601. Mean: 0.000220611952423
+#           0.0 to 0.00267379679144. Mean: 0.000232596017869
 # High Twentieth Percentile:
-#           0.00263157894737 to 0.0140845070423. Mean: 0.00770998751968
+#           0.00268096514745 to 0.0143198090692. Mean: 0.00782187060264
 # Top Twentieth Percentile:
-#           0.0140845070423 to 0.238095238095. Mean: 0.0334724000898
+#           0.0143426294821 to 0.238095238095. Mean: 0.0337435292852
 # Top Tenth Percentile:
-#           0.0277777777778 to 0.238095238095. Mean: 0.0473766224211
+#           0.0285714285714 to 0.238095238095. Mean: 0.0479587849638
 
 # WL_MEAN:
-# Standard Deviation: 0.49642951962
+# Standard Deviation: 0.496233318681
 # Bottom 10th Percentile:
 #           2.0 to 3.0. Mean: 2.96541786744
 # Bottom 20th Percentile:
@@ -624,99 +626,99 @@ def get_metrics_dist():
 # Mid Twentieth Percentile:
 #           3.0 to 3.0. Mean: 3.0
 # High Twentieth Percentile:
-#           3.0 to 4.0. Mean: 3.57952907256
+#           3.0 to 4.0. Mean: 3.58865929841
 # Top Twentieth Percentile:
-#           4.0 to 15.0. Mean: 4.0286686103
+#           4.0 to 15.0. Mean: 4.02859960552
 # Top Tenth Percentile:
-#           4.0 to 15.0. Mean: 4.05801376598
+#           4.0 to 15.0. Mean: 4.0587639311
 
 # PASSIVE_PERCENT:
-# Standard Deviation: 0.023402230311
+# Standard Deviation: 0.0234176407862
 # Bottom 10th Percentile:
-#           0.0 to 0.0230769230769. Mean: 0.013606382269
+#           0.0 to 0.0230769230769. Mean: 0.0136145878783
 # Bottom 20th Percentile:
-#           0.0 to 0.0309278350515. Mean: 0.020444226883
+#           0.0 to 0.0309734513274. Mean: 0.0204558899623
 # Low Twentieth Percentile:
-#           0.0309278350515 to 0.0414746543779. Mean: 0.0364639008931
+#           0.0309917355372 to 0.04158004158. Mean: 0.0365050430908
 # Mid Twentieth Percentile:
-#           0.0414746543779 to 0.0513833992095. Mean: 0.0463513548164
+#           0.0415913200723 to 0.0514705882353. Mean: 0.046423542321
 # High Twentieth Percentile:
-#           0.0513833992095 to 0.065306122449. Mean: 0.0575335857237
+#           0.0514874141876 to 0.0655737704918. Mean: 0.057707596971
 # Top Twentieth Percentile:
-#           0.0653266331658 to 0.393939393939. Mean: 0.0836374302865
+#           0.0656167979003 to 0.393939393939. Mean: 0.083880654695
 # Top Tenth Percentile:
-#           0.078125 to 0.393939393939. Mean: 0.0966150892697
+#           0.0786026200873 to 0.393939393939. Mean: 0.09713410682
 
 # STANZAS:
-# Standard Deviation: 34.0816983955
+# Standard Deviation: 34.1237029611
 # Bottom 10th Percentile:
 #           1.0 to 1.0. Mean: 1.0
 # Bottom 20th Percentile:
 #           1.0 to 1.0. Mean: 1.0
 # Low Twentieth Percentile:
-#           1.0 to 4.0. Mean: 2.52042287362
+#           1.0 to 4.0. Mean: 2.56222969726
 # Mid Twentieth Percentile:
-#           4.0 to 7.0. Mean: 5.3109082172
+#           4.0 to 7.0. Mean: 5.35415665545
 # High Twentieth Percentile:
-#           7.0 to 17.0. Mean: 11.2244113407
+#           7.0 to 17.0. Mean: 11.3685728015
 # Top Twentieth Percentile:
-#           17.0 to 954.0. Mean: 51.5208940719
+#           17.0 to 954.0. Mean: 52.0315581854
 # Top Tenth Percentile:
-#           33.0 to 954.0. Mean: 80.1435594887
+#           34.0 to 954.0. Mean: 81.5552178318
 
 # SL_MODE:
-# Standard Deviation: 15.8050954111
+# Standard Deviation: 15.8215290724
 # Bottom 10th Percentile:
 #           0.0 to 1.0. Mean: 0.85590778098
 # Bottom 20th Percentile:
 #           0.0 to 1.0. Mean: 0.927919269582
 # Low Twentieth Percentile:
-#           1.0 to 4.0. Mean: 2.14368092263
+#           1.0 to 4.0. Mean: 2.18692936088
 # Mid Twentieth Percentile:
-#           4.0 to 6.0. Mean: 4.50600672753
+#           4.0 to 6.0. Mean: 4.5348390197
 # High Twentieth Percentile:
-#           6.0 to 14.0. Mean: 9.66170110524
+#           6.0 to 14.0. Mean: 9.77703027391
 # Top Twentieth Percentile:
-#           14.0 to 383.0. Mean: 29.9008746356
+#           14.0 to 383.0. Mean: 30.1360946746
 # Top Tenth Percentile:
-#           23.0 to 383.0. Mean: 42.610619469
+#           24.0 to 383.0. Mean: 43.2006079027
 
 # LEX_DIV:
-# Standard Deviation: 0.112642103912
+# Standard Deviation: 0.112350844628
 # Bottom 10th Percentile:
-#           0.1 to 0.459595959596. Mean: 0.397395692594
+#           0.1 to 0.461340206186. Mean: 0.398775544905
 # Bottom 20th Percentile:
-#           0.1 to 0.512096774194. Mean: 0.443465536628
+#           0.1 to 0.51269035533. Mean: 0.44470720605
 # Low Twentieth Percentile:
-#           0.51214953271 to 0.579545454545. Mean: 0.547709654342
+#           0.512727272727 to 0.580152671756. Mean: 0.548541338318
 # Mid Twentieth Percentile:
-#           0.579545454545 to 0.632352941176. Mean: 0.60613823569
+#           0.580152671756 to 0.63309352518. Mean: 0.606864629068
 # High Twentieth Percentile:
-#           0.632352941176 to 0.691011235955. Mean: 0.659958895743
+#           0.63309352518 to 0.691729323308. Mean: 0.660775502642
 # Top Twentieth Percentile:
-#           0.691056910569 to 1.0. Mean: 0.755504140733
+#           0.691780821918 to 1.0. Mean: 0.75644833758
 # Top Tenth Percentile:
-#           0.735632183908 to 1.0. Mean: 0.801288779479
+#           0.7375 to 1.0. Mean: 0.803261592629
 
 # I_FREQ:
-# Standard Deviation: 0.0207606764781
+# Standard Deviation: 0.0207707308261
 # Bottom 10th Percentile:
 #           0.0 to 0.0. Mean: 0.0
 # Bottom 20th Percentile:
 #           0.0 to 0.0. Mean: 0.0
 # Low Twentieth Percentile:
-#           0.0 to 0.00401606425703. Mean: 0.000450434283336
+#           0.0 to 0.00406504065041. Mean: 0.000461579030066
 # Mid Twentieth Percentile:
-#           0.00403225806452 to 0.015037593985. Mean: 0.00939783138308
+#           0.00406504065041 to 0.0151515151515. Mean: 0.00944830248207
 # High Twentieth Percentile:
-#           0.015037593985 to 0.0304449648712. Mean: 0.0220391710395
+#           0.0151515151515 to 0.0307692307692. Mean: 0.0221608439511
 # Top Twentieth Percentile:
-#           0.0304568527919 to 0.260869565217. Mean: 0.0499104612673
+#           0.0307692307692 to 0.260869565217. Mean: 0.0501495188874
 # Top Tenth Percentile:
-#           0.0446428571429 to 0.260869565217. Mean: 0.0633888950901
+#           0.0451612903226 to 0.260869565217. Mean: 0.0639369450694
 
 # ALLITERATION:
-# Standard Deviation: 0.147257104015
+# Standard Deviation: 0.142645871008
 # Bottom 10th Percentile:
 #           0.0 to 0.15873015873. Mean: 0.105614230318
 # Bottom 20th Percentile:
@@ -728,12 +730,12 @@ def get_metrics_dist():
 # High Twentieth Percentile:
 #           0.305019305019 to 0.364452423698. Mean: 0.332546242362
 # Top Twentieth Percentile:
-#           0.364485981308 to 1.0. Mean: 0.499729729195
+#           0.364485981308 to 1.0. Mean: 0.492469944367
 # Top Tenth Percentile:
-#           0.423558897243 to 1.0. Mean: 0.612036959145
+#           0.423558897243 to 1.0. Mean: 0.600533791229
 
 # SL_RANGE:
-# Standard Deviation: 11.3647465346
+# Standard Deviation: 11.3789532075
 # Bottom 10th Percentile:
 #           0.0 to 0.0. Mean: 0.0
 # Bottom 20th Percentile:
@@ -741,81 +743,82 @@ def get_metrics_dist():
 # Low Twentieth Percentile:
 #           0.0 to 0.0. Mean: 0.0
 # Mid Twentieth Percentile:
-#           0.0 to 1.0. Mean: 0.661701105238
+#           0.0 to 1.0. Mean: 0.676117251321
 # High Twentieth Percentile:
-#           1.0 to 5.0. Mean: 2.73666506487
+#           1.0 to 5.0. Mean: 2.79432964921
 # Top Twentieth Percentile:
-#           5.0 to 268.0. Mean: 17.7405247813
+#           5.0 to 268.0. Mean: 17.9289940828
 # Top Tenth Percentile:
-#           12.0 to 268.0. Mean: 27.5860373648
+#           12.0 to 268.0. Mean: 28.0597771023
 
 # SL_MEAN:
-# Standard Deviation: 13.8025399685
+# Standard Deviation: 13.8164113089
 # Bottom 10th Percentile:
 #           0.203883495146 to 0.914285714286. Mean: 0.804204232859
 # Bottom 20th Percentile:
-#           0.203883495146 to 1.0. Mean: 0.893324945219
+#           0.203883495146 to 1.08333333333. Mean: 0.893738837306
 # Low Twentieth Percentile:
-#           1.0 to 3.8. Mean: 2.56572467901
+#           1.08333333333 to 3.83333333333. Mean: 2.60583518206
 # Mid Twentieth Percentile:
-#           3.8 to 6.0. Mean: 4.55353902605
+#           3.83333333333 to 6.0. Mean: 4.58509536133
 # High Twentieth Percentile:
-#           6.0 to 13.0. Mean: 8.68806315931
+#           6.0 to 13.5. Mean: 8.79407528123
 # Top Twentieth Percentile:
-#           13.0833333333 to 383.0. Mean: 26.62809587
+#           13.5 to 383.0. Mean: 26.8244625615
 # Top Tenth Percentile:
-#           21.0 to 383.0. Mean: 37.7774814674
+#           21.0 to 383.0. Mean: 38.2874353114
 
 # THE_FREQ:
-# Standard Deviation: 0.0334374590689
+# Standard Deviation: 0.0334696768754
 # Bottom 10th Percentile:
-#           0.0 to 0.0243902439024. Mean: 0.0120536044573
+#           0.0 to 0.0243902439024. Mean: 0.0120679785171
 # Bottom 20th Percentile:
-#           0.0 to 0.0375335120643. Mean: 0.0217891850659
+#           0.0 to 0.037558685446. Mean: 0.0218027034887
 # Low Twentieth Percentile:
-#           0.037558685446 to 0.0551378446115. Mean: 0.0468336650878
+#           0.0375939849624 to 0.0552147239264. Mean: 0.0468816348144
 # Mid Twentieth Percentile:
-#           0.0551724137931 to 0.0701754385965. Mean: 0.0624823627011
+#           0.0552486187845 to 0.0703296703297. Mean: 0.0626089857943
 # High Twentieth Percentile:
-#           0.0701754385965 to 0.0901639344262. Mean: 0.0795070905581
+#           0.070351758794 to 0.0905172413793. Mean: 0.0797401364269
 # Top Twentieth Percentile:
-#           0.0901639344262 to 0.5. Mean: 0.113729778097
+#           0.0905349794239 to 0.5. Mean: 0.114068580887
 # Top Tenth Percentile:
-#           0.106796116505 to 0.5. Mean: 0.130025135523
+#           0.107655502392 to 0.5. Mean: 0.13071782003
 
 # LL_RANGE:
-# Standard Deviation: 183.703137865
+# Standard Deviation: 179.663028337
 # Bottom 10th Percentile:
-#           0.0 to 12.0. Mean: 7.38520653218
+#           0.0 to 12.0. Mean: 7.69644572526
 # Bottom 20th Percentile:
-#           0.0 to 15.0. Mean: 10.5728015377
+#           0.0 to 15.0. Mean: 10.7674195099
 # Low Twentieth Percentile:
-#           15.0 to 22.0. Mean: 18.5415665545
+#           15.0 to 22.0. Mean: 18.6323882749
 # Mid Twentieth Percentile:
-#           22.0 to 32.0. Mean: 26.5598270062
+#           22.0 to 32.0. Mean: 26.689572321
 # High Twentieth Percentile:
-#           32.0 to 45.0. Mean: 37.6410379625
+#           32.0 to 45.0. Mean: 37.8097068717
 # Top Twentieth Percentile:
-#           45.0 to 8979.0. Mean: 124.672983479
+#           45.0 to 8979.0. Mean: 123.111439842
 # Top Tenth Percentile:
-#           58.0 to 8979.0. Mean: 200.268436578
+#           59.0 to 8979.0. Mean: 198.976697062
 
 # COMMON_PERCENT:
-# Standard Deviation: 0.0761024239026
+# Standard Deviation: 0.0761343189787
 # Bottom 10th Percentile:
-#           0.140221402214 to 0.359355638166. Mean: 0.318082840078
+#           0.140221402214 to 0.359375. Mean: 0.318129568916
 # Bottom 20th Percentile:
-#           0.140221402214 to 0.388692579505. Mean: 0.346832322679
+#           0.140221402214 to 0.388888888889. Mean: 0.346922907322
 # Low Twentieth Percentile:
-#           0.388704318937 to 0.428571428571. Mean: 0.409433432313
+#           0.388888888889 to 0.428571428571. Mean: 0.409635428773
 # Mid Twentieth Percentile:
-#           0.428571428571 to 0.463235294118. Mean: 0.445372829558
+#           0.428666224287 to 0.463636363636. Mean: 0.445704655207
 # High Twentieth Percentile:
-#           0.463235294118 to 0.505518763797. Mean: 0.48270885957
+#           0.463636363636 to 0.50643776824. Mean: 0.483222007958
 # Top Twentieth Percentile:
-#           0.505617977528 to 0.887372013652. Mean: 0.555164643029
+#           0.506454816286 to 0.887372013652. Mean: 0.555805924393
 # Top Tenth Percentile:
-#           0.540178571429 to 0.887372013652. Mean: 0.589846977951
+#           0.541666666667 to 0.887372013652. Mean: 0.591228527168
+
 
 if __name__ == "__main__" or __name__ == "__console__":
 
