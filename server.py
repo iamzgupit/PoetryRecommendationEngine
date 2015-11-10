@@ -32,46 +32,50 @@ def get_random_poem():
     poem_ids = db.session.query(Poem.poem_id).all()
     chosen_id = choice(poem_ids)
     poem = str(chosen_id[0])
-    url = "/" + poem
+    url = "/" + poem + "/0"
 
     return redirect(url)
 
 
-@app.route('/<int:poem_id>')
-def display_search_results(poem_id):
-    main_poem = Poem.query.get(poem_id)
-    name = main_poem.poet.name.replace(" ", "_")
-    wikipedia_url = "https://en.wikipedia.org/wiki/" + name
-    page = get(wikipedia_url).text
-    if "does not have an article with this exact name" in page:
-        wikipedia_url = None
-        source = None
-    else:
-        soup = BeautifulSoup(page, "html5lib")
-        info_box = soup.find("table", class_="infobox vcard")
-        image = info_box.find("img")
-        if image:
-            attrib = image.attrs
-            source = attrib['src']
-            source = "https:" + source
-        else:
-            source = '/static/parchment.jpg'
+# @app.route('/<int:poem_id>')
+# def display_search_results(poem_id):
+#     main_poem = Poem.query.get(poem_id)
+#     name = main_poem.poet.name.replace(" ", "_")
+#     wikipedia_url = "https://en.wikipedia.org/wiki/" + name
+#     page = get(wikipedia_url).text
+#     if "does not have an article with this exact name" in page:
+#         wikipedia_url = None
+#         source = None
+#     else:
+#         soup = BeautifulSoup(page, "html5lib")
+#         info_box = soup.find("table", class_="infobox vcard")
+#         image = info_box.find("img")
+#         if image:
+#             attrib = image.attrs
+#             source = attrib['src']
+#             source = "https:" + source
+#         else:
+#             source = '/static/parchment.jpg'
 
-    match_poems = Poem.query.all()[0:5]
-    mp1, mp2, mp3, mp4, mp5 = match_poems
+#     match_poems = Poem.query.all()[0:5]
+#     mp0, mp1, mp2, mp3, mp4 = match_poems
 
-    return render_template("searchresults.html", main_poem=main_poem,
-                           wikipedia_url=wikipedia_url, source=source, mp1=mp1,
-                           mp2=mp2, mp3=mp3, mp4=mp4, mp5=mp5)
+#     return render_template("displaymatches.html", main_poem=main_poem,
+#                            match_poem=main_poem, wikipedia_url=wikipedia_url,
+#                            source=source, mp0=mp0, mp1=mp1, mp2=mp2, mp3=mp3,
+#                            mp4=mp4)
 
 
 @app.route('/<int:poem_id>/<int:index>')
-def display_search_results(poem_id, index):
+def display_search_poems(poem_id, index):
     main_poem = Poem.query.get(poem_id)
     match_poems = Poem.query.all()[0:5]
 
-    match_poem = match_poems[index]
-    match_poems[index] = None
+    if index:
+        match_poem = match_poems[index - 1]
+    else:
+        match_poem = main_poem
+
     mp1, mp2, mp3, mp4, mp5 = match_poems
 
     name = match_poem.poet.name.replace(" ", "_")
@@ -91,10 +95,10 @@ def display_search_results(poem_id, index):
         else:
             source = '/static/parchment.jpg'
 
-
     return render_template("displaymatches.html", main_poem=main_poem,
                            match_poem=match_poem, wikipedia_url=wikipedia_url,
-                           source=source, mp1=mp1, mp2=mp2, mp3=mp3, mp4=mp4, mp5=mp5)
+                           source=source, mp1=mp1, mp2=mp2, mp3=mp3, mp4=mp4,
+                           mp5=mp5)
 
 
 @app.route('/about')

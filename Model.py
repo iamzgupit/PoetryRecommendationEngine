@@ -623,7 +623,7 @@ class Metrics(db.Model):
                 per_micro += add_per
                 per_sent += add_per
 
-            dist_raw = Metrics._get_euc_raw(macro_lex, o_macro_lex, per_macro)
+            # dist_raw = Metrics._get_euc_raw(macro_lex, o_macro_lex, per_macro)
             dist_raw += Metrics._get_euc_raw(temp_micro, o_micro_lex, per_micro)
             dist_raw += Metrics._get_euc_raw(sentiment, o_sentiment, per_sent)
 

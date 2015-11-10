@@ -101,7 +101,7 @@ $('.typeahead').on('typeahead:autocompleted', checkId);
 $("#search-button").on('click', startSearch);
 
 function startSearch() {
-    url = "/" + poemID.toString()
+    url = "/" + poemID.toString() + "/0"
     window.location.href = url;
 };
 
