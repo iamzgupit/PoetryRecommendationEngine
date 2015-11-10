@@ -2,6 +2,8 @@ from flask import (Flask, render_template, redirect, jsonify,
                    request, session)
 from random import choice
 from Model import Poem, connect_to_db, db
+from requests import get
+from bs4 import BeautifulSoup
 
 
 app = Flask(__name__)
@@ -38,7 +40,25 @@ def get_random_poem():
 @app.route('/<int:poem_id>')
 def display_search_results(poem_id):
     main_poem = Poem.query.get(poem_id)
-    return render_template("searchresults.html", main_poem=main_poem)
+    name = main_poem.poet.name.replace(" ", "_")
+    wikipedia_url = "https://en.wikipedia.org/wiki/" + name
+    page = get(wikipedia_url).text
+    if "does not have an article with this exact name" in page:
+        wikipedia_url = None
+        source = None
+    else:
+        soup = BeautifulSoup(page, "html5lib")
+        info_box = soup.find("table", class_="infobox vcard")
+        image = info_box.find("img")
+        if image:
+            attrib = image.attrs
+            source = attrib['src']
+            source = "https:" + source
+        else:
+            source = '/static/parchment.jpg'
+
+    return render_template("searchresults.html", main_poem=main_poem,
+                           wikipedia_url=wikipedia_url, source=source)
 
 
 @app.route('/about')

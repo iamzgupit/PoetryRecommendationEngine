@@ -9,15 +9,45 @@
 
     <script src="https://twitter.github.io/typeahead.js/releases/latest/typeahead.bundle.js"></script>
     <script>
+
+        var searchCriteria = []
+
         function unpack(data) {
             searchCriteria = data.search
             console.log(searchCriteria)
             setSearch()
         }
+
+        function setSearch() {
+            var poems = new Bloodhound({
+
+                datumTokenizer: Bloodhound.tokenizers.obj.whitespace('title', 'author'),
+                queryTokenizer: Bloodhound.tokenizers.whitespace,
+                local: searchCriteria
+            });
+
+            $('#custom-templates .typeahead').typeahead({
+                hint: true,
+                highlight: true,
+                minLength: 3
+            }, {
+                name: 'poems',
+                displayKey: 'title',
+                source: poems.ttAdapter(),
+                templates: {
+                    suggestion: function(data) {
+                        return '<p><strong>' + data.title + '</strong> – by ' + data.author + '</p>';
+                    }
+                }
+            });
+
+            var style = $('span.twitter-typeahead').attr('style')
+            $('span.search-button').attr('style', style)
+        };
         
         $.get('/search.json', unpack)
     </script>
-    <link href="../static/stylesheet.css" rel="stylesheet">
+    <link href="/static/stylesheet.css" rel="stylesheet">
 </head>
 
 <body>
@@ -43,51 +73,27 @@
 <div class="container">
 <div class="row main-search">
     <div class="col-md-8 col-md-offset-2">
-        <div id="bloodhound">
-        <input id="search" class="typeahead" type="text" placeholder="Search for a Poem by Title or Author"> <button id="search-button" disabled="disabled">Search</button>
-        </div>
-    </div>
-</div>
+        <div id="custom-templates">
+        <input id="search" class="typeahead" type="text" placeholder="Search for a Poem by Title or Author"> </div>   <!-- end of bloodhoud div -->
+        <span "search-button"><button id="search-button" disabled="disabled">Search
+        </button></span>
+    </div> <!-- end of column  -->
+</div> <!-- end of main-search row -->
 
 <div class="row">
-    <div class="col-md-3 col-md-offset-3">
-            <p class="search-option right-align"><a href="/random">Random Poem</a></p>
-    </div>
-    <div class="col-md-3">
-        <p class="search-option"><a href="#">Advanced Search</a></p>
-    </div>
-</div>
+    <div class="col-md-8 col-md-offset-2">
+        <ul>
+            <li class="search-option"><a href="/random">Random Poem</a></li>
+            <li class="search-option"><a href="#">Advanced Search</a></li>
+        </ul>
+    </div> <!-- end of column -->
+</div> <!-- end of row -->
 
 <script>
 
-var searchCriteria = []
+// var searchCriteria = []
 var poemID = 0
 var button = $("#search-button")
-
-function unpack(data) {
-    searchCriteria = data.search
-    console.log(searchCriteria)
-    setSearch()
-}
-
-function setSearch() {
-    var poems = new Bloodhound({
-
-        datumTokenizer: Bloodhound.tokenizers.obj.whitespace('title'),
-        queryTokenizer: Bloodhound.tokenizers.whitespace,
-        local: searchCriteria
-    });
-
-    $('#bloodhound .typeahead').typeahead({
-        hint: true,
-        highlight: true,
-        minLength: 3
-    }, {
-        name: 'poems',
-        displayKey: 'title',
-        source: poems.ttAdapter()
-    });
-};
 
 $("#search").on('input', checkId);
 $('.typeahead').on('typeahead:selected', checkId);

@@ -15,6 +15,14 @@ ReadMe: Recommendations
         </div>
     </div> <!-- end of first column -->
     <div class="col-md-2">
+            {% if wikipedia_url %}
+        <div class="wikipedia">
+            <a href= {{ wikipedia_url }}>
+            <img class="author-photo" src={{ source }}>
+            <h6 class="learn-more">Read More About {{ main_poem.poet.name }}</h6>
+            </a>
+        </div>
+            {% endif %}
         <div class="row results">
             <h5 class="title">{{ main_poem.title }}</h5>
             <h6 class="author">By {{ main_poem.poet.name }}</h6>
@@ -48,5 +56,20 @@ ReadMe: Recommendations
     </div> <!-- end of results column -->
 </div> <!-- end of main-content row -->
 </div> <!-- end of container div -->
+
+
+<script>
+// var poetRough = "{{ main_poem.poet.name }}";
+// var poetName = poetRough.replace(" ", "_");
+// var url = 'https://en.wikipedia.org/w/api.php?action=query&titles=' + poetName + '&prop=images';
+// var image = "https://upload.wikimedia.org/wikipedia/commons/d/d6/"
+// function saveInfo(data) {
+//     console.log("YAY")
+// }
+
+// pageInfo = $.get(url, saveInfo)
+
+// </script>
+
 
 {% endblock %}

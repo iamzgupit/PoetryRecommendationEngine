@@ -4,6 +4,8 @@ from sqlalchemy import func
 from os import listdir
 from unidecode import unidecode
 from server import app
+import numpy as np
+from sklearn.decomposition import RandomizedPCA
 
 
 def get_frequent_words():
@@ -145,11 +147,10 @@ def grab_poem_author_list():
         f.write(content)
 
 
-def seed_metrics(start):
-    poem_ids = db.session.query(Poem.poem_id).all()
-    i = start
-    for poem_id_tup in poem_ids[start:]:
-        poem_id = poem_id_tup[0]
+def seed_metrics(poem_ids):
+    print "{} metrics to add".format(len(poem_ids))
+    i = 1
+    for poem_id in poem_ids:
         metric = Metrics.get_metrics(poem_id)
         print metric.poem_id
         print "Number: {}".format(i)
@@ -157,6 +158,51 @@ def seed_metrics(start):
         db.session.add(metric)
         db.session.commit()
         print "DONE\n"
+
+
+def adjust_rhyme():
+    metrics = Metrics.query.filter(Metrics.rhyme == 0).all()
+    print "{} METRICS TO UPDATE".format(len(metrics))
+    i = 1
+    for metric in metrics:
+        text = metric.poem.text
+        lines = Metrics._get_clean_line_data(text)
+        rhyme_score = Metrics._get_rhyme_score(lines)
+        metric.rhyme = rhyme_score
+        print "{}: new rhyme score {}".format(metric.poem_id, metric.rhyme)
+        db.session.commit()
+        print "{} complete".format(i)
+        i += 1
+
+
+def get_ml_variance():
+    raw_metrics = Metrics.query.all()
+    all_metrics = []
+    for m in raw_metrics:
+        all_metrics.append([m.wl_mean, m.wl_median, m.wl_mode, m.wl_range,
+                            m.ll_mean, m.ll_median, m.ll_mode, m.ll_range,
+                            m.pl_char, m.pl_lines, m.pl_words, m.lex_div,
+                            m.the_freq, m.i_freq, m.you_freq, m.is_freq,
+                            m.a_freq, m.common_percent, m.poem_percent,
+                            m.object_percent, m.abs_percent, m.male_percent,
+                            m.female_percent, m.alliteration, m.positive,
+                            m.negative, m.active_percent, m.passive_percent,
+                            m.end_repeat, m.rhyme, m.stanzas, m.sl_mean,
+                            m.sl_median, m.sl_mode, m.sl_range])
+    data = np.array(all_metrics)
+    pca = RandomizedPCA(n_components=35)
+    pca.fit(data)
+    print pca.explained_variance_ratio_
+
+   # [  9.64326054e-01   3.32552571e-02   1.71983858e-03   3.71019419e-04
+   # 1.20910404e-04   8.03361054e-05   7.70739267e-05   2.54045719e-05
+   # 1.36828834e-05   8.90329622e-06   8.96331768e-07   3.60671116e-07
+   # 9.73878214e-08   8.97739129e-08   4.32426691e-08   2.09719612e-08
+   # 8.34793242e-09   1.10703155e-09   8.09024534e-10   6.99685514e-10
+   # 2.85098873e-10   9.88561481e-11   7.92900587e-11   5.93983780e-11
+   # 3.84629837e-11   3.25354203e-11   2.97858677e-11   2.70925677e-11
+   # 2.37682416e-11   2.22747072e-11   2.15634075e-11   1.85979306e-11
+   # 1.66401057e-11   1.34496005e-11   9.91747090e-12]
 
 if __name__ == "__main__" or __name__ == "__console__":
 

@@ -3,6 +3,10 @@
             border-color: white;
         }
 
+        .twitter-typeahead {
+            display: inline;
+        }
+
         .navbar {
             border-color: white;
         }
@@ -13,6 +17,17 @@
 
         .main-content {
             margin-top: 150px;
+        }
+
+        img.author-photo {
+            border-radius: 50%;
+            width: 175px;
+            height: 175px;
+        }
+
+        h6.learn-more {
+            text-align: center;
+            width: 175px;
         }
 
         .large-content {
@@ -45,9 +60,10 @@
             width: 600px;
             height: 600px;
         }
-        .search-option {
-            margin: 0 auto;
+        li.search-option {
+            margin: 10px 15px;
             font-size: small;
+            display: inline-block;
         }
 
         .right-align {
@@ -86,6 +102,7 @@
             border: 1px solid rgba(0, 0, 0, 0.2);
             border-radius: 8px;
             box-shadow: 0 5px 10px rgba(0,0,0,.2);
+            display: inline-block;
         }
 
         .tt-suggestion {
@@ -96,6 +113,9 @@
         #search-button {
             display: inline-block;
             height: 40px;
+            position: absolute;
+            margin-left: 610px;
+            margin-top: -40px;
         }
 
         .reading {
