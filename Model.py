@@ -1419,15 +1419,14 @@ class Metrics(db.Model):
 
         end_words = Metrics._get_end_words(line_dict)
         total = float(len(end_words))
-        rhymes = 0
+        rhymes = []
         for word in end_words:
             other_words = set([w for w in end_words if w != word])
-            rhyme_words = Metrics._o_get_rhyme_list(word)
-            for word in other_words:
-                if word in rhyme_words:
-                    rhymes += 1
+            rhyme_words = set(Metrics._o_get_rhyme_list(word))
+            rhymes.extend(w for w in other_words if w in rhyme_words)
 
-        return rhymes/total
+        rhymes = set(rhymes)
+        return len(rhymes)/total
 
     @staticmethod
     def _get_end_rep_score(line_dict):

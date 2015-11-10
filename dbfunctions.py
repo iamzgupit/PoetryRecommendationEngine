@@ -158,7 +158,7 @@ def seed_metrics(poem_ids):
 
 
 def adjust_rhyme():
-    metrics = Metrics.query.filter(Metrics.rhyme == 0).all()
+    metrics = Metrics.query.all()
     print "{} METRICS TO UPDATE".format(len(metrics))
     i = 1
     for metric in metrics:
