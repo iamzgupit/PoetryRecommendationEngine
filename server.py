@@ -57,7 +57,7 @@ def get_random_poem():
     poem_ids = db.session.query(Poem.poem_id).all()
     chosen_id = choice(poem_ids)
     poem = str(chosen_id[0])
-    url = "/" + poem + "/0"
+    url = "/" + poem
 
     return redirect(url)
 
@@ -65,14 +65,22 @@ def get_random_poem():
 @app.route('/<int:poem_id>')
 def display_search_results(poem_id):
 
+    NUM_RESULTS = 5
+
     main_poem = Poem.query.get(poem_id)
     main_metrics = Metrics.query.get(main_poem.poem_id)
 
-    match_metrics = main_metrics.find_matches(limit=5)
-    match_data = [(poem, 100 - match) for poem, poet, match in match_metrics]
+    match_metrics = main_metrics.find_matches(limit=NUM_RESULTS)
+
+    match_data = []
+    for i in range(NUM_RESULTS):
+        poem, poet, match = match_metrics[i]
+        match = 100 - (match * 10)
+        match = "{:.2f}%".format(match)
+        match_data.append((poem, match, i + 1))
 
     session["match"] = match_data
-    match_poems = [(Poem.query.get(poem), match) for poem, match in match_data]
+    match_poems = [(Poem.query.get(p), m, i) for p, m, i in match_data]
 
     wikipedia_url, source = get_wiki_info(main_poem)
 
@@ -87,10 +95,13 @@ def display_search_poems(poem_id, index):
     main_poem = Poem.query.get(poem_id)
 
     match_data = session.get("match")
-    match_poems = [(Poem.query.get(poem), match)
-                   for poem, match in match_data]
+    match_poems = [(Poem.query.get(poem), match, i)
+                   for poem, match, i in match_data]
 
-    match_poem = match_poems[index - 1][0]
+    if index:
+        match_poem = match_poems[index - 1][0]
+    else:
+        match_poem = main_poem
 
     wikipedia_url, source = get_wiki_info(match_poem)
 

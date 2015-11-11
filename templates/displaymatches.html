@@ -27,19 +27,19 @@ ReadMe: Recommendations
 
         <div class="row results">
             <h5 class="title">
-                <a href='/{{main_poem.poem_id}}'>{{ main_poem.title }}</a>
+                <a href='/{{main_poem.poem_id}}/0'>{{ main_poem.title }}</a>
             </h5>
             <h6 class="author">By {{ main_poem.poet.name }}</h6>
             <p class="main-poem">Matched Poem</p>
         </div>
 
-        {% for poem, match in match_poems %}
+        {% for poem, match, i in match_poems %}
         <div class="row results">
             <h5 class="title">
-                <a href='/{{main_poem.poem_id}}/1'>{{ poem.title }}</a>
+                <a href='/{{main_poem.poem_id}}/{{i}}'>{{ poem.title }}</a>
             </h5>
             <h6 class="author">{{ poem.poet.name }}</h6>
-            <p class="match-percent">{{ match }}%</p>
+            <p class="match-percent">{{ match }}</p>
         </div>
         {% endfor %}
 

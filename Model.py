@@ -860,21 +860,11 @@ class Metrics(db.Model):
 
                 >>> fake = Metrics(poem_id=0,\
                                    wl_mean=1,\
-                                   wl_median=2,\
-                                   wl_mode=3,\
                                    wl_range=4,\
                                    ll_mean=5,\
-                                   ll_median=6,\
-                                   ll_mode=7,\
                                    ll_range=8,\
-                                   pl_char=9,\
                                    pl_lines=10,\
-                                   pl_words=11,\
-                                   stanzas=13,\
-                                   sl_mean=14,\
-                                   sl_median=15,\
-                                   sl_mode=16,\
-                                   sl_range=17)
+                                   stanzas=13)
                 >>>
                 >>> fake._get_macro_lex_data()
                 [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 13, 14, 15, 16, 17]
@@ -882,11 +872,9 @@ class Metrics(db.Model):
         This function is called in Metrics.find_matches and will not need to be
         used directly."""
 
-        macro_lex = [self.wl_mean, self.wl_median, self.wl_mode,
-                     self.wl_range, self.ll_mean, self.ll_median,
-                     self.ll_mode, self.ll_range, self.pl_char,
-                     self.pl_lines, self.pl_words, self.stanzas, self.sl_mean,
-                     self.sl_median, self.sl_mode, self.sl_range]
+        macro_lex = [self.wl_mean, self.wl_range, self.ll_mean, self.ll_range,
+                     self.pl_lines, self.stanzas]
+
         return macro_lex
 
     def _get_micro_lex_data(self):
