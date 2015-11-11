@@ -15,6 +15,7 @@ ReadMe: Recommendations
         </div>
     </div> <!-- end of first column -->
     <div class="col-md-2">
+
             {% if wikipedia_url %}
         <div class="wikipedia">
             <a href= {{ wikipedia_url }}>
@@ -23,6 +24,7 @@ ReadMe: Recommendations
             </a>
         </div>
             {% endif %}
+
         <div class="row results">
             <h5 class="title">
                 <a href='/{{main_poem.poem_id}}'>{{ main_poem.title }}</a>
@@ -30,58 +32,19 @@ ReadMe: Recommendations
             <h6 class="author">By {{ main_poem.poet.name }}</h6>
             <p class="main-poem">Matched Poem</p>
         </div>
+
+        {% for poem, match in match_poems %}
         <div class="row results">
             <h5 class="title">
-                <a href='/{{main_poem.poem_id}}/1'>{{ mp1.title }}</a>
+                <a href='/{{main_poem.poem_id}}/1'>{{ poem.title }}</a>
             </h5>
-            <h6 class="author">{{ mp1.poet.name }}</h6>
-            <p class="match-percent">%80</p>
+            <h6 class="author">{{ poem.poet.name }}</h6>
+            <p class="match-percent">{{ match }}%</p>
         </div>
-        <div class="row results">
-            <h5 class="title">
-                <a href='/{{main_poem.poem_id}}/2'>{{ mp2.title }}</a>
-            </h5>
-            <h6 class="author">{{ mp2.poet.name }}</h6>
-            <p class="match-percent">%80</p>
-        </div>
-        <div class="row results">
-            <h5 class="title">
-                <a href='/{{main_poem.poem_id}}/3'>{{ mp3.title }}</a>
-            </h5>
-            <h6 class="author">{{ mp3.poet.name }}</h6>
-            <p class="match-percent">%80</p>
-        </div>
-        <div class="row results">
-            <h5 class="title">
-                <a href='/{{main_poem.poem_id}}/4'>{{ mp4.title }}</a>
-            </h5>
-            <h6 class="author">{{ mp4.poet.name }}</h6>
-            <p class="match-percent">%80</p>
-        </div>
-        <div class="row results">
-            <h5 class="title">
-                <a href='/{{main_poem.poem_id}}/5'>{{ mp5.title }}</a>
-            </h5>
-            <h6 class="author">{{ mp5.poet.name }}</h6>
-            <p class="match-percent">%80</p>
-        </div>
+        {% endfor %}
+
     </div> <!-- end of results column -->
 </div> <!-- end of main-content row -->
 </div> <!-- end of container div -->
-
-
-<script>
-// var poetRough = "{{ main_poem.poet.name }}";
-// var poetName = poetRough.replace(" ", "_");
-// var url = 'https://en.wikipedia.org/w/api.php?action=query&titles=' + poetName + '&prop=images';
-// var image = "https://upload.wikimedia.org/wikipedia/commons/d/d6/"
-// function saveInfo(data) {
-//     console.log("YAY")
-// }
-
-// pageInfo = $.get(url, saveInfo)
-
-// </script>
-
 
 {% endblock %}
