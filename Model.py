@@ -550,21 +550,97 @@ class Metrics(db.Model):
     poem = db.relationship('Poem', backref='metrics')
 
 #FIXME NO DOCTEST COMPLICATED TO TEST
-    def find_matches(self, per_macro=0.35, per_micro=0.3, per_sent=0.2,
-                     per_con=0.15, unique_auth=True, new_auth=True, limit=10):
+    def get_other_metrics(self):
+        wlr = self.wl_range
+        if wlr > 16:
+            wlr_min = 12
+        else:
+            wlr_min = wlr - 5
+        wlr_max = wlr + 5
+
+        llr = self.ll_range
+        if llr > 750:
+            llr_min = 130
+        elif llr > 190:
+            llr_min = 100
+        else:
+            llr_min = llr - 40
+        llr_max = llr + 40
+
+        llm = self.ll_mean
+        if llm > 218:
+            llm_min = 175
+        else:
+            llm_min = llm - 45
+        llm_max = llm + 45
+
+        pll = self.pl_lines
+        if pll > 80:
+            pll_min = 55
+            pll_max = pll + 50
+        else:
+            pll_min = pll - 20
+            pll_max = pll + 20
+
+        other_metrics = (Metrics.query
+                                .filter(Metrics.poem_id != self.poem_id,
+                                        Metrics.pl_lines <= pll_max,
+                                        Metrics.pl_lines >= pll_min,
+                                        Metrics.ll_mean <= llm_max,
+                                        Metrics.ll_mean >= llm_min,
+                                        Metrics.ll_range >= llr_min,
+                                        Metrics.ll_range <= llr_max,
+                                        Metrics.wl_range >= wlr_min,
+                                        Metrics.wl_range <= wlr_max).all())
+
+        print len(other_metrics)
+        while len(other_metrics) > 2500:
+            pll_max -= 2
+            pll_min += 2
+            llm_max -= 5
+            llm_min += 5
+            llr_max -= 5
+            llr_min += 5
+            wlr_min += 1.5
+            wlr_max -= 1.5
+            other_metrics = (Metrics.query
+                                    .filter(Metrics.poem_id != self.poem_id,
+                                            Metrics.pl_lines <= pll_max,
+                                            Metrics.pl_lines >= pll_min,
+                                            Metrics.ll_mean <= llm_max,
+                                            Metrics.ll_mean >= llm_min,
+                                            Metrics.ll_range >= llr_min,
+                                            Metrics.ll_range <= llr_max,
+                                            Metrics.wl_range >= wlr_min,
+                                            Metrics.wl_range <= wlr_max).all())
+            print len(other_metrics)
+
+        while len(other_metrics) < 1000:
+            pll_max += 1
+            pll_min -= 1
+            llm_max += 2.5
+            llm_min -= 2.5
+            llr_max += 2.5
+            llr_min -= 2.5
+            wlr_min += 0.75
+            wlr_max -= 0.75
+
+            print len(other_metrics)
+
+        return other_metrics
+
+#FIXME NO DOCTEST COMPLICATED TO TEST
+    def find_matches(self, per_micro=1, per_sent=1, per_con=1, unique_auth=True,
+                     new_auth=True, limit=10):
 
         """returns a list with (poem_id, match percent) for every other poem"""
 
-        poem = Poem.query.get(self.poem_id)
+        other_metrics = self.get_other_metrics()
 
+        sorted_matches = self._calc_matches(other_metrics, per_micro, per_sent,
+                                            per_con)
         if new_auth:
-            other_poems = Poem.query.filter(Poem.poem_id != self.poem_id,
-                                            Poem.poet_id != poem.poet_id).all()
-        else:
-            other_poems = Poem.query.filter(Poem.poem_id != self.poem_id).all()
-
-        sorted_matches = self._calc_matches(other_poems, per_macro, per_micro,
-                                            per_sent, per_con)
+            sorted_matches = [tup for tup in sorted_matches if tup[1] != self.poem.poet_id]
 
         if unique_auth:
             final_matches = []
@@ -582,21 +658,18 @@ class Metrics(db.Model):
         return final_matches[:limit]
 
 #FIXME NO DOCTEST DIFFICULT TO TEST
-    def _calc_matches(self, other_poems, per_macro, per_micro, per_sent,
-                      per_con):
+    def _calc_matches(self, other_metrics, per_micro, per_sent, per_con):
         """given self and other poem objects, returns list with match closeness"""
 
-        macro_lex = self.get_macro_lex_data()
-        micro_lex = self.get_micro_lex_data()
-        sentiment = self.get_sentiment_data()
+        # macro_lex = self.get_macro_lex_data()
+        micro_lex = self._get_micro_lex_data()
+        sentiment = self._get_sentiment_data()
 
         matches = []
-        for other_poem in other_poems:
+        for o_metrics in other_metrics:
 
-            other_metrics = other_poem.metrics
-
-            o_macro_lex = other_metrics.get_macro_lex_data()
-            o_micro_lex = other_metrics.get_micro_lex_data()
+            # o_macro_lex = o_metrics.get_macro_lex_data()
+            o_micro_lex = o_metrics._get_micro_lex_data()
 
             # We are adding the percentage of words from one poem in another
             # to our micro lexical data -- this requires making a temporary
@@ -604,32 +677,31 @@ class Metrics(db.Model):
             # we want this percentage to be different for each poem we're
             # comparing
             temp_micro = [n for n in micro_lex]
-            word_per = self._get_word_compare(other_metrics)
+            word_per = self._get_word_compare(o_metrics)
             temp_micro.append(word_per)
 
-            o_word_per = other_metrics._get_word_compare(self)
+            o_word_per = o_metrics._get_word_compare(self)
             o_micro_lex.append(o_word_per)
 
-            o_sentiment = other_metrics.get_sentiment_data()
+            o_sentiment = o_metrics._get_sentiment_data()
 
-            context, o_context = self._create_context_lists(other_poem)
+            context, o_context = self._create_context_lists(o_metrics)
 
-            dist_raw = 0
+            euc_squared = 0
             if context and o_context:
-                dist_raw += Metrics._get_euc_raw(context, o_context, per_con)
+                euc_squared += Metrics._get_euc_raw(context, o_context, per_con)
             else:
-                add_per = per_con / 3
-                per_macro += add_per
+                add_per = per_con / 2
                 per_micro += add_per
                 per_sent += add_per
 
             # dist_raw = Metrics._get_euc_raw(macro_lex, o_macro_lex, per_macro)
-            dist_raw += Metrics._get_euc_raw(temp_micro, o_micro_lex, per_micro)
-            dist_raw += Metrics._get_euc_raw(sentiment, o_sentiment, per_sent)
+            euc_squared += Metrics._get_euc_raw(temp_micro, o_micro_lex, per_micro)
+            euc_squared += Metrics._get_euc_raw(sentiment, o_sentiment, per_sent)
 
-            euc_distance = sqrt(dist_raw)
-            matches.append((other_metrics.poem_id,
-                            other_poem.poet_id,
+            euc_distance = sqrt(euc_squared)
+            matches.append((o_metrics.poem_id,
+                            o_metrics.poem.poet_id,
                             euc_distance))
 
         sorted_matches = sorted(matches, key=lambda tup: tup[2])
@@ -674,9 +746,13 @@ class Metrics(db.Model):
     def _get_word_compare(self, other):
         """returns the percentage of words from self in other"""
 
-        raw_words = Metrics._get_clean_word_list(self.poem.text)
+        raw_words = Metrics._clean_word_list(self.poem.text)
         words = [w for w in raw_words if w.isalpha()]
-        raw_other_words = Metrics._get_clean_word_list(other.poem.text)
+        try:
+            raw_other_words = Metrics._clean_word_list(other.poem.text)
+        except AttributeError:
+            print "ISSUE WITH TEXT: {}".format(other.poem_id)
+
         other_words = [w for w in raw_other_words if w.isalpha()]
 
         word_per = Metrics._get_percent_in(words, other_words)
@@ -699,9 +775,6 @@ class Metrics(db.Model):
         if raw_context["reg_per"]:
             context.append(raw_context["reg_per"])
             o_context.append(1)
-        if raw_context["birth_per"][0]:
-            context.append(raw_context["birth_per"][0])
-            o_context.append(raw_context["birth_per"][1])
 
         return [context, o_context]
 
@@ -714,41 +787,28 @@ class Metrics(db.Model):
         self_context = self._get_context_data()
         other_context = other._get_context_data()
 
+        reg_per = None
+        term_per = None
+        sub_per = None
+
         regions = self_context["regions"]
         other_regions = other_context["regions"]
         if regions and other_regions:
             reg_per = Metrics._get_percent_in(regions, other_regions)
-        else:
-            reg_per = None
 
         terms = self_context["terms"]
         other_terms = other_context["terms"]
 
         if terms and other_terms:
             term_per = Metrics._get_percent_in(terms, other_terms)
-        else:
-            reg_per = None
 
         subs = self_context["subjects"]
         other_subs = other_context["subjects"]
 
         if subs and other_subs:
             sub_per = Metrics._get_percent_in(subs, other_subs)
-        else:
-            sub_per = None
 
-        birthyear = self_context["birthyear"]
-        other_birthyear = other_context["birthyear"]
-
-        if birthyear and other_birthyear:
-            birth_per = birthyear / 2015
-            other_birthper = birthyear / 2015
-        else:
-            birth_per = None
-            other_birthper = None
-
-        return {"reg_per": reg_per, "term_per": term_per,
-                "sub_per": sub_per, "birth_per": [birth_per, other_birthper]}
+        return {"reg_per": reg_per, "term_per": term_per, "sub_per": sub_per}
 
 #FIXME NO DOCTEST COMPLICATED TO TEST
     def _get_context_data(self):
@@ -781,7 +841,6 @@ class Metrics(db.Model):
                                    pl_char=9,\
                                    pl_lines=10,\
                                    pl_words=11,\
-                                   lex_div=12,\
                                    stanzas=13,\
                                    sl_mean=14,\
                                    sl_median=15,\
@@ -789,7 +848,7 @@ class Metrics(db.Model):
                                    sl_range=17)
                 >>>
                 >>> fake._get_macro_lex_data()
-                [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17]
+                [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 13, 14, 15, 16, 17]
 
         This function is called in Metrics.find_matches and will not need to be
         used directly."""
@@ -797,9 +856,8 @@ class Metrics(db.Model):
         macro_lex = [self.wl_mean, self.wl_median, self.wl_mode,
                      self.wl_range, self.ll_mean, self.ll_median,
                      self.ll_mode, self.ll_range, self.pl_char,
-                     self.pl_lines, self.pl_words, self.lex_div,
-                     self.stanzas, self.sl_mean, self.sl_median,
-                     self.sl_mode, self.sl_range]
+                     self.pl_lines, self.pl_words, self.stanzas, self.sl_mean,
+                     self.sl_median, self.sl_mode, self.sl_range]
         return macro_lex
 
     def _get_micro_lex_data(self):
@@ -813,17 +871,19 @@ class Metrics(db.Model):
                                    a_freq=5,\
                                    alliteration=6,\
                                    rhyme=7,\
-                                   end_repeat=8)
+                                   end_repeat=8\
+                                   lex_div=9)
                 >>>
                 >>> fake._get_micro_lex_data()
-                [1, 2, 3, 4, 5, 6, 7, 8]
+                [1, 2, 3, 4, 5, 6, 7, 8, 9]
 
         This function is called in Metrics.find_matches and will not need to be
         used directly.
         """
 
         micro_lex = [self.the_freq, self.i_freq, self.you_freq, self.is_freq,
-                     self.a_freq, self.alliteration, self.rhyme, self.end_repeat]
+                     self.a_freq, self.alliteration, self.rhyme,
+                     self.end_repeat, self.lex_div]
 
         return micro_lex
 
@@ -1428,6 +1488,7 @@ class Metrics(db.Model):
         rhymes = set(rhymes)
         return len(rhymes)/total
 
+#FIXME REWRITE SCORING
     @staticmethod
     def _get_end_rep_score(line_dict):
         """given a text, returns the unique line endings / total line endings
@@ -1443,8 +1504,9 @@ class Metrics(db.Model):
         """
 
         end_words = Metrics._get_end_words(line_dict)
-        unique = set(end_words)
-        return len(unique) / float(len(end_words))
+        end_length = len(end_words)
+        repeats = end_length - len(set(end_words))
+        return repeats / end_length
 
 
 class PoemMatch(db.Model):

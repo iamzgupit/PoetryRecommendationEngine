@@ -157,11 +157,14 @@ def seed_metrics(poem_ids):
         print "DONE\n"
 
 
-def adjust_rhyme():
+start = 442  # GO AGAIN TOMORROW
+
+
+def adjust_rhyme(start):
     metrics = Metrics.query.all()
     print "{} METRICS TO UPDATE".format(len(metrics))
-    i = 1
-    for metric in metrics:
+    i = start
+    for metric in metrics[start:]:
         text = metric.poem.text
         lines = Metrics._get_clean_line_data(text)
         rhyme_score = Metrics._get_rhyme_score(lines)
@@ -171,6 +174,20 @@ def adjust_rhyme():
         print "{} complete".format(i)
         i += 1
 
+
+def adjust_end_score():
+    metrics = Metrics.query.all()
+    print "{} METRICS TO UPDATE".format(len(metrics))
+    i = 1
+    for metric in metrics:
+        text = metric.poem.text
+        lines = Metrics._get_clean_line_data(text)
+        end_score = Metrics._get_end_rep_score(lines)
+        metric.end_repeat = end_score
+        print "{}: new end score {}".format(metric.poem_id, metric.end_repeat)
+        db.session.commit()
+        print "{} complete".format(i)
+        i += 1
 
 if __name__ == "__main__" or __name__ == "__console__":
 

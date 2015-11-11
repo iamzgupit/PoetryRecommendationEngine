@@ -12,34 +12,48 @@ ReadMe: Context
             <p>This area will contain some text explaining what this data catagory is on a macro level</p>
         </div>  <!-- end of algorithm-header row -->
         <div class="row algorithm-catagory">
-            <h5>Author Birth Year</h5>
-            <p>Here is some information about what this category is. Blah Blah Blah.</p>
-        </div>  <!-- end of algorithm-catagory row -->
-        <div class="row algorithm-graph">
-            <p>COOL D3 VISUALIZATION GOES HERE</p>
-        </div>  <!-- end of algorithm-graph row -->
-        <div class="row algorithm-catagory">
             <h5>Subjects</h5>
             <p>Here is some information about what this category is. Blah Blah Blah.</p>
         </div>  <!-- end of algorithm-catagory row -->
-        <div class="row algorithm-graph">
+        <div class="row algorithm-graph" id="subjects-graph">
             <p>COOL D3 VISUALIZATION GOES HERE</p>
         </div>  <!-- end of algorithm-graph row -->
         <div class="row algorithm-catagory">
             <h5>Poetic Terms</h5>
             <p>Here is some information about what this category is. Blah Blah Blah.</p>
         </div>  <!-- end of algorithm-catagory row -->
-        <div class="row algorithm-graph">
+        <div class="row algorithm-graph" id="terms-graph">
             <p>COOL D3 VISUALIZATION GOES HERE</p>
         </div>  <!-- end of algorithm-graph row -->
         <div class="row algorithm-catagory">
             <h5>Region</h5>
             <p>Here is some information about what this category is. Blah Blah Blah.</p>
         </div>  <!-- end of algorithm-catagory row -->
-        <div class="row algorithm-graph">
+        <div class="row algorithm-graph" id="region-graph">
             <p>COOL D3 VISUALIZATION GOES HERE</p>
         </div>  <!-- end of algorithm-graph row -->
     </div>  <!-- end of column -->
 </div> <!-- end of main-content row -->
 </div> <!-- end of container -->
+
+<script>
+var vis = d3.select("#subjects-graph").append("svg");
+
+var w = 900px, h = 400px;
+
+vis.attr("width", w).attr("height", h);
+
+var nodes = [{x: 30, y: 50}, {x: 50, y: 80}, {x: 90, y: 120}];
+
+vis.selectAll("circle.nodes")
+   .data(nodes)
+   .enter()
+   .append("svg:circle")
+   .attr("cx", function(d) { return d.x; })
+   .attr("cy", function(d) { return d.y; })
+   .attr("r", "10px")
+   .attr("fill", "black");
+
+</script>
+
 {% endblock %}
