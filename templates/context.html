@@ -3,17 +3,7 @@
 ReadMe: Context
 {% endblock %}
 {% block content %}
-<script>
 
-    var deets = null;
-
-
-    $.get('/subjectgraph.json', function (data) {
-        deets = data;
-        console.log("data received!");
-    });
-
-</script>
 <div class="container">
 <div class="row large-content">
     <div class="col-md-8 col-md-offset-2">
@@ -47,145 +37,136 @@ ReadMe: Context
 </div> <!-- end of container -->
 <script>
 
-    var width = 800;
-    var height = 600;
+d3.csv("../static/subjectgraph.csv", makeForceGraph);
 
-    // var nodes = [
-    //     {id: '1', subject: 'Marriage & Companionship', poet: null},
-    //     {id: '2', subject: 'Living', poet: null},
-    //     {id: '3', subject: 'Love', poet: null},
-    //     {id: '10', title: 'Probation', poet: 'Averill Curdy'},
-    //     {id: '12249', title: 'Song ("The world is full of loss ... ")', poet: 'Muriel Rukeyser'},
-    //     {id: '146729', title: 'Self-Portrait', poet: 'Chase Twichell'},
-    //     {id: '146821', title: 'Edward Hopper Study: Hotel Room', poet: 'Victoria Chang'},
-    //     {id: '15', title: 'Recitative', poet: 'A. E. Stallings'},
-    //     {id: '171044', title: 'Incubus', poet: 'Craig Arnold'},
-    //     {id: '171045', title: 'Togetherness', poet: 'Yusef Komunyakaa'},
-    //     {id: '171226', title: 'The Ache of Marriage', poet: 'Denise Levertov'},
-    //     {id: '171241', title: 'A Time Past', poet: 'Denise Levertov'},
-    //     {id: '171243', title: 'Twenty-year Marriage', poet: 'Ai'},
-    // ];
+var subject_names = ["Limerick", "Assonance", "Relationships", "Allusion",
+                     "Villanelle", "Philosophy", "Pastoral", "Romantic Love",
+                     "Water", "Unrequited Love"];
 
-    // The `links` array contains objects with a `source` and a `target`
-    // property. The values of those properties are the indices in
-    // the `nodes` array of the two endpoints of the link.
+function makeForceGraph(error, links) {
 
-    // var links = [
-    //    {source: 1, target: 3},
-    //    {source: 2, target: 3},
-    //    {source: 0, target: 3},
-    //    {source: 0, target: 4},
-    //    {source: 0, target: 5},
-    //    {source: 0, target: 6},
-    //    {source: 0, target: 7},
-    //    {source: 0, target: 8},
-    //    {source: 0, target: 9},
-    //    {source: 0, target: 10},
-    //    {source: 0, target: 11},
-    //    {source: 0, target: 12},
-    // ];
+    var nodes = {};
 
-    // Here's were the code begins. We start off by creating an SVG
-    // container to hold the visualization. We only need to specify
-    // the dimensions for this container.
+    // Compute the distinct nodes from the links.
 
-    var svg = d3.select('#subjects-graph').append('svg')
-                .attr('width', width)
-                .attr('height', height);
+    links.forEach(function(link) {
 
-    // Now we create a force layout object and define its properties.
-    // Those include the dimensions of the visualization and the arrays
-    // of nodes and links.
-    function tick() {
-       link.attr("x1", function(d) { return d.source.x; })
-           .attr("y1", function(d) { return d.source.y; })
-           .attr("x2", function(d) { return d.target.x; })
-           .attr("y2", function(d) { return d.target.y; });
+        link.source = nodes[link.source] ||
+            (nodes[link.source] = {name: link.source, source: link.source});
 
-       node.attr("cx", function(d) { return d.x; })
-           .attr("cy", function(d) { return d.y; });
-     }
+        link.target = nodes[link.target] ||
+            (nodes[link.target] = {name: link.target, source: link.source.name});
+
+    });
+
+    var width = 960;
+    var height = 500;
 
     var force = d3.layout.force()
-                  .size([width, height])
-                  .nodes(nodes)
+                  .nodes(d3.values(nodes))
                   .links(links)
-                  .linkDistance(50)
-                  .charge(-400)
+                  .size([width, height])
+                  .linkDistance(10)
+                  .charge(-20)
                   .on("tick", tick)
                   .start();
 
-    var drag = force.drag().on("dragstart", dragstart);
+    var svg = d3.select('#subjects-graph').append("svg")
+                .attr("width", width)
+                .attr("height", height);
 
-    force.linkDistance(width / 4);
+    // add the links and the arrows
+
+    var path = svg.selectAll(".link")
+                  .data(force.links())
+                  .enter().append("line")
+                  .attr("class", "link")
+                  .attr('style', 'stroke:black;stroke-width:2px;');
+
+    // define the nodes
+
+    var node = svg.selectAll(".node")
+                  .data(force.nodes())
+                  .enter().append("circle")
+                  .attr("r", function(d) { return size(d); })
+                  .style("fill", function(d) { return color(d); })
+                  .attr("class", function (d) { return pclass(d); })
+                  .attr("information", function (d) { return storeInfo(d); })
+                  .attr("link", function (d) { return getLink(d); })
+                  .call(force.drag);
+
+    var drag = force.drag().on("dragstart", dragstart);
 
     function dragstart(d) {
         d3.select(this).classed("fixed", d.fixed = true);
-    }
+    };
 
-    var link = svg.selectAll('.link')
-                  .data(links)
-                  .enter().append('line')
-                  .attr('class', 'link')
-                  .attr('style', 'stroke:black;stroke-width:2px;');
+    function name(d) {
+      if (subject_names.indexOf(d.name) >= 0) {
+        return d.name;
+      } else {
+        return null;
+      }
+    };
 
-    // Now it's the nodes turn. Each node is drawn as a circle.
-
-    var node = svg.selectAll('.node')
-                  .data(nodes)
-                  .enter()
-                  .append('circle')
-                  .attr("r", function (d) { return size(d) })
-                  .attr("class", function (d) { return pclass(d) })
-                  .style("fill", function (d) { return color(d) })
-                  .attr("information", function (d) { return storeInfo(d) })
-                  .attr("link", function (d) { return getLink(d) })
-                  .call(drag);
-
-    function color(item) {
-        if (item.poet !== null) {
-            return 'black';
-        } else {
+    function color(d) {
+        if (subject_names.indexOf(d.name) >= 0) {
             return '#808080';
+        } else {
+            return 'black';
         };
     }
 
-    function size(item) {
-        if (item.poet !== null) {
+    function size(d) {
+        if (subject_names.indexOf(d.name) >= 0) {
             return 10;
         } else {
-            return 25
+            return 5;
         };
     }
 
-    function pclass(item) {
-        if (item.poet !== null) {
-            return "node poem-node";
-        } else {
+    function pclass(d) {
+        if (subject_names.indexOf(d.name) >= 0) {
             return "node subject-node";
+        } else {
+            return "node poem-node";
         };
     }
 
-    function storeInfo(item) {
-        if (item.poet !== null) {
-            var poemData = item.title + " by " + item.poet
-            return poemData;
+    function storeInfo(d) {
+        if (subject_names.indexOf(d.name) >= 0) {
+            return d.name;
         } else {
-            return item.subject;
+            // var poemData = d.name.split("//");
+            // var poem_name = poemData[0];
+            return d.name;
         };
     }
 
-    function getLink(item) {
-        if (item.poet !== null) {
-            return "/" + item.id;
-        } else {
+    function getLink(d) {
+        if (subject_names.indexOf(d.name) >= 0) {
             return null;
+        } else {
+            // poemData = d.name;
+            // poemID = poemData.split('//')[1];
+            // url = "/" + poemID;
+            return '/algorithm';
         };
+    }
+
+    function tick() {
+        path.attr("x1", function(d) { return d.source.x; })
+            .attr("y1", function(d) { return d.source.y; })
+            .attr("x2", function(d) { return d.target.x; })
+            .attr("y2", function(d) { return d.target.y; });
+
+        node.attr("transform", function(d) {
+            return "translate(" + d.x + "," + d.y + ")"; });
     }
 
     function displayData(evt) {
-        var infoText = this.getAttribute('information')
-        var finalText = "Poem: " + infoText
+        var infoText = this.getAttribute('information');
+        var finalText = "Poem: " + infoText;
         $('#subject-info').html(finalText);
     }
 
@@ -194,19 +175,21 @@ ReadMe: Context
     }
 
     function changeURL(evt) {
-        url = this.getAttribute('link')
+        url = this.getAttribute('link');
         window.location.href = url;
     }
 
     function displaySubject(evt) {
-        infoText = this.getAttribute('information')
-        finalText = "Subject: " + infoText
+        infoText = this.getAttribute('information');
+        finalText = "Subject: " + infoText;
         $('#subject-info').html(finalText);
     }
 
     $('.poem-node').hover(displayData, removeData);
-    $('.poem-node').on('dblclick', changeURL)
+    $('.poem-node').on('dblclick', changeURL);
     $('.subject-node').hover(displaySubject, removeData);
+
+};
 
 </script>
 

@@ -36,11 +36,6 @@ def get_wiki_info(poem):
     return (wikipedia_url, source)
 
 
-# @app.route('/subjectgraph.json')
-# def subjectData():
-#     return jsonify()
-
-
 @app.route('/')
 def homepage():
     """displays homepage with search bar"""
@@ -160,7 +155,8 @@ def save_info():
     session["title"] = title
     session["text"] = text
 
-    poem = UserMetrics(title=title, text=text)
+    temp_text = text.replace("<br>", "\n")
+    poem = UserMetrics(title=title, text=temp_text)
     matches = poem.find_matches(limit=NUM_RESULTS)
 
     match_data = []
@@ -172,7 +168,7 @@ def save_info():
 
     session["match"] = match_data
 
-    return redirect('/writer-mode/results')
+    return "success!"
 
 
 @app.route('/writer-mode/results')
@@ -189,7 +185,8 @@ def display_results():
 
     return render_template("writerresults.html", text=text, title=title,
                            main_title=title, match_poems=match_poems,
-                           wikipedia_url=wikipedia_url, source=source)
+                           wikipedia_url=wikipedia_url, source=source,
+                           poet="User")
 
 
 @app.route('/writer-mode/results/<int:index>')
@@ -203,6 +200,7 @@ def display_result_poem(index):
         main_poem = match_poems[index - 1][0]
         text = main_poem.formatted_text
         main_title = main_poem.title
+        poet = main_poem.poet.name
         wikipedia_url, source = get_wiki_info(main_poem)
 
     else:
@@ -210,10 +208,11 @@ def display_result_poem(index):
         main_title = title
         wikipedia_url = None
         source = None
+        poet = "User"
 
     return render_template("writerresults.html", text=text, title=title,
                            main_title=main_title, match_poems=match_poems,
-                           wikipedia_url=wikipedia_url, source=source)
+                           wikipedia_url=wikipedia_url, source=source, poet=poet)
 
 if __name__ == "__main__":
     # We have to set debug=True here, since it has to be True at the point

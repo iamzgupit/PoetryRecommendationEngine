@@ -8,7 +8,7 @@ ReadMe: Writer Mode Recommendations
 <div class="row main-content">
     <div class="col-md-8 col-md-offset-1 reading">
         <h2 class="title main"> {{ main_title }}</h2>
-        <h4 class="author main"> by User </h4>
+        <h4 class="author main"> by {{ poet }} </h4>
         <br>
         <div class="poem-content">
             {{ text|safe }}
@@ -21,13 +21,13 @@ ReadMe: Writer Mode Recommendations
         <div class="wikipedia">
             <a href= {{ wikipedia_url }}>
             <img class="author-photo" src={{ source }}>
-            <h6 class="learn-more">Read More About {{ match_poem.poet.name }}</h6>
+            <h6 class="learn-more">Read More About {{ poet }}</h6>
             </a>
         </div>
         {% endif %}
 
         <div class="row results">
-            <h5 class="title">{{ title }}</h5>
+            <h5 class="title"><a href="/writer-mode/results">{{ title }}</a></h5>
             <h6 class="author">By User</h6>
             <p class="main-poem">Matched Poem</p>
         </div>
@@ -35,7 +35,7 @@ ReadMe: Writer Mode Recommendations
         {% for poem, match, i in match_poems %}
         <div class="row results">
             <h5 class="title">
-                <a href='/{{main_poem.poem_id}}/{{i}}'>{{ poem.title }}</a>
+                <a href='/writer-mode/results/{{i}}'>{{ poem.title }}</a>
             </h5>
             <h6 class="author">{{ poem.poet.name }}</h6>
             <p class="match-percent">{{ match }}</p>

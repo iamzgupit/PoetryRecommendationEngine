@@ -5,6 +5,7 @@ from math import sqrt
 from word_lists import (COMMON_W, POEM_W, ABSTRACT, OBJECTS, MALE, FEMALE,
                         ACTIVE, PASSIVE, POSITIVE, NEGATIVE)
 from requests import get
+from random import randint
 
 db = SQLAlchemy()
 
@@ -536,6 +537,7 @@ class Region(db.Model):
                             backref='regions')
 
 
+
 class PoemRegion(db.Model):
     """ connects poem to region"""
 
@@ -762,7 +764,7 @@ class Metrics(db.Model):
 
         # if it gets too low, we adjust back up and keep incrementing i
         while len(o_met) < 200 and i <= 15:
-            for c in crit.keys():
+            for c in crit.values():
                 c['max'] += c['up_adj']
                 c['min'] -= c['up_adj']
 

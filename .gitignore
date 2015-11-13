@@ -4,3 +4,4 @@ env
 *.text
 .DS_Store
 archive/
+.coverage
