@@ -9,7 +9,6 @@ from requests import get
 db = SQLAlchemy()
 
 
-#FIXME LATER: MAKE SURE THAT RELATIONSHIP TO MATCHES/MATCHED_TO WORKS
 class Poem(db.Model):
     """Poem Object"""
 
@@ -36,9 +35,14 @@ class Poem(db.Model):
                                  secondary="poem_matches",
                                  foreign_keys="PoemMatch.match_poem_id")
 
-#FIXME: NO DOCTEST DIFFICULT TO TEST
     @staticmethod
     def create_search_params():
+        """returns dict w/list of dict w/ info for each poem to jsonify
+
+        this is called by the server to create the search parameters for
+        typeahead.
+        """
+
         search_params = []
         poems = Poem.query.all()
         for poem in poems:
@@ -58,9 +62,9 @@ class Poem(db.Model):
     def _find_content(word_list, start_word, stop_word):
         """returns index of start_word, stop_word in word_list as [start, stop]
 
-        >>> word_list = ["hello", "dog", "how", "are", "you"]
-        >>> Poem._find_content(word_list, "dog", "you")
-        [1, 4]
+            >>> word_list = ["hello", "dog", "how", "are", "you"]
+            >>> Poem._find_content(word_list, "dog", "you")
+            [1, 4]
 
         we can then use this to parse a list and receive the words starting
         at start_word and ending right before stop_word.
@@ -190,14 +194,22 @@ class Poem(db.Model):
             string = unidecode(string)
         return string
 
-#FIXME: NO DOCTEST DIFFICULT TO TEST
     @staticmethod
     def _find_author(soup_object, poem_id):
+        """locates the author in soup obj and returns their name as a string
+
+        This function is called by Poem.parse and will not need to be used
+        directly.
+        """
+
         author_info = soup_object.find("span", class_="author")
         if author_info:
             author = author_info.find("a")
             if author:
                 author = author.text.strip()
+            # some author names are stored in a <a> tag, others are stored as
+            # text with "by" or "By" before them -- this way we can grab it
+            # either way.
             else:
                 author = author_info.text.strip()
                 if author.startswith("By "):
@@ -205,8 +217,15 @@ class Poem(db.Model):
                 elif author.startswith("by "):
                     author = author.lstrip("by ")
 
+            # author names are often stored with multiple spaces btw first and
+            # last name, which we don't want to keep.
             split_author = author.split(" ")
             author = " ".join([w for w in split_author if len(w) > 0])
+
+        # if there is an issue in parsing, we want to know about it and be able
+        # to investiage the issue -- this will print the issue information to
+        # the console, but otherwise move forward with the parse function,
+        # with author stored as None.
 
         else:
             print "\n\n\n AUTHOR_INFO ISSUE, POEM: {}\n\n\n".format(poem_id)
@@ -214,12 +233,23 @@ class Poem(db.Model):
 
         return author
 
-#FIXME: NO DOCTEST DIFFICULT TO TEST
     @staticmethod
     def _find_birth_year(soup_object, poem_id):
+        """locates the author's birth year in soup obj, returns year as integer
+
+        This function is called by Poem.parse and will not need to be used
+        directly. Poem.parse feeds it the poem_id as well so that it can print
+        an error message if there is any issue and site the specific poem.
+        """
         rough_birth_year = soup_object.find("span", class_="birthyear")
         if rough_birth_year:
             birth_year = unidecode(rough_birth_year.text)
+
+            # birth year can be formatted mutiple ways e.g. 'b. 1854',
+            # '1854-1901', or '1954' -- we control for each format, and print
+            # an error message if the birth year does not fit any of these
+            # formats.
+
             if "-" in birth_year:
                 birth_year = int(birth_year.split("-")[0])
             elif "b." in birth_year:
@@ -239,19 +269,28 @@ class Poem(db.Model):
 
         return birth_year
 
-#FIXME: NO DOCTEST DIFFICULT TO TEST
     @staticmethod
     def _create_poet(soup_object, poem_id):
+        """if poet does not exists in table, create's it -- returns poet_id
+
+        this function calls Poem._find_author and Poem._find_birth_year to get
+        necessary information to initialize Poet row. This function is in turn
+        called by Poem.parse and will not need to be used directly.
+        """
 
         author = Poem._find_author(soup_object, poem_id)
-        birth_year = Poem._find_birth_year(soup_object, poem_id)
 
         if author:
             poet = Poet.query.filter(Poet.name == author).first()
             if not poet:
+                birth_year = Poem._find_birth_year(soup_object, poem_id)
                 poet = Poet(name=author, birth_year=birth_year)
                 db.session.add(poet)
-                db.session.commit()
+                db.session.commit()  # if the poet does not already exist we
+                                     # have to commit it before we can get the
+                                     # poet_id which is autocreated by the
+                                     # database as the primary/foreign key that
+                                     # links poems to their poets
 
             poet_id = poet.poet_id
 
@@ -261,90 +300,140 @@ class Poem(db.Model):
 
         return poet_id
 
-#FIXME: NO DOCTEST DIFFICULT TO TEST
     @staticmethod
     def _get_copyright(soup_object):
+        """ returns copyright information as string, given soup object
+
+        This is unique to the html documents we're parsing, grabs the copyright
+        information if it exists and returns it as a string. This is called by
+        Poem.parse and will not need to be used directly.
+        """
 
         credits = soup_object.find("div", "credit")
+
         if credits:
             credits = credits.get_text()
             credits = credits.strip()
             cwlist = credits.split(" ")
             start, stop = Poem._find_content(cwlist, "Copyright", "Reprinted")
             copyright = " ".join(cwlist[start:stop])
+
         else:
             copyright = None
 
         return copyright
 
-#FIXME: NO DOCTEST DIFFICULT TO TEST
     @staticmethod
     def _set_regions(context, poem_id):
+        """given context list, creates ties btw poem and the regions noted
+
+        called by Poem._set_context which is in turn called by Poem.parse as
+        part of initializing a new poem -- this will never need to be used
+        directly.
+        """
+
         regions = []
         for i in range(len(context)):
             if "REGION" in context[i]:
                 regions = context[i+1].split(', ')
                 break
+            # Region information is stored as a string with ", " separating each
+            # region, and follows "REGION" in all-caps in the list order.
 
         for region in regions:
             reg = Region.query.filter(Region.region == region).first()
             if not reg:
                 reg = Region(region=region)
                 db.session.add(reg)
-                db.session.commit()
+                db.session.commit()  # if specific region does not already exist
+                                     # we need to add it to the db and commit
+                                     # before we can get the region_id, which is
+                                     # the primary key created by the database
 
             region_id = reg.region_id
-            poem_region = PoemRegion(region_id=region_id,
-                                     poem_id=poem_id)
+
+            # regions are bound to poems by entries in the PoemRegion table
+            poem_region = PoemRegion(region_id=region_id, poem_id=poem_id)
             db.session.add(poem_region)
             db.session.commit()
 
-#FIXME: NO DOCTEST DIFFICULT TO TEST
     @staticmethod
     def _set_terms(context, poem_id):
+        """given context list, creates ties btw poem and the poetic terms noted
+
+        called by Poem._set_context which is in turn called by Poem.parse as
+        part of initializing a new poem -- this will never need to be used
+        directly.
+        """
+
+        poetic_terms = []
         if "Poetic Terms" in context:
             start, stop = Poem._find_term(context, "poetic terms")
             poetic_terms = [term.rstrip(', ') for term in context[start:stop]]
-        else:
-            poetic_terms = []
+            # terms exist on their own index in the context list, but often have
+            # commas and spaces at the end, which we need to strip.
 
         for poetic_term in poetic_terms:
             term = Term.query.filter(Term.term == poetic_term).first()
             if not term:
                 term = Term(term=poetic_term)
                 db.session.add(term)
-                db.session.commit()
+                db.session.commit()  # if specific term does not already exist
+                                     # we need to add it to the db and commit
+                                     # before we can get the term_id, which is
+                                     # the primary key created by the database
 
             term_id = term.term_id
+
+            # terms are bound to poems by entries in the PoemTerm table
             poem_term = PoemTerm(term_id=term_id, poem_id=poem_id)
             db.session.add(poem_term)
             db.session.commit()
 
-#FIXME: NO DOCTEST DIFFICULT TO TEST
     @staticmethod
     def _set_subjects(context, poem_id):
+        """given context list, creates ties btw poem and the poetic terms noted
+
+        called by Poem._set_context which is in turn called by Poem.parse as
+        part of initializing a new poem -- this will never need to be used
+        directly.
+        """
+
+        subjects = []
         if "SUBJECT" in context:
             start, stop = Poem._find_term(context, "SUBJECT")
             subjects = [sub for sub in context[start:stop]]
-        else:
-            subjects = []
+            # subjects exist on their own index in the context list
+            # they don't need to be cleaned.
 
         for subject in subjects:
             sub = Subject.query.filter(Subject.subject == subject).first()
             if not sub:
                 sub = Subject(subject=subject)
                 db.session.add(sub)
-                db.session.commit()
+                db.session.commit()  # if specific subject doesn't already exist
+                                     # we need to add it to the db and commit
+                                     # before we can get the subject_id
+                                     # (the primary key created by the database)
 
             sub_id = sub.subject_id
-            poem_subject = PoemSubject(subject_id=sub_id,
-                                       poem_id=poem_id)
+
+            # subjects are bound to poems by entries in the PoemSubject table
+            poem_subject = PoemSubject(subject_id=sub_id, poem_id=poem_id)
             db.session.add(poem_subject)
             db.session.commit()
 
-#FIXME: NO DOCTEST DIFFICULT TO TEST - RETURNS NOTHING
     @staticmethod
     def _set_context(soup_object, poem_id):
+        """ creates subject, region, and poem connections for a given soup obj.
+
+        calls Poem._clean_listobj to get clean list object from context, and
+        then called Poem._set_regions, Poem._set_terms, and Poem._set_subjects
+        to create ties between the poem and the term and subject. This function
+        itself is called by Poem.parse as part of initializing a new poem in the
+        Poem table, and will not need to be used directly.
+        """
+
         rough_context = soup_object.find_all("p", class_="section")
         context = Poem._clean_listobj(rough_context)
 
@@ -352,11 +441,18 @@ class Poem(db.Model):
         Poem._set_terms(context, poem_id)
         Poem._set_subjects(context, poem_id)
 
-#FIXME: NO DOCTEST DIFFICULT TO TEST
     @classmethod
     def parse(cls, file_name):
-        """given a text file containing html content, creates Poem object"""
+        """given a text file containing html content, creates Poem object
 
+        This is the method that calls most of the other methods as part of
+        parsing all the necessary information to create a new Poem, as well as
+        handles the actual adding of the poem to the database.
+        """
+
+        # previously, we had scraped the pages for each individual poem and
+        # stored their html content in a .text file in webscrape/Poem_Files
+        # as poem_id.text
         file_path = "webscrape/Poem_Files/" + file_name
         poem_file = open(file_path).read()
         soup = BeautifulSoup(poem_file, "html5lib")
@@ -365,21 +461,28 @@ class Poem(db.Model):
         url = "http://www.poetryfoundation.org/poem/" + str(poem_id)
 
         title_info = soup.find(id="poem-top")
-        if title_info:
+        html_content = soup.find("div", class_="poem")
+
+        if title_info and html_content:
             title = title_info.text.strip()
-        elif soup.find("div", class_="poem"):
+
+        elif html_content:
+            # if there is a div called poem but not a div with id "poem-top"
+            # then this is an unusual formatting and we want to print an error
+            # message to examine the html further.
+
             print "\n\n\nTITLE ISSUE. POEM {}\n\n\n".format(poem_id)
             title = None
+
         else:
-            #This isn't a poem object
+            # If there isn't a div with a class poem then the page is not the
+            # page we are looking for -- several of the files scraped were in
+            # fact for essays or interviews, though stored in the same place as
+            # poems, so this is not an issue, but we don't want to move forward
+            # if the file is not a poem.
             return
 
         poet_id = Poem._create_poet(soup, poem_id)
-
-        html_content = soup.find("div", class_="poem")
-        if not html_content:
-            # This isn't a poem object
-            return
 
         formatted_text = unicode(html_content)
 
@@ -387,7 +490,11 @@ class Poem(db.Model):
             text = html_content.text.replace('\t', ' ')
             text = text.replace('\r', '').strip()
             text = unidecode(text)
+
         except AttributeError:
+            # a few poems had issues with .text and .get_text(), though the html
+            # seemed otherwise fine, so I wrote my own function that accomplishes
+            # the same purpose, to be used in these cases.
             text = Poem._get_text(formatted_text)
 
         copyright = Poem._get_copyright(soup)
@@ -397,8 +504,13 @@ class Poem(db.Model):
                         copyright=copyright)
 
         db.session.add(new_poem)
-        db.session.commit()
+        db.session.commit()  # we have to commit the new poem to the database
+                             # before we can move forward, since PoemTerm,
+                             # PoemSubject, and Poem Region all need to link to
+                             # the poem_id.
+
         Poem._set_context(soup, poem_id)
+        db.session.commit()
 
 
 class Poet(db.Model):
@@ -502,7 +614,7 @@ class PoemSubject(db.Model):
 
 
 class Metrics(db.Model):
-    """ contains the metrics for each poem """
+    """ contains the metrics (data as floats) for each poem """
 
     __tablename__ = "metrics"
 
@@ -511,144 +623,212 @@ class Metrics(db.Model):
                         primary_key=True,
                         nullable=False)
 
-    wl_mean = db.Column(db.Float)  # > 1
-    wl_median = db.Column(db.Float)  # > 1
-    wl_mode = db.Column(db.Float)  # > 1
-    wl_range = db.Column(db.Float)  # > 1
-    ll_mean = db.Column(db.Float)  # > 1
-    ll_median = db.Column(db.Float)  # > 1
-    ll_mode = db.Column(db.Float)  # > 1
-    ll_range = db.Column(db.Float)  # > 1
-    pl_char = db.Column(db.Float)  # > 1
-    pl_lines = db.Column(db.Float)  # > 1
-    pl_words = db.Column(db.Float)  # > 1
-    lex_div = db.Column(db.Float)  # PERCENTAGE
-    the_freq = db.Column(db.Float)  # PERCENTAGE
-    i_freq = db.Column(db.Float)  # PERCENTAGE
-    you_freq = db.Column(db.Float)  # PERCENTAGE
-    is_freq = db.Column(db.Float)  # PERCENTAGE
-    a_freq = db.Column(db.Float)  # PERCENTAGE
-    common_percent = db.Column(db.Float)  # PERCENTAGE
-    poem_percent = db.Column(db.Float)  # PERCENTAGE
-    object_percent = db.Column(db.Float)  # PERCENTAGE
-    abs_percent = db.Column(db.Float)  # PERCENTAGE
-    male_percent = db.Column(db.Float)  # PERCENTAGE
-    female_percent = db.Column(db.Float)  # PERCENTAGE
-    alliteration = db.Column(db.Float)  # PERCENTAGE
-    positive = db.Column(db.Float)  # PERCENTAGE
-    negative = db.Column(db.Float)  # PERCENTAGE
-    active_percent = db.Column(db.Float)  # PERCENTAGE
-    passive_percent = db.Column(db.Float)  # PERCENTAGE
-    end_repeat = db.Column(db.Float)  # PERCENTAGE -- NOT MEANINGFUL
-    rhyme = db.Column(db.Float)  # PERCENTAGE
-    stanzas = db.Column(db.Float)  # > 1
-    sl_mean = db.Column(db.Float)  # > 1
-    sl_median = db.Column(db.Float)  # > 1
-    sl_mode = db.Column(db.Float)  # > 1
-    sl_range = db.Column(db.Float)  # > 1
+    wl_mean = db.Column(db.Float)    # Macro Lexical Data: larger integer ( > 1)
+    wl_median = db.Column(db.Float)  # Macro Lexical Data: larger integer ( > 1)
+    wl_mode = db.Column(db.Float)    # Macro Lexical Data: larger integer ( > 1)
+    wl_range = db.Column(db.Float)   # Macro Lexical Data: larger integer ( > 1)
+    ll_mean = db.Column(db.Float)    # Macro Lexical Data: larger integer ( > 1)
+    ll_median = db.Column(db.Float)  # Macro Lexical Data: larger integer ( > 1)
+    ll_mode = db.Column(db.Float)    # Macro Lexical Data: larger integer ( > 1)
+    ll_range = db.Column(db.Float)   # Macro Lexical Data: larger integer ( > 1)
+    pl_char = db.Column(db.Float)    # Macro Lexical Data: larger integer ( > 1)
+    pl_lines = db.Column(db.Float)   # Macro Lexical Data: larger integer ( > 1)
+    pl_words = db.Column(db.Float)   # Macro Lexical Data: larger integer ( > 1)
+    lex_div = db.Column(db.Float)       # Micro Lexical Data: (0 - 1) Percentage
+    the_freq = db.Column(db.Float)      # Micro Lexical Data: (0 - 1) Percentage
+    i_freq = db.Column(db.Float)        # Micro Lexical Data: (0 - 1) Percentage
+    you_freq = db.Column(db.Float)      # Micro Lexical Data: (0 - 1) Percentage
+    is_freq = db.Column(db.Float)       # Micro Lexical Data: (0 - 1) Percentage
+    a_freq = db.Column(db.Float)        # Micro Lexical Data: (0 - 1) Percentage
+    alliteration = db.Column(db.Float)  # Micro Lexical Data: (0 - 1) Percentage
+    rhyme = db.Column(db.Float)         # Micro Lexical Data: (0 - 1) Percentage
+    common_percent = db.Column(db.Float)   # Sentiment Data: (0 - 1) Percentage
+    poem_percent = db.Column(db.Float)     # Sentiment Data: (0 - 1) Percentage
+    object_percent = db.Column(db.Float)   # Sentiment Data: (0 - 1) Percentage
+    abs_percent = db.Column(db.Float)      # Sentiment Data: (0 - 1) Percentage
+    male_percent = db.Column(db.Float)     # Sentiment Data: (0 - 1) Percentage
+    female_percent = db.Column(db.Float)   # Sentiment Data: (0 - 1) Percentage
+    positive = db.Column(db.Float)         # Sentiment Data: (0 - 1) Percentage
+    negative = db.Column(db.Float)         # Sentiment Data: (0 - 1) Percentage
+    active_percent = db.Column(db.Float)   # Sentiment Data: (0 - 1) Percentage
+    passive_percent = db.Column(db.Float)  # Sentiment Data: (0 - 1) Percentage
+
+    # upon analysis, this metrics were found to not be meaningful for our set:
+    end_repeat = db.Column(db.Float)       # (0 - 1) Percentage
+    stanzas = db.Column(db.Float)          # larger integer ( > 1)
+    sl_mean = db.Column(db.Float)          # larger integer ( > 1)
+    sl_median = db.Column(db.Float)        # larger integer ( > 1)
+    sl_mode = db.Column(db.Float)          # larger integer ( > 1)
+    sl_range = db.Column(db.Float)         # larger integer ( > 1)
 
     poem = db.relationship('Poem', backref='metrics')
 
-#FIXME NO DOCTEST COMPLICATED TO TEST
-    def get_other_metrics(self):
+    def _get_other_metrics(self):
+        """ returns list of 200-600 metrics obj w/similar macro attributes.
+
+        For a given metrics object(self), we grab 200-600 other metrics objects
+        within an accepted range for four macro attributes: word length range
+        (wl_range), line length range (ll_range), mean line length (ll_m), and
+        poem length by line (pl_lines). We set initial excepted ranges for all
+        four attributes based on an analysis of the spread of the data -- query
+        the database for metrics with those parameters, check the length, and
+        then alter those parameters up or down as necessary until we have a list
+        between 200-600 in length, or until we've tried 15 iterations, in which
+        we move forward with what we have, to avoid the potential of a loop.
+
+        this method is called by Metrics.find_matches and does not need to be
+        used directly.
+        """
+
         wlr = self.wl_range
-        if wlr > 16:
-            wlr_min = 12
-        else:
-            wlr_min = wlr - 5
-        wlr_max = wlr + 5
+        wlr_min = wlr - 4
+        wlr_max = wlr + 4
 
         llr = self.ll_range
-        if llr > 750:
-            llr_min = 130
-        elif llr > 190:
-            llr_min = 100
-        else:
-            llr_min = llr - 40
-        llr_max = llr + 40
+        llr_min = llr - 30
+        llr_max = llr + 30
 
         llm = self.ll_mean
-        if llm > 218:
-            llm_min = 175
-        else:
-            llm_min = llm - 45
-        llm_max = llm + 45
+        llm_min = llm - 30
+        llm_max = llm + 30
 
         pll = self.pl_lines
         if pll > 80:
-            pll_min = 55
-            pll_max = pll + 50
+            pll_min = 45
+            pll_max = pll + 40
         else:
-            pll_min = pll - 20
-            pll_max = pll + 20
+            pll_min = pll - 10
+            pll_max = pll + 10
 
-        other_metrics = (Metrics.query
-                                .filter(Metrics.poem_id != self.poem_id,
-                                        Metrics.pl_lines <= pll_max,
-                                        Metrics.pl_lines >= pll_min,
-                                        Metrics.ll_mean <= llm_max,
-                                        Metrics.ll_mean >= llm_min,
-                                        Metrics.ll_range >= llr_min,
-                                        Metrics.ll_range <= llr_max,
-                                        Metrics.wl_range >= wlr_min,
-                                        Metrics.wl_range <= wlr_max).all())
+        o_met = (Metrics.query
+                        .filter(Metrics.poem_id != self.poem_id,
+                                Metrics.pl_lines <= pll_max,
+                                Metrics.pl_lines >= pll_min,
+                                Metrics.ll_mean <= llm_max,
+                                Metrics.ll_mean >= llm_min,
+                                Metrics.ll_range >= llr_min,
+                                Metrics.ll_range <= llr_max,
+                                Metrics.wl_range >= wlr_min,
+                                Metrics.wl_range <= wlr_max).all())
 
-        print len(other_metrics)
+        print len(o_met)  # For debugging, to see how many iterations we go
+                          # through, and what the values were at each point
 
-        i = 0
-        while len(other_metrics) > 2500 and i <= 10:
-            pll_max -= 2
-            pll_min += 2
-            llm_max -= 5
-            llm_min += 5
-            llr_max -= 5
-            llr_min += 5
-            wlr_min += 1.5
-            wlr_max -= 1.5
-            other_metrics = (Metrics.query
-                                    .filter(Metrics.poem_id != self.poem_id,
-                                            Metrics.pl_lines <= pll_max,
-                                            Metrics.pl_lines >= pll_min,
-                                            Metrics.ll_mean <= llm_max,
-                                            Metrics.ll_mean >= llm_min,
-                                            Metrics.ll_range >= llr_min,
-                                            Metrics.ll_range <= llr_max,
-                                            Metrics.wl_range >= wlr_min,
-                                            Metrics.wl_range <= wlr_max).all())
-            print len(other_metrics)
+        i = 0   # we increment i to avoid being stuck in a loop
+
+        crit = {'plength': {'val': pll, 'max': pll_max, 'min': pll_min,
+                            'down_adj': 2, 'up_adj': 1},
+                'mean_ll': {'val': llm, 'max': llm_max, 'min': llm_min,
+                            'down_adj': 4, 'up_adj': 2.5},
+                'llrange': {'val': llr, 'max': llr_max, 'min': llr_min,
+                            'down_adj': 4, 'up_adj': 2},
+                'wlrange': {'val': wlr, 'max': wlr_max, 'min': wlr_min,
+                            'down_adj': 1, 'up_adj': 1}}
+
+        print crit
+
+        while len(o_met) > 600 and i <= 15:
+
+            # for each attribute, we don't want to set the maximum value below,
+            # or the minimum value above, the value of the poem we're trying to
+            # match, so we check that and adjust as necessary.
+
+            for c in crit.values():
+                if c['max'] - c['down_adj'] >= c['val']:
+                    c['max'] -= c['down_adj']
+                else:
+                    c['max'] = c['val']
+
+                if c['min'] + c['down_adj'] <= c['val']:
+                    c['min'] += c['down_adj']
+                else:
+                    c['min'] = c['val']
+
+            o_met = (Metrics.query
+                            .filter(Metrics.poem_id != self.poem_id,
+                                    Metrics.pl_lines <= crit['plength']['max'],
+                                    Metrics.pl_lines >= crit['plength']['min'],
+                                    Metrics.ll_mean <= crit['mean_ll']['max'],
+                                    Metrics.ll_mean >= crit['mean_ll']['min'],
+                                    Metrics.ll_range >= crit['llrange']['min'],
+                                    Metrics.ll_range <= crit['llrange']['max'],
+                                    Metrics.wl_range >= crit['wlrange']['min'],
+                                    Metrics.wl_range <= crit['wlrange']['max'])
+                            .all())
+
+            print len(o_met)
+
             i += 1
 
-        while len(other_metrics) < 1000 and i <= 10:
-            pll_max += 1
-            pll_min -= 1
-            llm_max += 2.5
-            llm_min -= 2.5
-            llr_max += 2.5
-            llr_min -= 2.5
-            wlr_min += 0.75
-            wlr_max -= 0.75
+        # if it gets too low, we adjust back up and keep incrementing i
+        while len(o_met) < 200 and i <= 15:
+            for c in crit.keys():
+                c['max'] += c['up_adj']
+                c['min'] -= c['up_adj']
 
-            print len(other_metrics)
+            o_met = (Metrics.query
+                            .filter(Metrics.poem_id != self.poem_id,
+                                    Metrics.pl_lines <= crit['plength']['max'],
+                                    Metrics.pl_lines >= crit['plength']['min'],
+                                    Metrics.ll_mean <= crit['mean_ll']['max'],
+                                    Metrics.ll_mean >= crit['mean_ll']['min'],
+                                    Metrics.ll_range >= crit['llrange']['min'],
+                                    Metrics.ll_range <= crit['llrange']['max'],
+                                    Metrics.wl_range >= crit['wlrange']['min'],
+                                    Metrics.wl_range <= crit['wlrange']['max'])
+                            .all())
+
+            print len(o_met)
+
             i += 1
 
-        return other_metrics
+        return o_met
 
-#FIXME NO DOCTEST COMPLICATED TO TEST
-    def find_matches(self, per_micro=1, per_sent=1, per_con=1, per_macro=0.5,
+    def find_matches(self, micwgt=1, sentwgt=1, conwgt=1, macwgt=0.5,
                      unique_auth=True, new_auth=True, limit=10):
+        """returns a list with (poem_id, match percent) for limit other poems
 
-        """returns a list with (poem_id, match percent) for every other poem"""
+        for a given metrics (self), will find the best matches and return a list
+        of their information in tuples best match -> worst match , limited by
+        the limit criteria.
 
-        other_metrics = self.get_other_metrics()
+        This method calles Metrics._get_other_metrics to get a narrower list
+        of other metrics to check (controlled for macro attributes within a
+        reasonable range from the poem's attributes).
+
+        We give this method micwgt, sentwgt, conwgt, and macwgt, which are
+        weighting factors that we can use to adjust the importance of different
+        sorts of criteria (micro_lex attributes correspond to micwgt, macro_lex
+        attributes correspond to macwgt, sentiment attributes correspond to
+        sentwgt, and context attributes -- which are the Subjects, Terms, and
+        Regions as decided by the Poetry Foundation -- correspond to conwgt).
+
+        limit sets how many of the possible matches we should return,
+        unique_auth sets whether to return only the best matched poem for each
+        poet (only one per poet if True), and new_auth sets whether to exclude
+        the author of the chosen poem from the results (no matches by the author
+        of our matching poem if True).
+        """
+
+        other_metrics = self._get_other_metrics()
 
         sorted_matches = self._calc_matches(other_metrics=other_metrics,
-                                            per_micro=per_micro,
-                                            per_sent=per_sent,
-                                            per_macro=per_macro,
-                                            per_con=per_con)
-        if new_auth:
-            sorted_matches = [tup for tup in sorted_matches if tup[1] != self.poem.poet_id]
+                                            micwgt=micwgt,
+                                            sentwgt=sentwgt,
+                                            macwgt=macwgt,
+                                            conwgt=conwgt)
 
+        # if we turn new_auth off, we will receive poems in the results that
+        # include poems by the author of our initial poem, otherwise we sort
+        # those out by default. Checking for self.poem means that we can use
+        # same method with the child class UserMetrics.
+        if new_auth and self.poem:
+            sorted_matches = [tup for tup in sorted_matches
+                              if tup[1] != self.poem.poet_id]
+
+        # if we turn unique_auth off, we will receive multiple matches by the
+        # same author, otherwise, we sort out other matches by the same author
+        # keeping only those that are the best fit.
         if unique_auth:
             final_matches = []
             used_poets = []
@@ -664,18 +844,22 @@ class Metrics(db.Model):
 
         return final_matches[:limit]
 
-#FIXME NO DOCTEST DIFFICULT TO TEST
-    def _calc_matches(self, other_metrics, per_micro, per_sent, per_con, per_macro):
-        """given self and other poem objects, returns list with match closeness"""
+    def _calc_matches(self, other_metrics, micwgt, sentwgt, conwgt, macwgt):
+        """given self and other poem objects, returns list w/ match closeness
 
-        # macro_lex = self.get_macro_lex_data()
+        this method is called by find_matches, so it won't need to be called
+        directly. It in gathers all the necessary data and feeds it to
+        Metrics._get_euc_raw, taking the square root of the end results to
+        calculate the euclidean distance, and returning a list with tuples of
+        (poem_id, poet_id, euclidean_distance), sorted by best to worst match.
+        """
+
         micro_lex = self._get_micro_lex_data()
         sentiment = self._get_sentiment_data()
 
         matches = []
         for o_metrics in other_metrics:
 
-            # o_macro_lex = o_metrics.get_macro_lex_data()
             o_micro_lex = o_metrics._get_micro_lex_data()
 
             # We are adding the percentage of words from one poem in another
@@ -692,27 +876,37 @@ class Metrics(db.Model):
 
             o_sentiment = o_metrics._get_sentiment_data()
 
-            context, o_context = self._create_context_lists(o_metrics)
+            if self.poem:  # checking that this is not a UserMetrics class.
+                context, o_context = self._create_context_lists(o_metrics)
+            else:
+                context = False
+                o_context = False
+
             macro, o_macro = self._get_macro_compare(o_metrics)
 
             euc_squared = 0
             if context and o_context:
-                euc_squared += Metrics._get_euc_raw(context, o_context, per_con)
-            else:
-                add_per = per_con / 2
-                per_micro += add_per
-                per_sent += add_per
+                euc_squared += Metrics._get_euc_raw(context, o_context, conwgt)
 
-            # dist_raw = Metrics._get_euc_raw(macro_lex, o_macro_lex, per_macro)
-            euc_squared += Metrics._get_euc_raw(temp_micro, o_micro_lex, per_micro)
-            euc_squared += Metrics._get_euc_raw(sentiment, o_sentiment, per_sent)
-            euc_squared += Metrics._get_euc_raw(macro, o_macro, per_macro)
+            # if we don't have context data, we increase the weighting of the
+            # other criteria.
+            else:
+                addwgt = conwgt / 3
+                micwgt += addwgt
+                sentwgt += addwgt
+                macwgt += addwgt
+
+            euc_squared += Metrics._get_euc_raw(temp_micro, o_micro_lex, micwgt)
+            euc_squared += Metrics._get_euc_raw(sentiment, o_sentiment, sentwgt)
+            euc_squared += Metrics._get_euc_raw(macro, o_macro, macwgt)
 
             euc_distance = sqrt(euc_squared)
+
             matches.append((o_metrics.poem_id,
                             o_metrics.poem.poet_id,
                             euc_distance))
 
+        # we sort by euclidian distance, smallest (i.e. best match to largest)
         sorted_matches = sorted(matches, key=lambda tup: tup[2])
 
         return sorted_matches
@@ -751,26 +945,36 @@ class Metrics(db.Model):
 
         return temp_total * weight
 
-#FIXME NO DOCTEST COMPLICATED TO TEST
     def _get_word_compare(self, other):
-        """returns the percentage of words from self in other"""
+        """returns the percentage of words from self in other
 
-        raw_words = Metrics._clean_word_list(self.poem.text)
-        words = [w for w in raw_words if w.isalpha()]
-        try:
+        called my Metrics._calc_matches_ which is in turn caled by
+        Metrics.find_matches, and will not need to be called directly.
+        """
+        if self.poem:
+            raw_words = Metrics._clean_word_list(self.poem.text)
+        else:
+            raw_words = Metrics._clean_word_list(self.text)
+
+        if other.poem:
             raw_other_words = Metrics._clean_word_list(other.poem.text)
-        except AttributeError:
-            print "ISSUE WITH TEXT: {}".format(other.poem_id)
+        else:
+            raw_other_words = Metrics._clean_word_list(other.text)
 
+        words = [w for w in raw_words if w.isalpha()]
         other_words = [w for w in raw_other_words if w.isalpha()]
 
-        word_per = Metrics._get_percent_in(words, other_words)
+        percent_shared = Metrics._get_percent_in(words, other_words)
 
-        return word_per
+        return percent_shared
 
-#FIXME NO DOCTEST COMPLICATED TO TEST
     def _create_context_lists(self, other_poem):
-        """Returns list w/ [percent shared context data], [ideal]"""
+        """Returns list w/ [percent shared context data], [ideal]
+
+        ideal is just a list with 1 corresponding to each percentage in
+        percent shared context data -- 1 is the ideal, because that is the
+        result we would receive if they shared all the same data.
+        """
 
         raw_context = self._get_context_compare(other_poem)
         context = []
@@ -787,10 +991,12 @@ class Metrics(db.Model):
 
         return [context, o_context]
 
-#FIXME NO DOCTEST COMPLICATED TO TEST
     def _get_context_compare(self, other):
-        """"returns a list of how close their context data is
+        """"returns a dictionary containing percentage shared context data
 
+        this method is called by Metrics._create_context_lists, which is in turn
+        called by other methods as part of finding maching poems -- it will not
+        need to be called directly.
         """
 
         self_context = self._get_context_data()
@@ -821,32 +1027,58 @@ class Metrics(db.Model):
 
     @staticmethod
     def division(x, y):
-        if y == 0:
+        """ returns the percent variation in x and y
+
+        we divide the smaller number by the larger, since we'll be using this
+        to compare how close they are to one another as a percentage to the
+        ideal of 1 (what we would get if they were the same value), and we don't
+        care which value is bigger (x or y), only about how far from 1 that
+        value is.
+
+            >>> Metrics.division(100.0, 110.0)
+            0.9090909090909091
+
+            >>> Metrics.division(110.0, 100.0)
+            0.9090909090909091
+
+            >>> Metrics.division(52.0, 0)
+            0
+
+        this method is called by Metrics._get_macro_compare and will not need
+        to be called directly.
+        """
+
+        if y == 0 or x == 0:
             return 0
-        else:
+        elif x <= y:
             return x / y
+        else:
+            return y / x
 
     def _get_macro_compare(self, other):
-        """"returns a list of how close their context data is
+        """"returns tuple with [closeness of macro data], [ideal]
 
+        This function is called by Metrics._calc_matches_ and will not need to
+        be called directly. Ideal is 1 for each item, since that is what
+        we would receive if they had the same value.
         """
 
         self_macro = self._get_macro_lex_data()
         other_macro = other._get_macro_lex_data()
 
         macro_compare = map(Metrics.division, self_macro, other_macro)
-        ideal = [1 for item in macro_compare]
+        ideal = [1.0 for item in macro_compare]
 
         return (macro_compare, ideal)
 
-#FIXME NO DOCTEST COMPLICATED TO TEST
     def _get_context_data(self):
-        """Returns a list with nested lists with context data for a poem"""
+        """Returns a list w/ nested lists w/ context data for a poem"""
 
         poem = self.poem
         subjects = [sub.subject for sub in poem.subjects]
         terms = [term.term for term in poem.terms]
         regions = [region.region for region in poem.regions]
+
         if poem.poet:
             birthyear = poem.poet.birth_year
         else:
@@ -863,17 +1095,16 @@ class Metrics(db.Model):
                                    wl_range=4,\
                                    ll_mean=5,\
                                    ll_range=8,\
-                                   pl_lines=10,\
-                                   stanzas=13)
+                                   pl_lines=10)
                 >>>
                 >>> fake._get_macro_lex_data()
-                [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 13, 14, 15, 16, 17]
+                [1, 4, 5, 8, 10]
 
         This function is called in Metrics.find_matches and will not need to be
         used directly."""
 
         macro_lex = [self.wl_mean, self.wl_range, self.ll_mean, self.ll_range,
-                     self.pl_lines, self.stanzas]
+                     self.pl_lines]
 
         return macro_lex
 
@@ -931,7 +1162,6 @@ class Metrics(db.Model):
                           self.passive_percent]
         return sentiment_data
 
-#FIXME NO DOCTEST COMPLICATED TO TEST
     @classmethod
     def get_metrics(cls, poem_id):
         """given poem id, returns instance of Metrics class w/data calculated"""
@@ -1398,18 +1628,9 @@ class Metrics(db.Model):
         Scrapes rhyming words from www.rhymezone.com, controls for appropriate
         values and returns the set.
 
-            >>> rhymes = Metrics._get_rhyme_list("tester")
-            >>> results = set(['fester', 'fresher', 'leicester', 'professor',\
-                               'semester', 'taster', 'nester', 'mister',\
-                               'connector', 'lessor', 'molester', 'pester',\
-                               'better', 'checker', 'ester', 'sequester',\
-                               'nestor', 'ever', 'dresser', 'pepper', 'esther',\
-                               'bold', 'refresher', 'fiesta', 'jester', 'testa',\
-                               'pressure', 'western', 'letter', 'trimester',\
-                               'investor', 'feather', 'nectar', 'director',\
-                               'polyester', 'buster', 'wrecker', 'sylvester',\
-                               'wester', 'lesser', 'chester', 'enter',\
-                               'webster', 'protector', 'temper', 'gesture'])
+            >>> rhymes = Metrics._get_rhyme_list("orange")
+            >>> results = set(['sponge', 'plunge', 'expunge', 'challenge',\
+                               'muskellunge', 'lunge', 'lozenge', 'scavenge'])
             >>> rhymes == results
             True
 
@@ -1417,23 +1638,6 @@ class Metrics(db.Model):
         used directly.
         """
 
-        word = word.strip()
-        BEG_URL = "http://www.rhymezone.com/r/rhyme.cgi?Word="
-        FIN_URL = "&typeofrhyme=perfect&org1=syl&org2=l&org3=y"
-        url = BEG_URL + word + FIN_URL
-        html_text = get(url).text
-        soup = BeautifulSoup(html_text, "html.parser")
-        words = soup.find_all("b")
-        rough_word_list = [unidecode(w.text).strip() for w in words]
-        word_list = [w for w in rough_word_list
-                     if "[" not in w
-                     and len(w) < 10
-                     and w != word]
-
-        return set(word_list)
-
-    @staticmethod
-    def _o_get_rhyme_list(word):
         word = word.strip()
         BEG_URL = 'http://www.rhymer.com/RhymingDictionary/'
         FIN_URL = '.html'
@@ -1486,7 +1690,7 @@ class Metrics(db.Model):
                                            'This is good sample Text?',\
                                            'Who know what will happen next?']}
                 >>> Metrics._get_rhyme_score(ldict)
-                1.0
+                0.6666666666666666
 
         This function is called by Metrics.get_metrics and will not need to be
         used directly.
@@ -1497,13 +1701,12 @@ class Metrics(db.Model):
         rhymes = []
         for word in end_words:
             other_words = set([w for w in end_words if w != word])
-            rhyme_words = set(Metrics._o_get_rhyme_list(word))
+            rhyme_words = set(Metrics._get_rhyme_list(word))
             rhymes.extend(w for w in other_words if w in rhyme_words)
 
         rhymes = set(rhymes)
         return len(rhymes)/total
 
-#FIXME REWRITE SCORING
     @staticmethod
     def _get_end_rep_score(line_dict):
         """given a text, returns the unique line endings / total line endings
@@ -1512,7 +1715,7 @@ class Metrics(db.Model):
                                            'This is good sample Text!',\
                                            'Who know what will happen next?']}
                 >>> Metrics._get_end_rep_score(ldict)
-                0.6666666666666666
+                0.3333333333333333
 
         This function is called by Metrics.get_metrics and will not need to be
         used directly.
@@ -1521,7 +1724,7 @@ class Metrics(db.Model):
         end_words = Metrics._get_end_words(line_dict)
         end_length = len(end_words)
         repeats = end_length - len(set(end_words))
-        return repeats / end_length
+        return repeats / float(end_length)
 
 
 class PoemMatch(db.Model):
@@ -1541,6 +1744,56 @@ class PoemMatch(db.Model):
 
     poem = db.relationship("Poem", backref="pmatches", foreign_keys="PoemMatch.primary_poem_id")
     match = db.relationship("Poem", backref="pmatched_to", foreign_keys="PoemMatch.match_poem_id")
+
+
+class UserMetrics(Metrics):
+
+    def __init__(self, title, text):
+        self.title = title
+        self.text = text
+        self.poem_id = None
+        self.poet_id = None
+        self.get_metrics()
+
+    def get_metrics(self):
+        """calculates metrics data and stores it on the UserMetrics instance"""
+
+        word_list = Metrics._clean_word_list(self.text)
+        line_dict = Metrics._get_clean_line_data(self.text)
+
+        wl_data = Metrics._get_wl_data(word_list)
+
+        self.wl_mean = wl_data["wl_mean"]
+        self.wl_range = wl_data["wl_range"]
+        self.lex_div = wl_data["lex_div"]
+
+        ll_data = Metrics._get_ll_data(line_dict)
+
+        self.ll_mean = ll_data["ll_mean"]
+        self.ll_range = ll_data["ll_range"]
+        self.pl_lines = ll_data["pl_lines"]
+
+        freq_data = Metrics._get_freq_data(word_list)
+
+        self.i_freq = freq_data["i_freq"]
+        self.you_freq = freq_data["you_freq"]
+        self.the_freq = freq_data["the_freq"]
+        self.is_freq = freq_data["is_freq"]
+        self.a_freq = freq_data["a_freq"]
+
+        self.alliteration = Metrics._get_alliteration_score(line_dict)
+        self.rhyme = Metrics._get_rhyme_score(line_dict)
+
+        self.common_percent = Metrics._get_percent_out(word_list, COMMON_W)
+        self.poem_percent = Metrics._get_percent_out(word_list, POEM_W)
+        self.object_percent = Metrics._get_percent_in(word_list, OBJECTS)
+        self.abs_percent = Metrics._get_percent_in(word_list, ABSTRACT)
+        self.male_percent = Metrics._get_percent_in(word_list, MALE)
+        self.female_percent = Metrics._get_percent_in(word_list, FEMALE)
+        self.active_percent = Metrics._get_percent_in(word_list, ACTIVE)
+        self.passive_percent = Metrics._get_percent_in(word_list, PASSIVE)
+        self.positive = Metrics._get_percent_in(word_list, POSITIVE)
+        self.negative = Metrics._get_percent_in(word_list, NEGATIVE)
 
 
 #HELPER FUNCTIONS

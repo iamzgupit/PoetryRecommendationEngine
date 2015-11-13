@@ -157,7 +157,7 @@ def seed_metrics(poem_ids):
         print "DONE\n"
 
 
-start = 442  # GO AGAIN TOMORROW
+start = 6718  # GO AGAIN TOMORROW
 
 
 def adjust_rhyme(start):

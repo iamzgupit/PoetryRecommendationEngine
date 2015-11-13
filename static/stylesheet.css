@@ -19,6 +19,12 @@
             margin-top: 150px;
         }
 
+        .graph-information {
+            height: 150px;
+            text-align: right;
+            text-transform: uppercase;
+        }
+
         img.author-photo {
             border-radius: 50%;
             width: 175px;

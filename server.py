@@ -1,7 +1,7 @@
 from flask import (Flask, render_template, redirect, jsonify,
                    request, session)
 from random import choice
-from Model import Poem, Metrics, connect_to_db, db
+from Model import Poem, Metrics, UserMetrics, connect_to_db, db
 from requests import get
 from bs4 import BeautifulSoup
 
@@ -34,6 +34,11 @@ def get_wiki_info(poem):
             source = None
 
     return (wikipedia_url, source)
+
+
+# @app.route('/subjectgraph.json')
+# def subjectData():
+#     return jsonify()
 
 
 @app.route('/')
@@ -147,10 +152,26 @@ def display_writer_input():
 
 @app.route('/writer-mode/interim', methods=["POST"])
 def save_info():
+
+    NUM_RESULTS = 5
+
     title = request.form.get("title")
     text = request.form.get("text")
     session["title"] = title
     session["text"] = text
+
+    poem = UserMetrics(title=title, text=text)
+    matches = poem.find_matches(limit=NUM_RESULTS)
+
+    match_data = []
+    for i in range(NUM_RESULTS):
+        poem, poet, match = matches[i]
+        match = 100 - (match * 10)
+        match = "{:.2f}%".format(match)
+        match_data.append((poem, match, i + 1))
+
+    session["match"] = match_data
+
     return redirect('/writer-mode/results')
 
 
@@ -158,7 +179,41 @@ def save_info():
 def display_results():
     title = session.get("title")
     text = session.get("text")
-    return render_template("writerresults.html", text=text, title=title)
+
+    match_data = session.get("match")
+    match_poems = [(Poem.query.get(poem), match, i)
+                   for poem, match, i in match_data]
+
+    wikipedia_url = None
+    source = None
+
+    return render_template("writerresults.html", text=text, title=title,
+                           main_title=title, match_poems=match_poems,
+                           wikipedia_url=wikipedia_url, source=source)
+
+
+@app.route('/writer-mode/results/<int:index>')
+def display_result_poem(index):
+
+    title = session.get("title")
+    match_data = session.get("match")
+    match_poems = [(Poem.query.get(poem), match, i)
+                   for poem, match, i in match_data]
+    if index:
+        main_poem = match_poems[index - 1][0]
+        text = main_poem.formatted_text
+        main_title = main_poem.title
+        wikipedia_url, source = get_wiki_info(main_poem)
+
+    else:
+        text = session.get("text")
+        main_title = title
+        wikipedia_url = None
+        source = None
+
+    return render_template("writerresults.html", text=text, title=title,
+                           main_title=main_title, match_poems=match_poems,
+                           wikipedia_url=wikipedia_url, source=source)
 
 if __name__ == "__main__":
     # We have to set debug=True here, since it has to be True at the point
