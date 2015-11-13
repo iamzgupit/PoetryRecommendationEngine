@@ -137,9 +137,9 @@ function makeForceGraph(error, links) {
         if (subject_names.indexOf(d.name) >= 0) {
             return d.name;
         } else {
-            // var poemData = d.name.split("//");
-            // var poem_name = poemData[0];
-            return d.name;
+            var poemData = d.name.split("//");
+            var poem_name = poemData[0];
+            return poem_name;
         };
     }
 
@@ -147,10 +147,10 @@ function makeForceGraph(error, links) {
         if (subject_names.indexOf(d.name) >= 0) {
             return null;
         } else {
-            // poemData = d.name;
-            // poemID = poemData.split('//')[1];
-            // url = "/" + poemID;
-            return '/algorithm';
+            poemData = d.name;
+            poemID = poemData.split('//')[1];
+            url = "/" + poemID;
+            return url;
         };
     }
 
