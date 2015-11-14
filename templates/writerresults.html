@@ -27,7 +27,7 @@ ReadMe: Writer Mode Recommendations
         {% endif %}
 
         <div class="row results">
-            <h5 class="title"><a href="/writer-mode/results">{{ title }}</a></h5>
+            <h5 class="title"><a href="/writer-mode/results0">{{ title }}</a></h5>
             <h6 class="author">By User</h6>
             <p class="main-poem">Matched Poem</p>
         </div>
@@ -35,7 +35,7 @@ ReadMe: Writer Mode Recommendations
         {% for poem, match, i in match_poems %}
         <div class="row results">
             <h5 class="title">
-                <a href='/writer-mode/results/{{i}}'>{{ poem.title }}</a>
+                <a href='/writer-mode/results{{i}}'>{{ poem.title }}</a>
             </h5>
             <h6 class="author">{{ poem.poet.name }}</h6>
             <p class="match-percent">{{ match }}</p>

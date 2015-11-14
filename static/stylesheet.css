@@ -27,6 +27,7 @@
 
         .algorithm-graph {
             border: 2px solid black;
+            padding-bottom: 40px;
         }
 
         img.author-photo {

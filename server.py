@@ -4,7 +4,7 @@ from random import choice
 from Model import Poem, Metrics, UserMetrics, connect_to_db, db
 from requests import get
 from bs4 import BeautifulSoup
-
+from word_lists import all_regions, all_terms, all_subjects
 
 app = Flask(__name__)
 
@@ -140,6 +140,48 @@ def display_context_page():
     return render_template("context.html")
 
 
+@app.route('/algorithm/subjects')
+def display_subject_graph():
+    subjects = all_subjects
+    link = "../static/subjectgraph.csv"
+    category = "Subject: "
+    page_title = "Subject Graph"
+    explanation_text = "Explanation text will go here!"
+
+    return render_template("contextgraph.html", data_url=link,
+                           data_categories=subjects, category=category,
+                           page_title=page_title,
+                           explanation_text=explanation_text)
+
+
+@app.route('/algorithm/terms')
+def display_term_graph():
+    terms = all_terms
+    link = "../static/termgraph.csv"
+    category = "Term: "
+    page_title = "Term Graph"
+    explanation_text = "Explanation text will go here!"
+
+    return render_template("contextgraph.html", data_url=link,
+                           data_categories=terms, category=category,
+                           page_title=page_title,
+                           explanation_text=explanation_text)
+
+
+@app.route('/algorithm/regions')
+def display_region_graph():
+    regions = all_regions
+    link = "../static/regiongraph.csv"
+    category = "Region: "
+    page_title = "Region Graph"
+    explanation_text = "Explanation text will go here!"
+
+    return render_template("contextgraph.html", data_url=link,
+                           data_categories=regions, category=category,
+                           page_title=page_title,
+                           explanation_text=explanation_text)
+
+
 @app.route('/writer-mode')
 def display_writer_input():
     return render_template("writermode.html")
@@ -189,7 +231,7 @@ def display_results():
                            poet="User")
 
 
-@app.route('/writer-mode/results/<int:index>')
+@app.route('/writer-mode/results<int:index>')
 def display_result_poem(index):
 
     title = session.get("title")
