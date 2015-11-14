@@ -20,9 +20,13 @@
         }
 
         .graph-information {
-            height: 150px;
+            height: 45px;
             text-align: right;
             text-transform: uppercase;
+        }
+
+        .algorithm-graph {
+            border: 2px solid black;
         }
 
         img.author-photo {

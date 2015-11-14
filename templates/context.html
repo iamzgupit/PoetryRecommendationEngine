@@ -18,7 +18,7 @@ ReadMe: Context
         </div>  <!-- end of algorithm-catagory row -->
         <div class="graph-information" id="subject-info">
         </div> <!-- end of graph-information row -->
-        <div class="row algorithm-graph" id="subjects-graph">
+        <div class="row algorithm-graph" id="subjects-graph" style="border:2px solid black;">
         </div>  <!-- end of algorithm-graph row -->
         <div class="row algorithm-catagory">
             <h5>Poetic Terms</h5>
@@ -59,15 +59,18 @@ function makeForceGraph(error, links) {
 
     });
 
-    var width = 960;
+    var width = 773;
     var height = 500;
+    var radius = 6;
 
     var force = d3.layout.force()
                   .nodes(d3.values(nodes))
                   .links(links)
                   .size([width, height])
-                  .linkDistance(10)
-                  .charge(-20)
+                  .linkDistance(5)
+                  .charge(-34)
+                  .chargeDistance(300)
+                  .friction(0.4)
                   .on("tick", tick)
                   .start();
 
@@ -159,9 +162,9 @@ function makeForceGraph(error, links) {
             .attr("y1", function(d) { return d.source.y; })
             .attr("x2", function(d) { return d.target.x; })
             .attr("y2", function(d) { return d.target.y; });
-
-        node.attr("transform", function(d) {
-            return "translate(" + d.x + "," + d.y + ")"; });
+        
+        node.attr("cx", function(d) { return d.x = Math.max(radius, Math.min(width - radius, d.x)); })
+            .attr("cy", function(d) { return d.y = Math.max(radius, Math.min(height - radius, d.y)); });
     }
 
     function displayData(evt) {

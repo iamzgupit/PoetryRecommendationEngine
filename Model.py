@@ -682,6 +682,8 @@ class Metrics(db.Model):
         used directly.
         """
 
+        ################
+        # dict_of_ranges = ._set_min_max_ranges(param1, param2)
         wlr = self.wl_range
         wlr_min = wlr - 4
         wlr_max = wlr + 4
@@ -729,6 +731,8 @@ class Metrics(db.Model):
 
         print crit
 
+        #################
+        # ._use_ranges_to_return_subset_poems
         while len(o_met) > 600 and i <= 15:
 
             # for each attribute, we don't want to set the maximum value below,
@@ -784,6 +788,7 @@ class Metrics(db.Model):
 
             i += 1
 
+        #################
         return o_met
 
     def find_matches(self, micwgt=1, sentwgt=1, conwgt=1, macwgt=0.5,
@@ -824,10 +829,13 @@ class Metrics(db.Model):
         # include poems by the author of our initial poem, otherwise we sort
         # those out by default. Checking for self.poem means that we can use
         # same method with the child class UserMetrics.
+
+        #  ._remove_others_peomrs_same_auth
         if new_auth and self.poem:
             sorted_matches = [tup for tup in sorted_matches
                               if tup[1] != self.poem.poet_id]
 
+        #  ._remove_duplicate_auths
         # if we turn unique_auth off, we will receive multiple matches by the
         # same author, otherwise, we sort out other matches by the same author
         # keeping only those that are the best fit.
@@ -862,6 +870,7 @@ class Metrics(db.Model):
         matches = []
         for o_metrics in other_metrics:
 
+            ##### HELPER FUNCTION --> get criteria
             o_micro_lex = o_metrics._get_micro_lex_data()
 
             # We are adding the percentage of words from one poem in another
@@ -872,21 +881,27 @@ class Metrics(db.Model):
             temp_micro = [n for n in micro_lex]
             word_per = self._get_word_compare(o_metrics)
             temp_micro.append(word_per)
+            o_micro_lex.append(1)
 
             o_word_per = o_metrics._get_word_compare(self)
-            o_micro_lex.append(o_word_per)
+            temp_micro.append(o_word_per)
+            o_micro_lex.append(1)
 
             o_sentiment = o_metrics._get_sentiment_data()
 
             if self.poem:  # checking that this is not a UserMetrics class.
+                # getting the percentage of context shared, the ideal values (1)
                 context, o_context = self._create_context_lists(o_metrics)
             else:
                 context = False
                 o_context = False
 
             macro, o_macro = self._get_macro_compare(o_metrics)
+            ######
 
             euc_squared = 0
+
+            #FIXME PUT THIS IN TO THE HELPER FUNCTION
             if context and o_context:
                 euc_squared += Metrics._get_euc_raw(context, o_context, conwgt)
 
@@ -904,12 +919,14 @@ class Metrics(db.Model):
 
             euc_distance = sqrt(euc_squared)
 
+            ######
             matches.append((o_metrics.poem_id,
                             o_metrics.poem.poet_id,
                             euc_distance))
 
         # we sort by euclidian distance, smallest (i.e. best match to largest)
-        sorted_matches = sorted(matches, key=lambda tup: tup[2])
+        distance_idx = 2
+        sorted_matches = sorted(matches, key=lambda tup: tup[distance_idx])
 
         return sorted_matches
 
