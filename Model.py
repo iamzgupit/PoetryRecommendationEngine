@@ -5,7 +5,6 @@ from math import sqrt
 from word_lists import (COMMON_W, POEM_W, ABSTRACT, OBJECTS, MALE, FEMALE,
                         ACTIVE, PASSIVE, POSITIVE, NEGATIVE)
 from requests import get
-from random import randint
 
 db = SQLAlchemy()
 
@@ -124,6 +123,17 @@ class Poem(db.Model):
         return [start, stop]
 
     @staticmethod
+    def _separate_punctuation(text):
+        """given a list of strings, separates punctionation and returns list"""
+
+        punctuation = [".", ",", ":", ";", "--", '"', "!", "?"]
+        for punc in punctuation:
+            if punc in text:
+                text = text.replace(punc, " " + punc)
+
+        return text
+
+    @staticmethod
     def _clean_listobj(list_obj):
         """ given a beautiful soup list object, returns clean list of strings
 
@@ -147,10 +157,7 @@ class Poem(db.Model):
             clean = item.get_text()
             clean = clean.replace("\r", '')
             clean = clean.replace("\t", '')
-            punctuation = [".", ",", ":", ";", "-", "--", '"', "!", "?"]
-            for punc in punctuation:
-                if punc in clean:
-                    clean = clean.replace(punc, " " + punc)
+            clean = Poem._separate_punctuation(clean)
             rough_word_list = clean.split(" ")
 
             word_list = [w for w in rough_word_list if "\n" not in w]
@@ -189,10 +196,13 @@ class Poem(db.Model):
                 content = True
             if content and l != ">":
                 text.append(l)
+
         string = "".join(text)
         string = string.strip()
+
         if isinstance(string, unicode):
             string = unidecode(string)
+
         return string
 
     @staticmethod
@@ -537,7 +547,6 @@ class Region(db.Model):
                             backref='regions')
 
 
-
 class PoemRegion(db.Model):
     """ connects poem to region"""
 
@@ -665,6 +674,90 @@ class Metrics(db.Model):
 
     poem = db.relationship('Poem', backref='metrics')
 
+    def _get_ranges_dict(self):
+        """returns a dictionary with acceptable ranges for a given metrics obj"""
+
+        wlr = self.wl_range
+        llm = self.ll_mean
+        llr = self.ll_range
+        pll = self.pl_lines
+        if pll > 80:
+            pll_min = 45
+            pll_max = pll + 40
+        else:
+            pll_min = pll - 10
+            pll_max = pll + 10
+
+        ranges = {'plength': {'val': pll,
+                              'max': pll_max,
+                              'min': pll_min,
+                              'down_adj': 2,
+                              'up_adj': 1},
+                  'mean_ll': {'val': llm,
+                              'max': llm + 30,
+                              'min': llm - 30,
+                              'down_adj': 4,
+                              'up_adj': 2.5},
+                  'llrange': {'val': llr,
+                              'max': llr + 30,
+                              'min': llr - 30,
+                              'down_adj': 4,
+                              'up_adj': 2},
+                  'wlrange': {'val': wlr,
+                              'max': wlr + 4,
+                              'min': wlr - 4,
+                              'down_adj': 1,
+                              'up_adj': 1}}
+
+        return ranges
+
+    def _get_within_range(self, ranges):
+        """returns a list of metrics fitting the parameters in ranges_dict"""
+
+        o_met = (Metrics.query
+                        .filter(Metrics.poem_id != self.poem_id,
+                                Metrics.pl_lines <= ranges["plength"]["max"],
+                                Metrics.pl_lines >= ranges["plength"]["min"],
+                                Metrics.ll_mean <= ranges["mean_ll"]["max"],
+                                Metrics.ll_mean >= ranges["mean_ll"]["min"],
+                                Metrics.ll_range >= ranges["llrange"]["min"],
+                                Metrics.ll_range <= ranges["llrange"]["max"],
+                                Metrics.wl_range >= ranges["wlrange"]["min"],
+                                Metrics.wl_range <= ranges["wlrange"]["max"])
+                        .all())
+
+        return o_met
+
+    def _increment_down(self, range_dict):
+        """reduces ranges to provide lower number of results"""
+
+        ranges = range_dict
+
+        # for each attribute, we don't want to set the maximum value below,
+        # or the minimum value above, the value of the poem we're trying to
+        # match, so we check that and adjust as necessary.
+        for c in ranges.values():
+            if c['max'] - c['down_adj'] >= c['val']:
+                c['max'] -= c['down_adj']
+            else:
+                c['max'] = c['val']
+
+            if c['min'] + c['down_adj'] <= c['val']:
+                c['min'] += c['down_adj']
+            else:
+                c['min'] = c['val']
+
+        return ranges
+
+    def _increment_up(self, range_dict):
+        """increases ranges to provide higher number of results"""
+        ranges = range_dict
+        for r in ranges.values():
+            r['max'] += r['up_adj']
+            r['min'] -= r['up_adj']
+
+        return ranges
+
     def _get_other_metrics(self):
         """ returns list of 200-600 metrics obj w/similar macro attributes.
 
@@ -682,114 +775,68 @@ class Metrics(db.Model):
         used directly.
         """
 
-        ################
-        # dict_of_ranges = ._set_min_max_ranges(param1, param2)
-        wlr = self.wl_range
-        wlr_min = wlr - 4
-        wlr_max = wlr + 4
+        ranges = self._get_ranges_dict()
 
-        llr = self.ll_range
-        llr_min = llr - 30
-        llr_max = llr + 30
-
-        llm = self.ll_mean
-        llm_min = llm - 30
-        llm_max = llm + 30
-
-        pll = self.pl_lines
-        if pll > 80:
-            pll_min = 45
-            pll_max = pll + 40
-        else:
-            pll_min = pll - 10
-            pll_max = pll + 10
-
-        o_met = (Metrics.query
-                        .filter(Metrics.poem_id != self.poem_id,
-                                Metrics.pl_lines <= pll_max,
-                                Metrics.pl_lines >= pll_min,
-                                Metrics.ll_mean <= llm_max,
-                                Metrics.ll_mean >= llm_min,
-                                Metrics.ll_range >= llr_min,
-                                Metrics.ll_range <= llr_max,
-                                Metrics.wl_range >= wlr_min,
-                                Metrics.wl_range <= wlr_max).all())
+        o_met = self._get_within_range(ranges)
 
         print len(o_met)  # For debugging, to see how many iterations we go
                           # through, and what the values were at each point
 
         i = 0   # we increment i to avoid being stuck in a loop
-
-        crit = {'plength': {'val': pll, 'max': pll_max, 'min': pll_min,
-                            'down_adj': 2, 'up_adj': 1},
-                'mean_ll': {'val': llm, 'max': llm_max, 'min': llm_min,
-                            'down_adj': 4, 'up_adj': 2.5},
-                'llrange': {'val': llr, 'max': llr_max, 'min': llr_min,
-                            'down_adj': 4, 'up_adj': 2},
-                'wlrange': {'val': wlr, 'max': wlr_max, 'min': wlr_min,
-                            'down_adj': 1, 'up_adj': 1}}
-
-        print crit
-
-        #################
-        # ._use_ranges_to_return_subset_poems
         while len(o_met) > 600 and i <= 15:
 
-            # for each attribute, we don't want to set the maximum value below,
-            # or the minimum value above, the value of the poem we're trying to
-            # match, so we check that and adjust as necessary.
-
-            for c in crit.values():
-                if c['max'] - c['down_adj'] >= c['val']:
-                    c['max'] -= c['down_adj']
-                else:
-                    c['max'] = c['val']
-
-                if c['min'] + c['down_adj'] <= c['val']:
-                    c['min'] += c['down_adj']
-                else:
-                    c['min'] = c['val']
-
-            o_met = (Metrics.query
-                            .filter(Metrics.poem_id != self.poem_id,
-                                    Metrics.pl_lines <= crit['plength']['max'],
-                                    Metrics.pl_lines >= crit['plength']['min'],
-                                    Metrics.ll_mean <= crit['mean_ll']['max'],
-                                    Metrics.ll_mean >= crit['mean_ll']['min'],
-                                    Metrics.ll_range >= crit['llrange']['min'],
-                                    Metrics.ll_range <= crit['llrange']['max'],
-                                    Metrics.wl_range >= crit['wlrange']['min'],
-                                    Metrics.wl_range <= crit['wlrange']['max'])
-                            .all())
+            ranges = self._increment_down(ranges)
+            o_met = self._get_within_range(ranges)
 
             print len(o_met)
-
             i += 1
 
         # if it gets too low, we adjust back up and keep incrementing i
         while len(o_met) < 200 and i <= 15:
-            for c in crit.values():
-                c['max'] += c['up_adj']
-                c['min'] -= c['up_adj']
-
-            o_met = (Metrics.query
-                            .filter(Metrics.poem_id != self.poem_id,
-                                    Metrics.pl_lines <= crit['plength']['max'],
-                                    Metrics.pl_lines >= crit['plength']['min'],
-                                    Metrics.ll_mean <= crit['mean_ll']['max'],
-                                    Metrics.ll_mean >= crit['mean_ll']['min'],
-                                    Metrics.ll_range >= crit['llrange']['min'],
-                                    Metrics.ll_range <= crit['llrange']['max'],
-                                    Metrics.wl_range >= crit['wlrange']['min'],
-                                    Metrics.wl_range <= crit['wlrange']['max'])
-                            .all())
+            ranges = self._increment_up(ranges)
+            o_met = self._get_within_range(ranges)
 
             print len(o_met)
-
             i += 1
 
         #################
         return o_met
+
+    def _remove_main_auth(self, new_auth, sorted_matches):
+        """is new_auth is True, returns a list without poems by self.poet
+
+        if new_auth is False or if this is a UserMetrics instance, just returns
+        sorted_matches as given.
+        """
+
+        if new_auth and self.poem:
+            new_matches = [tup for tup in sorted_matches
+                           if tup[1] != self.poem.poet_id]
+            return new_matches
+
+        else:
+            return sorted_matches
+
+    def _remove_dupl_auth(self, unique_auth, sorted_matches):
+        """if unique_auth is True, returns list w/best match for each poet_id
+
+        if unique_auth is False, just returns sorted_matches as given.
+        """
+
+        if unique_auth:
+            final_matches = []
+            used_poets = []
+            for match in sorted_matches:
+                poem_id, poet_id, euc_distance = match
+                if poet_id not in used_poets:
+                    final_matches.append(match)
+                    used_poets.append(poet_id)
+                else:
+                    continue
+        else:
+            final_matches = sorted_matches
+
+        return final_matches
 
     def find_matches(self, micwgt=1, sentwgt=1, conwgt=1, macwgt=0.5,
                      unique_auth=True, new_auth=True, limit=10):
@@ -830,29 +877,84 @@ class Metrics(db.Model):
         # those out by default. Checking for self.poem means that we can use
         # same method with the child class UserMetrics.
 
-        #  ._remove_others_peomrs_same_auth
-        if new_auth and self.poem:
-            sorted_matches = [tup for tup in sorted_matches
-                              if tup[1] != self.poem.poet_id]
+        sorted_matches = self._remove_main_auth(new_auth=new_auth,
+                                                sorted_matches=sorted_matches)
 
-        #  ._remove_duplicate_auths
         # if we turn unique_auth off, we will receive multiple matches by the
         # same author, otherwise, we sort out other matches by the same author
         # keeping only those that are the best fit.
-        if unique_auth:
-            final_matches = []
-            used_poets = []
-            for match in sorted_matches:
-                poem_id, poet_id, euc_distance = match
-                if poet_id not in used_poets:
-                    final_matches.append(match)
-                    used_poets.append(poet_id)
-                else:
-                    continue
-        else:
-            final_matches = sorted_matches
+        final_matches = self._remove_dupl_auths(unique_auth=unique_auth,
+                                                sorted_matches=sorted_matches)
 
         return final_matches[:limit]
+
+    def _get_criteria(self, other_metric_obj, micro_lex, sentiment):
+        """"""
+
+        o_micro_lex = other_metric_obj._get_micro_lex_data()
+
+            # We are adding the percentage of words from one poem in another
+            # to our micro lexical data -- this requires making a temporary
+            # micro_lex catagory for our main poem, since lists are mutable and
+            # we want this percentage to be different for each poem we're
+            # comparing
+
+        temp_micro = [n for n in micro_lex]
+        word_per = self._get_word_compare(other_metric_obj)
+
+        temp_micro.append(word_per)
+        o_micro_lex.append(1)
+
+        o_word_per = other_metric_obj._get_word_compare(self)
+        temp_micro.append(o_word_per)
+        o_micro_lex.append(1)
+
+        o_sentiment = other_metric_obj._get_sentiment_data()
+
+        if self.poem:  # checking that this is not a UserMetrics class.
+            # getting the percentage of context shared, the ideal values (1)
+            context, o_context = self._create_context_lists(other_metric_obj)
+        else:
+            context = False
+            o_context = False
+
+        macro, o_macro = self._get_macro_compare(other_metric_obj)
+
+        return {"temp_micro": temp_micro, "o_micro_lex": o_micro_lex,
+                "o_sentiment": o_sentiment, "sentiment": sentiment,
+                "context": context, "o_context": o_context,
+                "macro": macro, "o_macro": o_macro}
+
+    def _get_euc_distance(self, comparison_dict, conwgt, micwgt, sentwgt, macwgt):
+        """"""
+        euc_squared = 0
+
+        context = comparison_dict["context"]
+        o_context = comparison_dict["o_context"]
+        if context and o_context:
+            euc_squared += Metrics._get_euc_raw(context, o_context, conwgt)
+
+            # if we don't have context data, we increase the weighting of the
+            # other criteria.
+        else:
+            addwgt = conwgt / 3
+            micwgt += addwgt
+            sentwgt += addwgt
+            macwgt += addwgt
+
+        euc_squared += Metrics._get_euc_raw(comparison_dict["temp_micro"],
+                                            comparison_dict["o_micro_lex"],
+                                            micwgt)
+        euc_squared += Metrics._get_euc_raw(comparison_dict["sentiment"],
+                                            comparison_dict["o_sentiment"],
+                                            sentwgt)
+        euc_squared += Metrics._get_euc_raw(comparison_dict["macro"],
+                                            comparison_dict["o_macro"],
+                                            macwgt)
+
+        euc_distance = sqrt(euc_squared)
+
+        return euc_distance
 
     def _calc_matches(self, other_metrics, micwgt, sentwgt, conwgt, macwgt):
         """given self and other poem objects, returns list w/ match closeness
@@ -870,56 +972,15 @@ class Metrics(db.Model):
         matches = []
         for o_metrics in other_metrics:
 
-            ##### HELPER FUNCTION --> get criteria
-            o_micro_lex = o_metrics._get_micro_lex_data()
+            compare_dict = self._get_criteria(other_metric_obj=o_metrics,
+                                              micro_lex=micro_lex,
+                                              sentiment=sentiment)
 
-            # We are adding the percentage of words from one poem in another
-            # to our micro lexical data -- this requires making a temporary
-            # micro_lex catagory for our main poem, since lists are mutable and
-            # we want this percentage to be different for each poem we're
-            # comparing
-            temp_micro = [n for n in micro_lex]
-            word_per = self._get_word_compare(o_metrics)
-            temp_micro.append(word_per)
-            o_micro_lex.append(1)
+            euc_distance = self._get_euc_distance(comparison_dict=compare_dict,
+                                                  conwgt=conwgt, micwgt=micwgt,
+                                                  sentwgt=sentwgt,
+                                                  macwgt=macwgt)
 
-            o_word_per = o_metrics._get_word_compare(self)
-            temp_micro.append(o_word_per)
-            o_micro_lex.append(1)
-
-            o_sentiment = o_metrics._get_sentiment_data()
-
-            if self.poem:  # checking that this is not a UserMetrics class.
-                # getting the percentage of context shared, the ideal values (1)
-                context, o_context = self._create_context_lists(o_metrics)
-            else:
-                context = False
-                o_context = False
-
-            macro, o_macro = self._get_macro_compare(o_metrics)
-            ######
-
-            euc_squared = 0
-
-            #FIXME PUT THIS IN TO THE HELPER FUNCTION
-            if context and o_context:
-                euc_squared += Metrics._get_euc_raw(context, o_context, conwgt)
-
-            # if we don't have context data, we increase the weighting of the
-            # other criteria.
-            else:
-                addwgt = conwgt / 3
-                micwgt += addwgt
-                sentwgt += addwgt
-                macwgt += addwgt
-
-            euc_squared += Metrics._get_euc_raw(temp_micro, o_micro_lex, micwgt)
-            euc_squared += Metrics._get_euc_raw(sentiment, o_sentiment, sentwgt)
-            euc_squared += Metrics._get_euc_raw(macro, o_macro, macwgt)
-
-            euc_distance = sqrt(euc_squared)
-
-            ######
             matches.append((o_metrics.poem_id,
                             o_metrics.poem.poet_id,
                             euc_distance))

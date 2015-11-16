@@ -12,6 +12,8 @@ app.secret_key = "TEMPORARY SECRET KEY"
 
 
 def get_wiki_info(poem):
+    """returns wikipedia url and link to main picture if applicable"""
+    
     name = poem.poet.name.replace(" ", "_")
     wikipedia_url = "https://en.wikipedia.org/wiki/" + name
     page = get(wikipedia_url).text

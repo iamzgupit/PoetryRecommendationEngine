@@ -12,9 +12,9 @@ ReadMe: Context
             <br>
             <p>{{ explanation_text }}</p>
         </div>  <!-- end of algorithm-header row -->
-        <div class="graph-info" id="criteria-info" style="height:40px;text-align:right;text-transform:uppercase;">
+        <div class="graph-info" id="criteria-info">
         </div> <!-- end of graph-information row -->
-        <div class="row algorithm-graph" id="graph-space" style="border:2px solid black;margin-bottom:40px;">
+        <div class="row algorithm-graph" id="graph-space">
         </div>  <!-- end of algorithm-graph row -->
     </div>  <!-- end of column -->
 </div> <!-- end of main-content row -->
@@ -50,7 +50,7 @@ function makeForceGraph(error, links) {
     });
 
     var width = 965;
-    var height = 700;
+    var height = 600;
     var radius = 6;
 
     var force = d3.layout.force()
@@ -58,8 +58,7 @@ function makeForceGraph(error, links) {
                   .links(links)
                   .size([width, height])
                   .linkDistance(5)
-                  .charge(-34)
-                  .chargeDistance(300)
+                  .charge(-20)
                   .friction(0.4)
                   .on("tick", tick)
                   .start();
