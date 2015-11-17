@@ -1914,7 +1914,7 @@ class Metrics(db.Model):
         """
         wl_range = [m.wl_range for m in metrics_obj_list]
 
-        return Metrics._get_range_data(list_of_numbers=wl_range, set_max=28)
+        return Metrics._get_range_data(list_of_numbers=wl_range, set_max=26)
 
     @staticmethod
     def get_pl_words_data(metrics_obj_list):
@@ -1937,7 +1937,7 @@ class Metrics(db.Model):
         """
         pl_lines = [m.pl_lines for m in metrics_obj_list]
 
-        return Metrics._get_range_data(list_of_numbers=pl_lines, set_max=151)
+        return Metrics._get_range_data(list_of_numbers=pl_lines, set_max=101)
 
     @staticmethod
     def _get_grouped_range(list_of_numbers, set_max, range_num):
@@ -1998,7 +1998,7 @@ class Metrics(db.Model):
         """
         ll_range = [m.ll_range for m in metrics_obj_list]
 
-        return Metrics._get_range_data(list_of_numbers=ll_range, set_max=151)
+        return Metrics._get_range_data(list_of_numbers=ll_range, set_max=101)
 
     @staticmethod
     def get_stanza_length_data(metrics_obj_list):

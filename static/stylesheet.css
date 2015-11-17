@@ -18,7 +18,7 @@
         .legend {
            position:absolute;
            padding-top:50px;
-           padding-left:550px;
+           padding-left:750px;
         }
 
         .main-search {
@@ -33,6 +33,20 @@
             height: 45px;
             text-align: right;
             text-transform: uppercase;
+        }
+
+        .axis {
+            font-size: x-small;
+        }
+
+        .y-axis {
+            padding-left:10px;
+            padding-top:10px;
+        }
+
+        .x-axis {
+            text-align:center;
+            padding-bottom:10px;
         }
 
         .algorithm-graph {
