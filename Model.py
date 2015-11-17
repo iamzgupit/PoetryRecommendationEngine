@@ -712,7 +712,9 @@ class Metrics(db.Model):
         return ranges
 
     def _get_within_range(self, ranges):
-        """returns a list of metrics fitting the parameters in ranges_dict"""
+        """returns a list of metrics objects fitting the parameters in ranges
+
+        excludes current poem_id"""
 
         o_met = (Metrics.query
                         .filter(Metrics.poem_id != self.poem_id,
@@ -783,7 +785,7 @@ class Metrics(db.Model):
                           # through, and what the values were at each point
 
         i = 0   # we increment i to avoid being stuck in a loop
-        while len(o_met) > 600 and i <= 15:
+        while len(o_met) > 400 and i <= 15:
 
             ranges = self._increment_down(ranges)
             o_met = self._get_within_range(ranges)
@@ -792,14 +794,13 @@ class Metrics(db.Model):
             i += 1
 
         # if it gets too low, we adjust back up and keep incrementing i
-        while len(o_met) < 200 and i <= 15:
+        while len(o_met) < 150 and i <= 15:
             ranges = self._increment_up(ranges)
             o_met = self._get_within_range(ranges)
 
             print len(o_met)
             i += 1
 
-        #################
         return o_met
 
     def _remove_main_auth(self, new_auth, sorted_matches):
@@ -817,7 +818,7 @@ class Metrics(db.Model):
         else:
             return sorted_matches
 
-    def _remove_dupl_auth(self, unique_auth, sorted_matches):
+    def _remove_dupl_auths(self, unique_auth, sorted_matches):
         """if unique_auth is True, returns list w/best match for each poet_id
 
         if unique_auth is False, just returns sorted_matches as given.
@@ -825,12 +826,12 @@ class Metrics(db.Model):
 
         if unique_auth:
             final_matches = []
-            used_poets = []
+            used_poets = set()
             for match in sorted_matches:
                 poem_id, poet_id, euc_distance = match
                 if poet_id not in used_poets:
                     final_matches.append(match)
-                    used_poets.append(poet_id)
+                    used_poets.add(poet_id)
                 else:
                     continue
         else:
@@ -886,34 +887,35 @@ class Metrics(db.Model):
         final_matches = self._remove_dupl_auths(unique_auth=unique_auth,
                                                 sorted_matches=sorted_matches)
 
+        # final_matches = [(180676, 310, 1.1730658920581396), (180649, 232, 1.1992932205497298), (181032, 283, 1.2108784028951076), (238448, 269, 1.2135422970758867), (2085, 196, 1.2359146103377696)]
         return final_matches[:limit]
+        # return final_matches
 
-    def _get_criteria(self, other_metric_obj, micro_lex, sentiment):
+    def _get_criteria(self, other_metric_obj, micro_lex, sentiment, word_list):
         """"""
 
         o_micro_lex = other_metric_obj._get_micro_lex_data()
 
-            # We are adding the percentage of words from one poem in another
-            # to our micro lexical data -- this requires making a temporary
-            # micro_lex catagory for our main poem, since lists are mutable and
-            # we want this percentage to be different for each poem we're
-            # comparing
+        # We are adding the percentage of words from one poem in another
+        # to our micro lexical data -- this requires making a temporary
+        # micro_lex catagory for our main poem, since lists are mutable and
+        # we want this percentage to be different for each poem we're
+        # comparing
 
         temp_micro = [n for n in micro_lex]
-        word_per = self._get_word_compare(other_metric_obj)
+        word_per, o_word_per = Metrics._get_word_compare(word_list=word_list,
+                                                         other=other_metric_obj)
 
-        temp_micro.append(word_per)
-        o_micro_lex.append(1)
-
-        o_word_per = other_metric_obj._get_word_compare(self)
-        temp_micro.append(o_word_per)
-        o_micro_lex.append(1)
+        temp_micro.extend([word_per, o_word_per])
+        o_micro_lex.extend([1, 1])
 
         o_sentiment = other_metric_obj._get_sentiment_data()
 
         if self.poem:  # checking that this is not a UserMetrics class.
             # getting the percentage of context shared, the ideal values (1)
             context, o_context = self._create_context_lists(other_metric_obj)
+            # context = False
+            # o_context = False
         else:
             context = False
             o_context = False
@@ -931,6 +933,7 @@ class Metrics(db.Model):
 
         context = comparison_dict["context"]
         o_context = comparison_dict["o_context"]
+
         if context and o_context:
             euc_squared += Metrics._get_euc_raw(context, o_context, conwgt)
 
@@ -969,12 +972,20 @@ class Metrics(db.Model):
         micro_lex = self._get_micro_lex_data()
         sentiment = self._get_sentiment_data()
 
+        if self.poem:
+            raw_words = Metrics._clean_word_list(self.poem.text)
+        else:
+            raw_words = Metrics._clean_word_list(self.text)
+
+        word_list = [w for w in raw_words if w.isalpha()]
+
         matches = []
         for o_metrics in other_metrics:
 
             compare_dict = self._get_criteria(other_metric_obj=o_metrics,
                                               micro_lex=micro_lex,
-                                              sentiment=sentiment)
+                                              sentiment=sentiment,
+                                              word_list=word_list)
 
             euc_distance = self._get_euc_distance(comparison_dict=compare_dict,
                                                   conwgt=conwgt, micwgt=micwgt,
@@ -1025,28 +1036,21 @@ class Metrics(db.Model):
 
         return temp_total * weight
 
-    def _get_word_compare(self, other):
+    @staticmethod
+    def _get_word_compare(word_list, other):
         """returns the percentage of words from self in other
 
         called my Metrics._calc_matches_ which is in turn caled by
         Metrics.find_matches, and will not need to be called directly.
         """
-        if self.poem:
-            raw_words = Metrics._clean_word_list(self.poem.text)
-        else:
-            raw_words = Metrics._clean_word_list(self.text)
 
-        if other.poem:
-            raw_other_words = Metrics._clean_word_list(other.poem.text)
-        else:
-            raw_other_words = Metrics._clean_word_list(other.text)
-
-        words = [w for w in raw_words if w.isalpha()]
+        raw_other_words = Metrics._clean_word_list(other.poem.text)
         other_words = [w for w in raw_other_words if w.isalpha()]
 
-        percent_shared = Metrics._get_percent_in(words, other_words)
+        percent_shared_one = Metrics._get_percent_in(word_list, other_words)
+        percent_shared_two = Metrics._get_percent_in(other_words, word_list)
 
-        return percent_shared
+        return (percent_shared_one, percent_shared_two)
 
     def _create_context_lists(self, other_poem):
         """Returns list w/ [percent shared context data], [ideal]
@@ -1155,17 +1159,23 @@ class Metrics(db.Model):
         """Returns a list w/ nested lists w/ context data for a poem"""
 
         poem = self.poem
-        subjects = [sub.subject for sub in poem.subjects]
-        terms = [term.term for term in poem.terms]
-        regions = [region.region for region in poem.regions]
+        # subjects = [sub.subject for sub in poem.subjects]
+        # subjects = set(poem.subjects)
+        subjects = None
+        # terms = [term.term for term in poem.terms]
+        # terms = set(poem.terms)
+        terms = None
+        # regions = [region.region for region in poem.regions]
+        # regions = set(poem.regions)
+        regions = None
 
-        if poem.poet:
-            birthyear = poem.poet.birth_year
-        else:
-            birthyear = None
+        # if poem.poet:
+        #     birthyear = poem.poet.birth_year
+        # else:
+        #     birthyear = None
 
         return {"regions": regions, "terms": terms,
-                "subjects": subjects, "birthyear": birthyear}
+                "subjects": subjects}
 
     def _get_macro_lex_data(self):
         """Returns a list of macro lexical data for a given poem
@@ -1630,9 +1640,12 @@ class Metrics(db.Model):
 
         total = len(poem_word_list)
         count = 0
+        data_word_list = set(data_word_list)
+
         for word in poem_word_list:
             if word in data_word_list:
                 count += 1
+
         return float(count)/float(total)
 
     @staticmethod
@@ -1650,6 +1663,7 @@ class Metrics(db.Model):
 
         total = len(poem_word_list)
         count = 0
+        data_word_list = set(data_word_list)
         for word in poem_word_list:
             if word not in data_word_list:
                 count += 1
@@ -1805,6 +1819,33 @@ class Metrics(db.Model):
         end_length = len(end_words)
         repeats = end_length - len(set(end_words))
         return repeats / float(end_length)
+
+    @staticmethod
+    def get_wl_average_data():
+        metrics = Metrics.query.all()
+        wl_mean = [m.wl_mean for m in metrics]
+        wl_median = [m.wl_median for m in metrics]
+        wl_mode = [m.wl_median for m in metrics]
+
+        labels = []
+        for i in range(9):
+            labels.append(float(i))
+
+        wl_mean_count = []
+        wl_median_count = []
+        wl_mode_count = []
+
+        for l in labels:
+            wl_mean_count.append(wl_mean.count(l))
+            wl_median_count.append(wl_median.count(l))
+            wl_mode_count.append(wl_mode.count(l))
+
+        wl_data = {"labels": labels,
+                   "wl_mean": wl_mean_count,
+                   "wl_median": wl_median_count,
+                   "wl_mode": wl_mode_count}
+
+        return wl_data
 
 
 class PoemMatch(db.Model):

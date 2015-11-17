@@ -49,17 +49,21 @@ function makeForceGraph(error, links) {
 
     });
 
+    // or do a python route and do d3.json
+    // {nodes:[list of objects{name: name, source: source}]
+    // links:[list of objects{source: index in nodes, target: index in nodes}]};
+
     var width = 965;
     var height = 600;
-    var radius = 6;
+    var radius = 5;
+
 
     var force = d3.layout.force()
                   .nodes(d3.values(nodes))
                   .links(links)
                   .size([width, height])
                   .linkDistance(5)
-                  .charge(-20)
-                  .friction(0.4)
+                  .charge(setCharge)
                   .on("tick", tick)
                   .start();
 
@@ -110,7 +114,7 @@ function makeForceGraph(error, links) {
         if (category_names.indexOf(d.name) >= 0) {
             return 10;
         } else {
-            return 5;
+            return 4;
         };
     }
 
@@ -131,8 +135,15 @@ function makeForceGraph(error, links) {
         } else {
             var poemData = d.name.split("//");
             var poem_name = poemData[0];
-            console.log(poem_name)
             return poem_name;
+        };
+    }
+
+    function setCharge(d) {
+        if (category_names.indexOf(d.name) >= 0) {
+            return -3;
+        } else {
+            return -1.5;
         };
     }
 
@@ -143,7 +154,6 @@ function makeForceGraph(error, links) {
             poemData = d.name;
             poemID = poemData.split('//')[1];
             url = "/" + poemID;
-            console.log(url)
             return url;
         };
     }
@@ -156,6 +166,44 @@ function makeForceGraph(error, links) {
         
         node.attr("cx", function(d) { return d.x = Math.max(radius, Math.min(width - radius, d.x)); })
             .attr("cy", function(d) { return d.y = Math.max(radius, Math.min(height - radius, d.y)); });
+
+        node.each(collide(0.5));
+    }
+
+
+    var padding;
+
+    function collide(alpha) {
+      var quadtree = d3.geom.quadtree(d3.values(nodes));
+      return function(d) {
+
+        if (category_names.indexOf(d.name) >= 0) {
+            padding = 5;
+        } else {
+            padding = 1;
+        }
+
+        var rb = 2*radius + padding,
+            nx1 = d.x - rb,
+            nx2 = d.x + rb,
+            ny1 = d.y - rb,
+            ny2 = d.y + rb;
+        quadtree.visit(function(quad, x1, y1, x2, y2) {
+          if (quad.point && (quad.point !== d)) {
+            var x = d.x - quad.point.x,
+                y = d.y - quad.point.y,
+                l = Math.sqrt(x * x + y * y);
+              if (l < rb) {
+              l = (l - rb) / l * alpha;
+              d.x -= x *= l;
+              d.y -= y *= l;
+              quad.point.x += x;
+              quad.point.y += y;
+            }
+          }
+          return x1 > nx2 || x2 < nx1 || y1 > ny2 || y2 < ny1;
+        });
+      };
     }
 
     function displayData(evt) {
@@ -182,6 +230,11 @@ function makeForceGraph(error, links) {
     $('.poem-node').hover(displayData, removeData);
     $('.poem-node').on('dblclick', changeURL);
     $('.subject-node').hover(displaySubject, removeData);
+
+    setTimeout(function() {
+        force.stop();
+        alert("Six Seconds Over!");
+    }, 6000);
 
 };
 

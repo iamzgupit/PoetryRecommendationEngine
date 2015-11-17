@@ -1,5 +1,6 @@
 from flask import (Flask, render_template, redirect, jsonify,
                    request, session)
+from flask_debugtoolbar import DebugToolbarExtension
 from random import choice
 from Model import Poem, Metrics, UserMetrics, connect_to_db, db
 from requests import get
@@ -13,29 +14,29 @@ app.secret_key = "TEMPORARY SECRET KEY"
 
 def get_wiki_info(poem):
     """returns wikipedia url and link to main picture if applicable"""
-    
-    name = poem.poet.name.replace(" ", "_")
-    wikipedia_url = "https://en.wikipedia.org/wiki/" + name
-    page = get(wikipedia_url).text
-    if "does not have an article with this exact name" in page:
-        wikipedia_url = None
-        source = None
-    else:
-        soup = BeautifulSoup(page, "html5lib")
-        info_box = soup.find("table", class_="infobox vcard")
-        if info_box:
-            image = info_box.find("img")
-            if image:
-                attrib = image.attrs
-                source = attrib['src']
-                source = "https:" + source
-            else:
-                source = '/static/parchment.jpg'
-        else:
-            wikipedia_url = None
-            source = None
 
-    return (wikipedia_url, source)
+    # name = poem.poet.name.replace(" ", "_")
+    # wikipedia_url = "https://en.wikipedia.org/wiki/" + name
+    # page = get(wikipedia_url).text
+    # if "does not have an article with this exact name" in page:
+    #     wikipedia_url = None
+    #     source = None
+    # else:
+    #     soup = BeautifulSoup(page, "html5lib")
+    #     info_box = soup.find("table", class_="infobox vcard")
+    #     if info_box:
+    #         image = info_box.find("img")
+    #         if image:
+    #             attrib = image.attrs
+    #             source = attrib['src']
+    #             source = "https:" + source
+    #         else:
+    #             source = '/static/parchment.jpg'
+    #     else:
+    #         wikipedia_url = None
+    #         source = None
+
+    return (None, None)
 
 
 @app.route('/')
@@ -125,6 +126,12 @@ def display_algorithm_page():
 @app.route('/algorithm/macro')
 def display_macro_page():
     return render_template("macro.html")
+
+
+@app.route('/wl_avg_data.json')
+def get_wl_average_data():
+    wl_data = Metrics.get_wl_average_data()
+    return jsonify(wl_data)
 
 
 @app.route('/algorithm/micro')
@@ -264,5 +271,7 @@ if __name__ == "__main__":
     app.debug = True
 
     connect_to_db(app)
+
+    DebugToolbarExtension(app)
 
     app.run()

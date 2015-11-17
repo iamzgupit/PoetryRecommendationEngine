@@ -157,9 +157,6 @@ def seed_metrics(poem_ids):
         print "DONE\n"
 
 
-start = 6718  # GO AGAIN TOMORROW
-
-
 def adjust_rhyme(start):
     metrics = Metrics.query.all()
     print "{} METRICS TO UPDATE".format(len(metrics))
