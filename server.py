@@ -135,12 +135,6 @@ def display_macro_page():
                            wl_median=wl_median, wl_mode=wl_mode)
 
 
-@app.route('/wl_avg_data.json')
-def get_wl_average_data():
-    wl_data = Metrics.get_wl_average_data()
-    return jsonify(wl_data)
-
-
 @app.route('/algorithm/micro')
 def display_micro_page():
     return render_template("micro.html")

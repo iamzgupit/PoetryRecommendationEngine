@@ -1842,7 +1842,7 @@ class Metrics(db.Model):
         wl_mode = [m.wl_median for m in metrics]
 
         labels = []
-        for i in range(9):
+        for i in range(8):
             labels.append(float(i))
 
         wl_mean_count = []

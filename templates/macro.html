@@ -17,7 +17,8 @@ ReadMe: Macro
             <p>Here is some information about what this category is. Blah Blah Blah.</p>
         </div>  <!-- end of algorithm-catagory row -->
         <div class="row algorithm-graph">
-            <canvas id="WLChart" width="800" height="500"></canvas>
+            <div class="legend" id="wl-avg-graph" style="position:absolute;padding-top:50px;padding-left:550px;list-style: none;"></div>
+            <canvas id="WLChart" width="750" height="500" style="margin-left:10px;"></canvas>
         </div>  <!-- end of algorithm-graph row -->
 
         <div class="row algorithm-catagory">
@@ -56,30 +57,11 @@ ReadMe: Macro
 </div> <!-- end of container -->
 <script>
 
-    // $.get('/wl_avg_data.json', setUpGraph);
-
-    // function setUpGraph(avgData) {
-
-    //     var wlLabels = avgData["labels"];
-    //     var meanData = avgData["wl_mean"];
-    //     var medianData = avgData["wl_median"];
-    //     var modeData = avgData["wl_mode"];
-    //     debugger;
-
-    var x = {{ wl_labels }};
-    var a = {{ wl_mean }};
-    var b = {{ wl_median }};
-    var x = {{ wl_mode }};
-
-    debugger;
-
-    var ctx = $("#WLChart").get(0).getContext("2d");
-    var myLineChart = new Chart(ctx).Line(data);
-    var data = {
-        labels: "{{ wl_labels }}",
+    var wlData = {
+        labels: {{ wl_labels }},
         datasets: [
             {
-                label: "Mean Wold Length",
+                label: "Mean Word Length",
                 fillColor: "rgba(220,220,220,0.2)",
                 strokeColor: "rgba(220,220,220,1)",
                 pointColor: "rgba(220,220,220,1)",
@@ -87,8 +69,7 @@ ReadMe: Macro
                 pointHighlightFill: "#fff",
                 pointHighlightStroke: "rgba(220,220,220,1)",
                 data: {{ wl_mean }}
-            },
-            {
+            },{
                 label: "Median Word Length",
                 fillColor: "rgba(151,187,205,0.2)",
                 strokeColor: "rgba(151,187,205,1)",
@@ -97,20 +78,33 @@ ReadMe: Macro
                 pointHighlightFill: "#fff",
                 pointHighlightStroke: "rgba(151,187,205,1)",
                 data: {{ wl_median }}
-            },
-            {
+            },{
                 label: "Mode Word Length",
-                fillColor: "rgba(151,187,205,0.2)",
-                strokeColor: "rgba(151,187,205,1)",
-                pointColor: "rgba(151,187,205,1)",
+                fillColor: "rgba(64,64,64,0.2)",
+                strokeColor: "rgba(64,64,64,1)",
+                pointColor: "rgba(64,64,64,1)",
                 pointStrokeColor: "#fff",
                 pointHighlightFill: "#fff",
-                pointHighlightStroke: "rgba(151,187,205,1)",
+                pointHighlightStroke: "rgba(64,64,64,1)",
                 data: {{ wl_mode }}
-            }
-        ]
+            }]
     };
-    // }
+
+    var wlOptions = {
+        legendTemplate : '<% for (var i=0; i<datasets.length; i++) { %>'
+                            + '<svg height="15" width="15">'
+                            + '<circle cx="7" cy="9" r="5" stroke="black" stroke-width="1" fill="<%=datasets[i].strokeColor%>" /></svg>'
+                            +'<% if (datasets[i].label) { %> <%= datasets[i].label %> <% } %>'
+                          +'<br>'
+                        +'<% } %>',
+        bezierCurve: false
+    };
+
+    var ctx = $("#WLChart").get(0).getContext("2d");
+    var WLChart = new Chart(ctx).Line(wlData, wlOptions);
+
+    var legend = WLChart.generateLegend();
+    $('#wl-avg-graph').append(legend);
 
 </script>
 {% endblock %}
