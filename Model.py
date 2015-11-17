@@ -1832,6 +1832,64 @@ class Metrics(db.Model):
         return repeats / float(end_length)
 
     @staticmethod
+    def _get_average_data(list_of_means, list_of_medians, list_of_modes, set_max=None):
+        """returns a dict w/ lists of of word length average data
+
+        called by server.py and fed through to Chart.js to make a graph of
+        the spread of our wl_mean, wl_median, and wl_mode values.
+        """
+
+        labels = []
+        if set_max:
+            for i in range(set_max):
+                labels.append(float(i))
+        else:
+            for i in range(int(max(list_of_means) + 1)):
+                labels.append(float(i))
+
+        mean_count = []
+        median_count = []
+        mode_count = []
+
+        for l in labels:
+            mean_count.append(list_of_means.count(l))
+            median_count.append(list_of_medians.count(l))
+            mode_count.append(list_of_modes.count(l))
+
+        data = {"labels": labels,
+                "mean": mean_count,
+                "median": median_count,
+                "mode": mode_count}
+
+        return data
+
+    @staticmethod
+    def _get_range_data(list_of_numbers, set_max=None):
+        """returns a dict w/ lists of of word length average data
+
+        called by server.py and fed through to Chart.js to make a graph of
+        the spread of our wl_mean, wl_median, and wl_mode values.
+        """
+
+        labels = []
+        if set_max:
+            for i in range(set_max):
+                labels.append(float(i))
+        else:
+            for i in range(int(max(list_of_numbers) + 1)):
+                labels.append(float(i))
+
+        range_count = []
+
+        for l in labels:
+            range_count.append(list_of_numbers.count(l))
+
+        data = {"labels": labels,
+                "range": range_count}
+
+        return data
+
+    @staticmethod
     def get_wl_average_data(metrics_obj_list):
         """returns a dict w/ lists of of word length average data
 
@@ -1843,25 +1901,9 @@ class Metrics(db.Model):
         wl_median = [m.wl_median for m in metrics_obj_list]
         wl_mode = [m.wl_median for m in metrics_obj_list]
 
-        labels = []
-        for i in range(8):
-            labels.append(float(i))
-
-        wl_mean_count = []
-        wl_median_count = []
-        wl_mode_count = []
-
-        for l in labels:
-            wl_mean_count.append(wl_mean.count(l))
-            wl_median_count.append(wl_median.count(l))
-            wl_mode_count.append(wl_mode.count(l))
-
-        wl_data = {"labels": labels,
-                   "wl_mean": wl_mean_count,
-                   "wl_median": wl_median_count,
-                   "wl_mode": wl_mode_count}
-
-        return wl_data
+        return Metrics._get_average_data(list_of_means=wl_mean,
+                                         list_of_medians=wl_median,
+                                         list_of_modes=wl_mode, set_max=8)
 
     @staticmethod
     def get_wl_range_data(metrics_obj_list):
@@ -1872,19 +1914,7 @@ class Metrics(db.Model):
         """
         wl_range = [m.wl_range for m in metrics_obj_list]
 
-        labels = []
-        for i in range(int(max(wl_range) + 1)):
-            labels.append(float(i))
-
-        wl_range_count = []
-
-        for l in labels:
-            wl_range_count.append(wl_range.count(l))
-
-        wl_data = {"labels": labels,
-                   "wl_range": wl_range_count}
-
-        return wl_data
+        return Metrics._get_range_data(list_of_numbers=wl_range, set_max=28)
 
     @staticmethod
     def get_pl_words_data(metrics_obj_list):
@@ -1895,19 +1925,53 @@ class Metrics(db.Model):
         """
         pl_words = [m.pl_words for m in metrics_obj_list]
 
+        return Metrics._get_grouped_range(list_of_numbers=pl_words,
+                                          set_max=2000, range_num=25)
+
+    @staticmethod
+    def get_pl_lines_data(metrics_obj_list):
+        """returns a dict w/ lists of of word length average data
+
+        called by server.py and fed through to Chart.js to make a graph of
+        the spread of our wl_mean, wl_median, and wl_mode values.
+        """
+        pl_lines = [m.pl_lines for m in metrics_obj_list]
+
+        return Metrics._get_range_data(list_of_numbers=pl_lines, set_max=151)
+
+    @staticmethod
+    def _get_grouped_range(list_of_numbers, set_max, range_num):
+        """returns a dict w/ lists of of word length average data
+
+        called by server.py and fed through to Chart.js to make a graph of
+        the spread of our wl_mean, wl_median, and wl_mode values.
+        """
         labels = []
-        for i in range(int(max(pl_words) + 1)):
-            labels.append(float(i))
+        range_count = []
+        for i in range(0, set_max - range_num, range_num):
 
-        wl_range_count = []
+            label = str(i) + " -- " + str(i + range_num)
+            labels.append(label)
+            range_list = [n for n in list_of_numbers
+                          if n >= i and n < (i + range_num)]
+            range_count.append(len(range_list))
 
-        for l in labels:
-            wl_range_count.append(wl_range.count(l))
+        data = {"labels": labels,
+                "range": range_count}
 
-        wl_data = {"labels": labels,
-                   "wl_range": wl_range_count}
+        return data
 
-        return wl_data
+    @staticmethod
+    def get_pl_char_data(metrics_obj_list):
+        """returns a dict w/ lists of of word length average data
+
+        called by server.py and fed through to Chart.js to make a graph of
+        the spread of our wl_mean, wl_median, and wl_mode values.
+        """
+        pl_char = [m.pl_char for m in metrics_obj_list]
+
+        return Metrics._get_grouped_range(list_of_numbers=pl_char,
+                                          set_max=3000, range_num=40)
 
     @staticmethod
     def get_ll_average_data(metrics_obj_list):
@@ -1918,31 +1982,62 @@ class Metrics(db.Model):
         """
 
         ll_mean = [m.ll_mean for m in metrics_obj_list]
-        print max(ll_mean)
         ll_median = [m.ll_median for m in metrics_obj_list]
-        print max(ll_median)
         ll_mode = [m.ll_median for m in metrics_obj_list]
-        print max(ll_mode)
 
-        labels = []
-        for i in range(86):
-            labels.append(float(i))
+        return Metrics._get_average_data(list_of_means=ll_mean,
+                                         list_of_medians=ll_median,
+                                         list_of_modes=ll_mode, set_max=86)
 
-        ll_mean_count = []
-        ll_median_count = []
-        ll_mode_count = []
+    @staticmethod
+    def get_ll_range_data(metrics_obj_list):
+        """returns a dict w/ lists of of word length average data
 
-        for l in labels:
-            ll_mean_count.append(ll_mean.count(l))
-            ll_median_count.append(ll_median.count(l))
-            ll_mode_count.append(ll_mode.count(l))
+        called by server.py and fed through to Chart.js to make a graph of
+        the spread of our wl_mean, wl_median, and wl_mode values.
+        """
+        ll_range = [m.ll_range for m in metrics_obj_list]
 
-        ll_data = {"labels": labels,
-                   "ll_mean": ll_mean_count,
-                   "ll_median": ll_median_count,
-                   "ll_mode": ll_mode_count}
+        return Metrics._get_range_data(list_of_numbers=ll_range, set_max=151)
 
-        return ll_data
+    @staticmethod
+    def get_stanza_length_data(metrics_obj_list):
+        """returns a dict w/ lists of of line length average data
+
+        called by server.py and fed through to Chart.js to make a graph of
+        the spread of our wl_mean, wl_median, and wl_mode values.
+        """
+
+        sl_mean = [m.sl_mean for m in metrics_obj_list]
+        sl_median = [m.sl_median for m in metrics_obj_list]
+        sl_mode = [m.sl_median for m in metrics_obj_list]
+
+        return Metrics._get_average_data(list_of_means=sl_mean,
+                                         list_of_medians=sl_median,
+                                         list_of_modes=sl_mode,
+                                         set_max=66)
+
+    @staticmethod
+    def get_stanza_range_data(metrics_obj_list):
+        """returns a dict w/ lists of of word length average data
+
+        called by server.py and fed through to Chart.js to make a graph of
+        the spread of our wl_mean, wl_median, and wl_mode values.
+        """
+        sl_range = [m.sl_range for m in metrics_obj_list]
+
+        return Metrics._get_range_data(list_of_numbers=sl_range, set_max=51)
+
+    @staticmethod
+    def get_stanza_num_data(metrics_obj_list):
+        """returns a dict w/ lists of of word length average data
+
+        called by server.py and fed through to Chart.js to make a graph of
+        the spread of our wl_mean, wl_median, and wl_mode values.
+        """
+        stanzas = [m.stanzas for m in metrics_obj_list]
+
+        return Metrics._get_range_data(list_of_numbers=stanzas, set_max=76)
 
 
 class PoemMatch(db.Model):

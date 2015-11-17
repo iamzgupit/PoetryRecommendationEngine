@@ -126,12 +126,27 @@ def display_algorithm_page():
 @app.route('/algorithm/macro')
 def display_macro_page():
     metrics_list = Metrics.query.all()
+
     wl_avg_data = Metrics.get_wl_average_data(metrics_list)
     wl_range_data = Metrics.get_wl_range_data(metrics_list)
+
     ll_avg_data = Metrics.get_ll_average_data(metrics_list)
+    ll_range_data = Metrics.get_ll_range_data(metrics_list)
+
+    pl_lines_data = Metrics.get_pl_lines_data(metrics_list)
+    pl_char_data = Metrics.get_pl_char_data(metrics_list)
+    pl_word_data = Metrics.get_pl_words_data(metrics_list)
+
+    sl_avg_data = Metrics.get_stanza_length_data(metrics_list)
+    stanza_num_data = Metrics.get_stanza_num_data(metrics_list)
+    sl_range_data = Metrics.get_stanza_range_data(metrics_list)
 
     return render_template("macro.html", wl_avg_data=wl_avg_data,
-                           wl_range_data=wl_range_data, ll_avg_data=ll_avg_data)
+                           wl_range_data=wl_range_data, ll_avg_data=ll_avg_data,
+                           ll_range_data=ll_range_data, pl_lines_data=pl_lines_data,
+                           pl_char_data=pl_char_data, pl_word_data=pl_word_data,
+                           sl_avg_data=sl_avg_data, sl_range_data=sl_range_data,
+                           stanza_num_data=stanza_num_data)
 
 
 @app.route('/algorithm/micro')

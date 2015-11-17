@@ -5,7 +5,7 @@ ReadMe: Macro
 {% block content %}
 <div class="container">
 <div class="row large-content">
-    <div class="col-md-8 col-md-offset-2">
+    <div class="col-md-10 col-md-offset-1">
         <div class="row algorithm-header">
             <h4>Macro Lexical Data</h4>
             <br>
@@ -16,51 +16,77 @@ ReadMe: Macro
             <h5>World Length: Mean, Median, Mode, and Range</h5>
             <p>Here is some information about what this category is. Blah Blah Blah.</p>
         </div>  <!-- end of algorithm-catagory row -->
+
         <div class="row algorithm-graph">
-            <div class="legend" id="wl-avg-graph" style="position:absolute;padding-top:50px;padding-left:550px;list-style: none;"></div>
-            <canvas class="graph-chart" id="WLChart" width="750" height="500" style="margin-left:10px;"></canvas>
+            <div class="legend" id="wl-avg-graph"></div>
+            <canvas class="graph-chart" id="WLChart" width="950" height="500"></canvas>
         </div>  <!-- end of algorithm-graph row -->
+
         <div class="row algorithm-graph">
-            <div class="legend" id="wl-range-graph" style="position:absolute;padding-top:50px;padding-left:550px;list-style: none;"></div>
-            <canvas class="graph-chart" id="WLRChart" width="750" height="300" style="margin-left:10px;"></canvas>
+            <div class="legend" id="wl-range-graph"></div>
+            <canvas class="graph-chart" id="WLRChart" width="950" height="300"></canvas>
         </div>  <!-- end of algorithm-graph row -->
+
         <div class="row algorithm-catagory">
             <h5>Line Length: Mean, Median, Mode and Range</h5>
             <p>Here is some information about what this category is. Blah Blah Blah.</p>
         </div>  <!-- end of algorithm-catagory row -->
+
         <div class="row algorithm-graph">
-            <div class="legend" id="ll-avg-graph" style="position:absolute;padding-top:50px;padding-left:550px;list-style: none;"></div>
-            <canvas class="graph-chart" id="LLChart" width="750" height="500" style="margin-left:10px;"></canvas>
+            <div class="legend" id="ll-avg-graph"></div>
+            <canvas class="graph-chart" id="LLChart" width="950" height="500"></canvas>
+        </div>  <!-- end of algorithm-graph row -->
+
+        <div class="row algorithm-graph">
+            <div class="legend" id="ll-range-graph"></div>
+            <canvas class="graph-chart" id="LLRChart" width="950" height="300"></canvas>
         </div>  <!-- end of algorithm-graph row -->
 
         <div class="row algorithm-catagory">
             <h5>Poem Length: Lines, Words, Characters</h5>
             <p>Here is some information about what this category is. Blah Blah Blah.</p>
         </div>  <!-- end of algorithm-catagory row -->
+
         <div class="row algorithm-graph">
-            <p>COOL D3 VISUALIZATION GOES HERE</p>
+            <div class="legend" id="pl-lines-graph"></div>
+            <canvas class="graph-chart" id="PLLChart" width="950" height="300"></canvas>
+        </div>  <!-- end of algorithm-graph row -->
+
+        <div class="row algorithm-graph">
+            <div class="legend" id="pl-words-graph"></div>
+            <canvas class="graph-chart" id="PLWChart" width="950" height="300"></canvas>
+        </div>  <!-- end of algorithm-graph row -->
+
+        <div class="row algorithm-graph">
+            <div class="legend" id="pl-char-graph"></div>
+            <canvas class="graph-chart" id="PLCChart" width="950" height="300"></canvas>
         </div>  <!-- end of algorithm-graph row -->
 
         <div class="row algorithm-catagory">
             <h5>Stanza Number and Length: Mean, Median, Mode, and Range</h5>
             <p>Here is some information about what this category is. Blah Blah Blah.</p>
         </div>  <!-- end of algorithm-catagory row -->
+
         <div class="row algorithm-graph">
-            <p>COOL D3 VISUALIZATION GOES HERE</p>
+            <div class="legend" id="sl-avg-graph"></div>
+            <canvas class="graph-chart" id="SLChart" width="950" height="500"></canvas>
         </div>  <!-- end of algorithm-graph row -->
 
-        <div class="row algorithm-catagory">
-            <h5>Lexical Diversity</h5>
-            <p>Here is some information about what this category is. Blah Blah Blah.</p>
-        </div>  <!-- end of algorithm-catagory row -->
         <div class="row algorithm-graph">
-            <p>COOL D3 VISUALIZATION GOES HERE</p>
+            <div class="legend" id="sl-range-graph"></div>
+            <canvas class="graph-chart" id="SLRChart" width="950" height="300"></canvas>
         </div>  <!-- end of algorithm-graph row -->
+
+        <div class="row algorithm-graph">
+            <div class="legend" id="sl-num-graph"></div>
+            <canvas class="graph-chart" id="SLNChart" width="950" height="300"></canvas>
+        </div>  <!-- end of algorithm-graph row -->
+
     </div>  <!-- end of column -->
 </div> <!-- end of main-content row -->
 </div> <!-- end of container -->
 <script>
-
+// setting up graph for word length averages //
     var wlData = {
         labels: {{ wl_avg_data["labels"] }},
         datasets: [
@@ -72,7 +98,7 @@ ReadMe: Macro
                 pointStrokeColor: "#fff",
                 pointHighlightFill: "#fff",
                 pointHighlightStroke: "rgba(220,220,220,1)",
-                data: {{ wl_avg_data["wl_mean"] }}
+                data: {{ wl_avg_data["mean"] }}
             },{
                 label: "Median Word Length",
                 fillColor: "rgba(151,187,205,0.2)",
@@ -81,7 +107,7 @@ ReadMe: Macro
                 pointStrokeColor: "#fff",
                 pointHighlightFill: "#fff",
                 pointHighlightStroke: "rgba(151,187,205,1)",
-                data: {{ wl_avg_data["wl_median"] }}
+                data: {{ wl_avg_data["median"] }}
             },{
                 label: "Mode Word Length",
                 fillColor: "rgba(64,64,64,0.2)",
@@ -90,7 +116,7 @@ ReadMe: Macro
                 pointStrokeColor: "#fff",
                 pointHighlightFill: "#fff",
                 pointHighlightStroke: "rgba(64,64,64,1)",
-                data: {{ wl_avg_data["wl_mode"] }}
+                data: {{ wl_avg_data["mode"] }}
             }]
     };
 
@@ -109,7 +135,8 @@ ReadMe: Macro
 
     var wlLegend = WLChart.generateLegend();
     $('#wl-avg-graph').append(wlLegend);
-    
+
+// setting up graph for word length range //
     var wlrData = {
         labels: {{ wl_range_data["labels"] }},
         datasets: [
@@ -121,7 +148,7 @@ ReadMe: Macro
                 pointStrokeColor: "#fff",
                 pointHighlightFill: "#fff",
                 pointHighlightStroke: "rgba(220,220,220,1)",
-                data: {{ wl_range_data["wl_range"] }}
+                data: {{ wl_range_data["range"] }}
             }]
     };
 
@@ -131,7 +158,7 @@ ReadMe: Macro
     var wlrLegend = WLRChart.generateLegend();
     $('#wl-range-graph').append(wlrLegend);
 
-
+// setting up graph for line length averages //
     var llData = {
         labels: {{ ll_avg_data["labels"] }},
         datasets: [
@@ -143,7 +170,7 @@ ReadMe: Macro
                 pointStrokeColor: "#fff",
                 pointHighlightFill: "#fff",
                 pointHighlightStroke: "rgba(151,187,205,1)",
-                data: {{ ll_avg_data["ll_median"] }}
+                data: {{ ll_avg_data["median"] }}
             },{
                 label: "Mode Line Length",
                 fillColor: "rgba(64,64,64,0.2)",
@@ -152,7 +179,7 @@ ReadMe: Macro
                 pointStrokeColor: "#fff",
                 pointHighlightFill: "#fff",
                 pointHighlightStroke: "rgba(64,64,64,1)",
-                data: {{ ll_avg_data["ll_mode"] }}
+                data: {{ ll_avg_data["mode"] }}
             },{
                 label: "Mean Line Length",
                 fillColor: "rgba(220,220,220,0.2)",
@@ -161,7 +188,7 @@ ReadMe: Macro
                 pointStrokeColor: "#fff",
                 pointHighlightFill: "#fff",
                 pointHighlightStroke: "rgba(220,220,220,1)",
-                data: {{ ll_avg_data["ll_mean"] }}
+                data: {{ ll_avg_data["mean"] }}
             }]
     };
 
@@ -170,6 +197,185 @@ ReadMe: Macro
 
     var llLegend = LLChart.generateLegend();
     $('#ll-avg-graph').append(llLegend);
+
+// setting up graph for line length range //
+    var llrData = {
+        labels: {{ ll_range_data["labels"] }},
+        datasets: [
+            {
+                label: "Line Length Range",
+                fillColor: "rgba(220,220,220,0.2)",
+                strokeColor: "rgba(220,220,220,1)",
+                pointColor: "rgba(220,220,220,1)",
+                pointStrokeColor: "#fff",
+                pointHighlightFill: "#fff",
+                pointHighlightStroke: "rgba(220,220,220,1)",
+                data: {{ ll_range_data["range"] }}
+            }]
+    };
+
+    var llrctx = $("#LLRChart").get(0).getContext("2d");
+    var LLRChart = new Chart(llrctx).Line(llrData, options);
+    var llrLegend = LLRChart.generateLegend();
+    $('#ll-range-graph').append(llrLegend);
+
+// setting up graph for poem length by lines //
+    var pllData = {
+        labels: {{ pl_lines_data["labels"] }},
+        datasets: [
+            {
+                label: "Length of Poems by Line",
+                fillColor: "rgba(220,220,220,0.2)",
+                strokeColor: "rgba(220,220,220,1)",
+                pointColor: "rgba(220,220,220,1)",
+                pointStrokeColor: "#fff",
+                pointHighlightFill: "#fff",
+                pointHighlightStroke: "rgba(220,220,220,1)",
+                data: {{ pl_lines_data["range"] }}
+            }]
+    };
+
+    var pllctx = $("#PLLChart").get(0).getContext("2d");
+    var PLLChart = new Chart(pllctx).Line(pllData, options);
+
+    var pllLegend = PLLChart.generateLegend();
+    $('#pl-lines-graph').append(pllLegend);
+
+// setting up graph for poem length by words //
+    var plwtemplabel = []
+    {% for label in pl_char_data["labels"] %}
+    plwtemplabel.push("{{label}}")
+    {% endfor %}
+
+    var plwData = {
+        labels: plwtemplabel,
+        datasets: [
+            {
+                label: "Length of Poems by Word",
+                fillColor: "rgba(220,220,220,0.2)",
+                strokeColor: "rgba(220,220,220,1)",
+                pointColor: "rgba(220,220,220,1)",
+                pointStrokeColor: "#fff",
+                pointHighlightFill: "#fff",
+                pointHighlightStroke: "rgba(220,220,220,1)",
+                data: {{ pl_word_data["range"] }}
+            }]
+    };
+
+    var plwctx = $("#PLWChart").get(0).getContext("2d");
+    var PLWChart = new Chart(plwctx).Line(plwData, options);
+
+    var plwLegend = PLWChart.generateLegend();
+    $('#pl-words-graph').append(plwLegend);
+
+// setting up graph for poem length by character //
+    var plctemplabel = []
+    {% for label in pl_char_data["labels"] %}
+    plctemplabel.push("{{label}}")
+    {% endfor %}
+
+    var plcData = {
+        labels: plctemplabel,
+        datasets: [
+            {
+                label: "Length of Poems by Character",
+                fillColor: "rgba(220,220,220,0.2)",
+                strokeColor: "rgba(220,220,220,1)",
+                pointColor: "rgba(220,220,220,1)",
+                pointStrokeColor: "#fff",
+                pointHighlightFill: "#fff",
+                pointHighlightStroke: "rgba(220,220,220,1)",
+                data: {{ pl_char_data["range"] }}
+            }]
+    };
+
+    var plcctx = $("#PLCChart").get(0).getContext("2d");
+    var PLCChart = new Chart(plcctx).Line(plcData, options);
+
+    var plcLegend = PLCChart.generateLegend();
+    $('#pl-char-graph').append(plcLegend);
+
+// setting up graph for stanza length averages //
+   var slData = {
+        labels: {{ sl_avg_data["labels"] }},
+        datasets: [
+            {
+                label: "Median Stanza Length",
+                fillColor: "rgba(151,187,205,0.2)",
+                strokeColor: "rgba(151,187,205,1)",
+                pointColor: "rgba(151,187,205,1)",
+                pointStrokeColor: "#fff",
+                pointHighlightFill: "#fff",
+                pointHighlightStroke: "rgba(151,187,205,1)",
+                data: {{ sl_avg_data["median"] }}
+            },{
+                label: "Mode Stanza Length",
+                fillColor: "rgba(64,64,64,0.2)",
+                strokeColor: "rgba(64,64,64,1)",
+                pointColor: "rgba(64,64,64,1)",
+                pointStrokeColor: "#fff",
+                pointHighlightFill: "#fff",
+                pointHighlightStroke: "rgba(64,64,64,1)",
+                data: {{ sl_avg_data["mode"] }}
+            },{
+                label: "Mean Stanza Length",
+                fillColor: "rgba(220,220,220,0.2)",
+                strokeColor: "rgba(220,220,220,1)",
+                pointColor: "rgba(220,220,220,1)",
+                pointStrokeColor: "#fff",
+                pointHighlightFill: "#fff",
+                pointHighlightStroke: "rgba(220,220,220,1)",
+                data: {{ sl_avg_data["mean"] }}
+            }]
+    };
+
+    var slctx = $("#SLChart").get(0).getContext("2d");
+    var SLChart = new Chart(slctx).Line(slData, options);
+
+    var slLegend = SLChart.generateLegend();
+    $('#sl-avg-graph').append(slLegend);
+
+// setting up graph for stanza range ///
+    var slrData = {
+        labels: {{ sl_range_data["labels"] }},
+        datasets: [
+            {
+                label: "Stanza Length Range",
+                fillColor: "rgba(220,220,220,0.2)",
+                strokeColor: "rgba(220,220,220,1)",
+                pointColor: "rgba(220,220,220,1)",
+                pointStrokeColor: "#fff",
+                pointHighlightFill: "#fff",
+                pointHighlightStroke: "rgba(220,220,220,1)",
+                data: {{ sl_range_data["range"] }}
+            }]
+    };
+
+    var slrctx = $("#SLRChart").get(0).getContext("2d");
+    var SLRChart = new Chart(slrctx).Line(slrData, options);
+    var slrLegend = SLRChart.generateLegend();
+    $('#sl-range-graph').append(slrLegend);
+
+// setting up graph for stanza number ///
+    var slnData = {
+        labels: {{ stanza_num_data["labels"] }},
+        datasets: [
+            {
+                label: "Number of Stanzas",
+                fillColor: "rgba(220,220,220,0.2)",
+                strokeColor: "rgba(220,220,220,1)",
+                pointColor: "rgba(220,220,220,1)",
+                pointStrokeColor: "#fff",
+                pointHighlightFill: "#fff",
+                pointHighlightStroke: "rgba(220,220,220,1)",
+                data: {{ stanza_num_data["range"] }}
+            }]
+    };
+
+    var slnctx = $("#SLNChart").get(0).getContext("2d");
+    var SLNChart = new Chart(slnctx).Line(slnData, options);
+    var slnLegend = SLNChart.generateLegend();
+    $('#sl-num-graph').append(slnLegend);
 
 </script>
 {% endblock %}

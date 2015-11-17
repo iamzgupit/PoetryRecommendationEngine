@@ -11,6 +11,16 @@
             border-color: white;
         }
 
+        .graph-chart {
+            margin-left:10px;
+        }
+
+        .legend {
+           position:absolute;
+           padding-top:50px;
+           padding-left:550px;
+        }
+
         .main-search {
             margin-top: 220px;
         }
