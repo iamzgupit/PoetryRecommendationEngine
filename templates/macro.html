@@ -147,7 +147,8 @@ ReadMe: Macro
                             +'<% if (datasets[i].label) { %> <%= datasets[i].label %> <% } %>'
                           +'<br>'
                         +'<% } %>',
-        bezierCurve: false
+        bezierCurve: false,
+        pointHitDetectionRadius : 2
     };
 
     var wlctx = $("#WLChart").get(0).getContext("2d");
