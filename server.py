@@ -125,14 +125,13 @@ def display_algorithm_page():
 
 @app.route('/algorithm/macro')
 def display_macro_page():
-    wl_data = Metrics.get_wl_average_data()
-    wl_labels = wl_data["labels"]
-    wl_mean = wl_data["wl_mean"]
-    wl_median = wl_data["wl_median"]
-    wl_mode = wl_data["wl_mode"]
+    metrics_list = Metrics.query.all()
+    wl_avg_data = Metrics.get_wl_average_data(metrics_list)
+    wl_range_data = Metrics.get_wl_range_data(metrics_list)
+    ll_avg_data = Metrics.get_ll_average_data(metrics_list)
 
-    return render_template("macro.html", wl_labels=wl_labels, wl_mean=wl_mean,
-                           wl_median=wl_median, wl_mode=wl_mode)
+    return render_template("macro.html", wl_avg_data=wl_avg_data,
+                           wl_range_data=wl_range_data, ll_avg_data=ll_avg_data)
 
 
 @app.route('/algorithm/micro')
