@@ -606,6 +606,16 @@ class Subject(db.Model):
                             secondary='poem_subjects',
                             backref="subjects")
 
+    # @classmethod
+    # def get_subject_list(cls):
+    #     subjects = cls.query.all()
+    #     subject_info = []
+    #     for sub in subjects:
+    #         poems = set(poem.poem_id for poem in sub.poems)
+    #         subject_info.append(poems)
+
+    #     return subject_info
+
 
 class PoemSubject(db.Model):
     """ connects poem to subject as noted by the Poetry Foundation """
@@ -839,7 +849,7 @@ class Metrics(db.Model):
 
         return final_matches
 
-    def find_matches(self, micwgt=1, sentwgt=1, conwgt=1, macwgt=0.5,
+    def find_matches(self, micwgt=1, sentwgt=1, conwgt=1, macwgt=1,
                      unique_auth=True, new_auth=True, limit=10):
         """returns a list with (poem_id, match percent) for limit other poems
 
@@ -891,7 +901,7 @@ class Metrics(db.Model):
         return final_matches[:limit]
         # return final_matches
 
-    def _get_criteria(self, other_metric_obj, micro_lex, sentiment, word_list):
+    def _get_criteria(self, other_metric_obj, micro_lex, sentiment, word_list, context):
         """"""
 
         o_micro_lex = other_metric_obj._get_micro_lex_data()
@@ -913,18 +923,19 @@ class Metrics(db.Model):
 
         if self.poem:  # checking that this is not a UserMetrics class.
             # getting the percentage of context shared, the ideal values (1)
-            context, o_context = self._create_context_lists(other_metric_obj)
+            self_context, o_context = self._create_context_lists(other_poem=other_metric_obj,
+                                                                 context=context)
             # context = False
             # o_context = False
         else:
-            context = False
+            self_context = False
             o_context = False
 
         macro, o_macro = self._get_macro_compare(other_metric_obj)
 
         return {"temp_micro": temp_micro, "o_micro_lex": o_micro_lex,
                 "o_sentiment": o_sentiment, "sentiment": sentiment,
-                "context": context, "o_context": o_context,
+                "context": self_context, "o_context": o_context,
                 "macro": macro, "o_macro": o_macro}
 
     def _get_euc_distance(self, comparison_dict, conwgt, micwgt, sentwgt, macwgt):
@@ -971,6 +982,7 @@ class Metrics(db.Model):
 
         micro_lex = self._get_micro_lex_data()
         sentiment = self._get_sentiment_data()
+        context = self._get_context_data()
 
         if self.poem:
             raw_words = Metrics._clean_word_list(self.poem.text)
@@ -985,7 +997,8 @@ class Metrics(db.Model):
             compare_dict = self._get_criteria(other_metric_obj=o_metrics,
                                               micro_lex=micro_lex,
                                               sentiment=sentiment,
-                                              word_list=word_list)
+                                              word_list=word_list,
+                                              context=context)
 
             euc_distance = self._get_euc_distance(comparison_dict=compare_dict,
                                                   conwgt=conwgt, micwgt=micwgt,
@@ -1052,7 +1065,7 @@ class Metrics(db.Model):
 
         return (percent_shared_one, percent_shared_two)
 
-    def _create_context_lists(self, other_poem):
+    def _create_context_lists(self, other_poem, context):
         """Returns list w/ [percent shared context data], [ideal]
 
         ideal is just a list with 1 corresponding to each percentage in
@@ -1060,9 +1073,11 @@ class Metrics(db.Model):
         result we would receive if they shared all the same data.
         """
 
-        raw_context = self._get_context_compare(other_poem)
+        raw_context = self._get_context_compare(other=other_poem,
+                                                self_context=context)
         context = []
         o_context = []
+
         if raw_context["sub_per"]:
             context.append(raw_context["sub_per"])
             o_context.append(1)
@@ -1075,7 +1090,7 @@ class Metrics(db.Model):
 
         return [context, o_context]
 
-    def _get_context_compare(self, other):
+    def _get_context_compare(self, other, self_context):
         """"returns a dictionary containing percentage shared context data
 
         this method is called by Metrics._create_context_lists, which is in turn
@@ -1083,7 +1098,6 @@ class Metrics(db.Model):
         need to be called directly.
         """
 
-        self_context = self._get_context_data()
         other_context = other._get_context_data()
 
         reg_per = None
@@ -1092,6 +1106,7 @@ class Metrics(db.Model):
 
         regions = self_context["regions"]
         other_regions = other_context["regions"]
+
         if regions and other_regions:
             reg_per = Metrics._get_percent_in(regions, other_regions)
 
@@ -1134,10 +1149,8 @@ class Metrics(db.Model):
 
         if y == 0 or x == 0:
             return 0
-        elif x <= y:
-            return x / y
         else:
-            return y / x
+            return abs(x - y) / x
 
     def _get_macro_compare(self, other):
         """"returns tuple with [closeness of macro data], [ideal]
@@ -1151,7 +1164,9 @@ class Metrics(db.Model):
         other_macro = other._get_macro_lex_data()
 
         macro_compare = map(Metrics.division, self_macro, other_macro)
-        ideal = [1.0 for item in macro_compare]
+        macro_compare.extend(map(Metrics.division, other_macro, self_macro))
+
+        ideal = [0.0 for item in macro_compare]
 
         return (macro_compare, ideal)
 
@@ -1159,20 +1174,9 @@ class Metrics(db.Model):
         """Returns a list w/ nested lists w/ context data for a poem"""
 
         poem = self.poem
-        # subjects = [sub.subject for sub in poem.subjects]
-        # subjects = set(poem.subjects)
-        subjects = None
-        # terms = [term.term for term in poem.terms]
-        # terms = set(poem.terms)
-        terms = None
-        # regions = [region.region for region in poem.regions]
-        # regions = set(poem.regions)
-        regions = None
-
-        # if poem.poet:
-        #     birthyear = poem.poet.birth_year
-        # else:
-        #     birthyear = None
+        subjects = set(poem.subjects)
+        terms = set(poem.terms)
+        regions = set(poem.regions)
 
         return {"regions": regions, "terms": terms,
                 "subjects": subjects}
