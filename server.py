@@ -125,7 +125,14 @@ def display_algorithm_page():
 
 @app.route('/algorithm/macro')
 def display_macro_page():
-    return render_template("macro.html")
+    wl_data = Metrics.get_wl_average_data()
+    wl_labels = wl_data["labels"]
+    wl_mean = wl_data["wl_mean"]
+    wl_median = wl_data["wl_median"]
+    wl_mode = wl_data["wl_mode"]
+
+    return render_template("macro.html", wl_labels=wl_labels, wl_mean=wl_mean,
+                           wl_median=wl_median, wl_mode=wl_mode)
 
 
 @app.route('/wl_avg_data.json')

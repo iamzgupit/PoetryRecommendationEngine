@@ -5,6 +5,7 @@ from math import sqrt
 from word_lists import (COMMON_W, POEM_W, ABSTRACT, OBJECTS, MALE, FEMALE,
                         ACTIVE, PASSIVE, POSITIVE, NEGATIVE)
 from requests import get
+from sqlalchemy.orm import joinedload
 
 db = SQLAlchemy()
 
@@ -542,9 +543,9 @@ class Region(db.Model):
     region_id = db.Column(db.Integer, autoincrement=True, primary_key=True)
     region = db.Column(db.Text, nullable=False)
 
-    poems = db.relationship("Poem",
-                            secondary='poem_region',
-                            backref='regions')
+    metrics = db.relationship("Metrics",
+                              secondary='poem_region',
+                              backref='regions')
 
 
 class PoemRegion(db.Model):
@@ -554,13 +555,14 @@ class PoemRegion(db.Model):
 
     pr_id = db.Column(db.Integer, autoincrement=True, primary_key=True)
     poem_id = db.Column(db.Integer,
-                        db.ForeignKey('poems.poem_id'),
+                        db.ForeignKey('metrics.poem_id'),
                         nullable=False)
     region_id = db.Column(db.Integer,
                           db.ForeignKey('regions.region_id'),
                           nullable=False)
 
-    poem = db.relationship("Poem", backref="poem_regions")
+    # poem = db.relationship("Poem", backref="poem_regions")
+    metrics = db.relationship("Metrics", backref="poem_regions")
     region = db.relationship("Region", backref="poem_regions")
 
 
@@ -572,9 +574,9 @@ class Term(db.Model):
     term_id = db.Column(db.Integer, autoincrement=True, primary_key=True)
     term = db.Column(db.Text, nullable=False)
 
-    poems = db.relationship("Poem",
-                            secondary='poem_terms',
-                            backref="terms")
+    metrics = db.relationship("Metrics",
+                              secondary='poem_terms',
+                              backref="terms")
 
 
 class PoemTerm(db.Model):
@@ -584,13 +586,13 @@ class PoemTerm(db.Model):
 
     pt_id = db.Column(db.Integer, autoincrement=True, primary_key=True)
     poem_id = db.Column(db.Integer,
-                        db.ForeignKey('poems.poem_id'),
+                        db.ForeignKey('metrics.poem_id'),
                         nullable=False)
     term_id = db.Column(db.Integer,
                         db.ForeignKey('terms.term_id'),
                         nullable=False)
 
-    poem = db.relationship("Poem", backref="poem_terms")
+    poem = db.relationship("Metrics", backref="poem_terms")
     term = db.relationship("Term", backref="poem_terms")
 
 
@@ -602,19 +604,9 @@ class Subject(db.Model):
     subject_id = db.Column(db.Integer, autoincrement=True, primary_key=True)
     subject = db.Column(db.Text, nullable=False)
 
-    poems = db.relationship("Poem",
-                            secondary='poem_subjects',
-                            backref="subjects")
-
-    # @classmethod
-    # def get_subject_list(cls):
-    #     subjects = cls.query.all()
-    #     subject_info = []
-    #     for sub in subjects:
-    #         poems = set(poem.poem_id for poem in sub.poems)
-    #         subject_info.append(poems)
-
-    #     return subject_info
+    metrics = db.relationship("Metrics",
+                              secondary='poem_subjects',
+                              backref="subjects")
 
 
 class PoemSubject(db.Model):
@@ -624,13 +616,13 @@ class PoemSubject(db.Model):
 
     ps_id = db.Column(db.Integer, autoincrement=True, primary_key=True)
     poem_id = db.Column(db.Integer,
-                        db.ForeignKey('poems.poem_id'),
+                        db.ForeignKey('metrics.poem_id'),
                         nullable=False)
     subject_id = db.Column(db.Integer,
                            db.ForeignKey('subjects.subject_id'),
                            nullable=False)
 
-    poem = db.relationship("Poem", backref="poem_subjects")
+    metrics = db.relationship("Metrics", backref="poem_subjects")
     subject = db.relationship("Subject", backref="poem_subjects")
 
 
@@ -693,7 +685,7 @@ class Metrics(db.Model):
         pll = self.pl_lines
         if pll > 80:
             pll_min = 45
-            pll_max = pll + 40
+            pll_max = pll + 10
         else:
             pll_min = pll - 10
             pll_max = pll + 10
@@ -704,13 +696,13 @@ class Metrics(db.Model):
                               'down_adj': 2,
                               'up_adj': 1},
                   'mean_ll': {'val': llm,
-                              'max': llm + 30,
-                              'min': llm - 30,
+                              'max': llm + 20,
+                              'min': llm - 20,
                               'down_adj': 4,
                               'up_adj': 2.5},
                   'llrange': {'val': llr,
-                              'max': llr + 30,
-                              'min': llr - 30,
+                              'max': llr + 20,
+                              'min': llr - 20,
                               'down_adj': 4,
                               'up_adj': 2},
                   'wlrange': {'val': wlr,
@@ -726,17 +718,20 @@ class Metrics(db.Model):
 
         excludes current poem_id"""
 
-        o_met = (Metrics.query
-                        .filter(Metrics.poem_id != self.poem_id,
-                                Metrics.pl_lines <= ranges["plength"]["max"],
-                                Metrics.pl_lines >= ranges["plength"]["min"],
-                                Metrics.ll_mean <= ranges["mean_ll"]["max"],
-                                Metrics.ll_mean >= ranges["mean_ll"]["min"],
-                                Metrics.ll_range >= ranges["llrange"]["min"],
-                                Metrics.ll_range <= ranges["llrange"]["max"],
-                                Metrics.wl_range >= ranges["wlrange"]["min"],
-                                Metrics.wl_range <= ranges["wlrange"]["max"])
-                        .all())
+        o_met = (db.session.query(Metrics)
+                   .filter(Metrics.poem_id != self.poem_id,
+                           Metrics.pl_lines <= ranges["plength"]["max"],
+                           Metrics.pl_lines >= ranges["plength"]["min"],
+                           Metrics.ll_mean <= ranges["mean_ll"]["max"],
+                           Metrics.ll_mean >= ranges["mean_ll"]["min"],
+                           Metrics.ll_range >= ranges["llrange"]["min"],
+                           Metrics.ll_range <= ranges["llrange"]["max"],
+                           Metrics.wl_range >= ranges["wlrange"]["min"],
+                           Metrics.wl_range <= ranges["wlrange"]["max"])
+                   .options(joinedload('subjects'))
+                   .options(joinedload('terms'))
+                   .options(joinedload('regions'))
+                   .all())
 
         return o_met
 
@@ -760,6 +755,24 @@ class Metrics(db.Model):
                 c['min'] = c['val']
 
         return ranges
+
+    @staticmethod
+    def _slim_metrics(ranges, other_metrics):
+        """given ranges dict & list of metrics, returns new list fitting ranges
+        """
+        new_metrics = []
+        for metric in other_metrics:
+            if all([metric.pl_lines <= ranges["plength"]['max'],
+                   metric.pl_lines >= ranges["plength"]["min"],
+                   metric.ll_mean <= ranges["mean_ll"]['max'],
+                   metric.ll_mean >= ranges["mean_ll"]["min"],
+                   metric.ll_range <= ranges["llrange"]["max"],
+                   metric.ll_range >= ranges["llrange"]["min"],
+                   metric.wl_range <= ranges["wlrange"]["max"],
+                   metric.wl_range >= ranges["wlrange"]["min"]]):
+                new_metrics.append(metric)
+
+        return new_metrics
 
     def _increment_up(self, range_dict):
         """increases ranges to provide higher number of results"""
@@ -798,7 +811,7 @@ class Metrics(db.Model):
         while len(o_met) > 400 and i <= 15:
 
             ranges = self._increment_down(ranges)
-            o_met = self._get_within_range(ranges)
+            o_met = Metrics._slim_metrics(ranges=ranges, other_metrics=o_met)
 
             print len(o_met)
             i += 1
@@ -849,8 +862,7 @@ class Metrics(db.Model):
 
         return final_matches
 
-    def find_matches(self, micwgt=1, sentwgt=1, conwgt=1, macwgt=1,
-                     unique_auth=True, new_auth=True, limit=10):
+    def find_matches(self, micwgt=1, sentwgt=1, conwgt=1, macwgt=1, unique_auth=True, new_auth=True, limit=10):
         """returns a list with (poem_id, match percent) for limit other poems
 
         for a given metrics (self), will find the best matches and return a list
@@ -1125,23 +1137,18 @@ class Metrics(db.Model):
         return {"reg_per": reg_per, "term_per": term_per, "sub_per": sub_per}
 
     @staticmethod
-    def division(x, y):
-        """ returns the percent variation in x and y
+    def difference_percent(x, y):
+        """ returns the difference between x and y as a percentage of x.
 
-        we divide the smaller number by the larger, since we'll be using this
-        to compare how close they are to one another as a percentage to the
-        ideal of 1 (what we would get if they were the same value), and we don't
-        care which value is bigger (x or y), only about how far from 1 that
-        value is.
+            >>> Metrics.difference_percent(100, 110)
+            0.1
 
-            >>> Metrics.division(100.0, 110.0)
-            0.9090909090909091
+            >>> Metrics.difference_percent(110, 100)
+            0.09090909090909091
 
-            >>> Metrics.division(110.0, 100.0)
-            0.9090909090909091
-
-            >>> Metrics.division(52.0, 0)
+            >>> Metrics.difference_percent(10, 0)
             0
+
 
         this method is called by Metrics._get_macro_compare and will not need
         to be called directly.
@@ -1150,6 +1157,7 @@ class Metrics(db.Model):
         if y == 0 or x == 0:
             return 0
         else:
+            x = float(x)
             return abs(x - y) / x
 
     def _get_macro_compare(self, other):
@@ -1163,8 +1171,8 @@ class Metrics(db.Model):
         self_macro = self._get_macro_lex_data()
         other_macro = other._get_macro_lex_data()
 
-        macro_compare = map(Metrics.division, self_macro, other_macro)
-        macro_compare.extend(map(Metrics.division, other_macro, self_macro))
+        macro_compare = map(Metrics.difference_percent, self_macro, other_macro)
+        macro_compare.extend(map(Metrics.difference_percent, other_macro, self_macro))
 
         ideal = [0.0 for item in macro_compare]
 
@@ -1173,10 +1181,9 @@ class Metrics(db.Model):
     def _get_context_data(self):
         """Returns a list w/ nested lists w/ context data for a poem"""
 
-        poem = self.poem
-        subjects = set(poem.subjects)
-        terms = set(poem.terms)
-        regions = set(poem.regions)
+        subjects = set(self.subjects)
+        terms = set(self.terms)
+        regions = set(self.regions)
 
         return {"regions": regions, "terms": terms,
                 "subjects": subjects}
@@ -1826,6 +1833,9 @@ class Metrics(db.Model):
 
     @staticmethod
     def get_wl_average_data():
+        """
+        """
+
         metrics = Metrics.query.all()
         wl_mean = [m.wl_mean for m in metrics]
         wl_median = [m.wl_median for m in metrics]
@@ -1850,6 +1860,36 @@ class Metrics(db.Model):
                    "wl_mode": wl_mode_count}
 
         return wl_data
+
+    @staticmethod
+    def get_ll_average_data():
+        """
+        """
+
+        metrics = Metrics.query.all()
+        ll_mean = [m.ll_mean for m in metrics]
+        ll_median = [m.ll_median for m in metrics]
+        ll_mode = [m.ll_median for m in metrics]
+
+        labels = []
+        for i in range(max(ll_mean)):
+            labels.append(float(i))
+
+        ll_mean_count = []
+        ll_median_count = []
+        ll_mode_count = []
+
+        for l in labels:
+            ll_mean_count.append(ll_mean.count(l))
+            ll_median_count.append(ll_median.count(l))
+            ll_mode_count.append(ll_mode.count(l))
+
+        ll_data = {"labels": labels,
+                   "ll_mean": ll_mean_count,
+                   "ll_median": ll_median_count,
+                   "ll_mode": ll_mode_count}
+
+        return ll_data
 
 
 class PoemMatch(db.Model):
