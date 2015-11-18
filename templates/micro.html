@@ -61,7 +61,10 @@ ReadMe: Micro
             <p>Here is some information about what this category is. Blah Blah Blah.</p>
         </div>  <!-- end of algorithm-catagory row -->
         <div class="row algorithm-graph">
-            <p>COOL D3 VISUALIZATION GOES HERE</p>
+            <div class="legend" id="alliteration-graph"></div>
+            <div class="axis y-axis" id="alliteration-y-axis">Freq.</div>
+            <canvas class="graph-chart" id="ALChart" width="950" height="500"></canvas>
+            <div class="axis x-axis" id="alliteration-x-axis">Score</div>
         </div>  <!-- end of algorithm-graph row -->
 
     </div>  <!-- end of column -->
@@ -184,8 +187,9 @@ ReadMe: Micro
     $('#filler-freq-graph').append(ffLegend);
 
 // setting up narrator frequency graph //
+
     var nfData = {
-        labels: templabel,
+        labels: smalllabel,
         datasets: [
             {
                 label: "Frequency of \"I\"",
@@ -195,7 +199,7 @@ ReadMe: Micro
                 pointStrokeColor: "#fff",
                 pointHighlightFill: "#fff",
                 pointHighlightStroke: "rgba(220,220,220,1)",
-                data: {{ filler["first"] }}
+                data: {{ narrator["first"] }}
             },{
                 label: "Frequency of \"You\"",
                 fillColor: "rgba(151,187,205,0.2)",
@@ -204,7 +208,7 @@ ReadMe: Micro
                 pointStrokeColor: "#fff",
                 pointHighlightFill: "#fff",
                 pointHighlightStroke: "rgba(151,187,205,1)",
-                data: {{ filler["second"] }}
+                data: {{ narrator["second"] }}
             }]
     };
 
@@ -213,5 +217,28 @@ ReadMe: Micro
 
     var nfLegend = NFChart.generateLegend();
     $('#narrator-freq-graph').append(nfLegend);
+
+//setting up alliteration graph //
+    var alData = {
+        labels: templabel,
+        datasets: [
+            {
+                label: "Alliteration",
+                fillColor: "rgba(220,220,220,0.2)",
+                strokeColor: "rgba(220,220,220,1)",
+                pointColor: "rgba(220,220,220,1)",
+                pointStrokeColor: "#fff",
+                pointHighlightFill: "#fff",
+                pointHighlightStroke: "rgba(220,220,220,1)",
+                data: {{ alliteration["first"] }}
+            }]
+    };
+
+    var alctx = $("#ALChart").get(0).getContext("2d");
+    var ALChart = new Chart(alctx).Line(alData, options);
+
+    var alLegend = ALChart.generateLegend();
+    $('#alliteration-graph').append(alLegend);
+
 </script>
 {% endblock %}

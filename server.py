@@ -2,7 +2,7 @@ from flask import (Flask, render_template, redirect, jsonify,
                    request, session)
 from flask_debugtoolbar import DebugToolbarExtension
 from random import choice
-from Model import Poem, Metrics, Region, Term, UserMetrics, connect_to_db, db
+from Model import Poem, Metrics, Region, Term, Subject, UserMetrics, connect_to_db, db
 from requests import get
 from bs4 import BeautifulSoup
 
@@ -168,7 +168,15 @@ def display_micro_page():
 
 @app.route('/algorithm/sentiment')
 def display_sentiment_page():
-    return render_template("sentiment.html")
+    metrics_list = Metrics.query.all()
+    pos_neg = Metrics.get_pos_neg_data(metrics_list)
+    obj_abs = Metrics.get_obj_abs_data(metrics_list)
+    common = Metrics.get_common_data(metrics_list)
+    gender = Metrics.get_gender_data(metrics_list)
+    active = Metrics.get_active_data(metrics_list)
+
+    return render_template("sentiment.html", pos_neg=pos_neg, obj_abs=obj_abs,
+                           common=common, gender=gender, active=active)
 
 
 @app.route('/algorithm/context')
@@ -178,16 +186,9 @@ def display_context_page():
 
 @app.route('/algorithm/subjects')
 def display_subject_graph():
-    subjects = all_subjects
-    link = "../static/subjectgraph.csv"
-    category = "Subject: "
-    page_title = "Subject Graph"
-    explanation_text = "Explanation text will go here!"
+    subject_data = Subject.get_subject_data()
 
-    return render_template("contextgraph.html", data_url=link,
-                           data_categories=subjects, category=category,
-                           page_title=page_title,
-                           explanation_text=explanation_text)
+    return render_template("subjects.html", subject_data=subject_data)
 
 
 @app.route('/algorithm/terms')

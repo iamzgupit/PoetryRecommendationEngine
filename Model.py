@@ -557,20 +557,24 @@ class Region(db.Model):
             iden = iden[0]
             metrics = region.metrics
             total = len(metrics)
+
             other_reg = []
             other_data = []
-            shared = 0
+            only_this = 0
             for met in metrics:
-                other_reg.extend([reg for reg in met.regions if reg != region])
+                more = [reg for reg in met.regions if reg != region]
+                if more:
+                    other_reg.extend(more)
+                else:
+                    only_this += 1
 
             all_other = set(other_reg)
             for reg in all_other:
                 count = other_reg.count(reg)
-                shared += count
                 other_data.append((reg.region, count))
 
-            if shared < total:
-                other_data.append(("Only " + region.region, total - shared))
+            if only_this > 0:
+                other_data.append(("Only " + region.region, only_this))
             reg_data = {"name": name,
                         "total": total,
                         "iden": iden,
@@ -623,20 +627,24 @@ class Term(db.Model):
             total = len(metrics)
 
             other_terms = []
+            only_this = 0
             for met in metrics:
-                other_terms.extend([t for t in met.terms if t != term])
+                more = [t for t in met.terms if t != term]
+                if more:
+                    other_terms.extend(more)
+                else:
+                    only_this += 1
 
             other_data = []
-            shared = 0
 
             all_other = set(other_terms)
             for t in all_other:
                 count = other_terms.count(t)
-                shared += count
                 other_data.append((t.term, count))
 
-            if shared < total:
-                other_data.append(("Only " + term.term, total - shared))
+            if only_this > 0:
+                other_data.append(("Only " + term.term, only_this))
+
             t_data = {"name": name,
                       "total": total,
                       "iden": iden,
@@ -675,6 +683,49 @@ class Subject(db.Model):
     metrics = db.relationship("Metrics",
                               secondary='poem_subjects',
                               backref="subjects")
+
+    @staticmethod
+    def get_subject_data():
+        subjects = db.session.query(Subject).options(joinedload('metrics').joinedload('subjects')).all()
+
+        subject_data = []
+        for subject in subjects:
+            name = subject.subject
+            iden = name.replace(".", "").replace("-", "").replace("/", "").replace(",", "").split(" ")
+            if iden[0].lower() != "the":
+                iden = iden[0]
+            else:
+                iden = iden[1]
+            metrics = subject.metrics
+            total = len(metrics)
+
+            other_subjects = []
+            only_this = 0
+            for met in metrics:
+                others = [s for s in met.subjects if s != subject]
+                if others:
+                    other_subjects.extend(others)
+                else:
+                    only_this += 1
+
+            other_data = []
+            all_other = set(other_subjects)
+
+            for s in all_other:
+                count = other_subjects.count(s)
+                other_data.append((s.subject, count))
+
+            if only_this > 0:
+                other_data.append(("Only " + subject.subject, only_this))
+
+            s_data = {"name": name,
+                      "total": total,
+                      "iden": iden,
+                      "others": other_data}
+
+            subject_data.append(s_data)
+
+        return subject_data
 
 
 class PoemSubject(db.Model):
@@ -2010,8 +2061,7 @@ class Metrics(db.Model):
         return data
 
     @staticmethod
-    def _get_small_percent_data(first_list_of_nums, second_list_of_nums=None,
-                                third_list_of_nums=None, set_max=None):
+    def _get_small_percent_data(first_list_of_nums, second_list_of_nums=None, third_list_of_nums=None, set_max=None):
         """returns a dict w/ lists of of word length average data
 
         called by server.py and fed through to Chart.js to make a graph of
@@ -2024,7 +2074,16 @@ class Metrics(db.Model):
                 0.270, 0.280, 0.290, 0.300, 0.310, 0.320, 0.330, 0.340, 0.350,
                 0.360, 0.370, 0.380, 0.390, 0.400, 0.410, 0.420, 0.430, 0.440,
                 0.450, 0.460, 0.470, 0.480, 0.490, 0.500]
+
         if set_max:
+            if set_max <= 0.2:
+                nums = [0.000, 0.005, 0.010, 0.015, 0.020, 0.025, 0.030, 0.035,
+                        0.040, 0.045, 0.050, 0.055, 0.060, 0.065, 0.070, 0.075,
+                        0.080, 0.085, 0.090, 0.095, 0.100, 0.105, 0.110, 0.115,
+                        0.120, 0.125, 0.130, 0.135, 0.140, 0.145, 0.150, 0.155,
+                        0.160, 0.165, 0.170, 0.175, 0.180, 0.185, 0.190, 0.195,
+                        0.200]
+
             nums = [n for n in nums if n <= set_max]
 
         labels = []
@@ -2064,6 +2123,50 @@ class Metrics(db.Model):
         return data
 
     @staticmethod
+    def get_obj_abs_data(metrics_obj_list):
+        obj = [m.object_percent for m in metrics_obj_list]
+        abst = [m.abs_percent for m in metrics_obj_list]
+
+        return Metrics._get_small_percent_data(first_list_of_nums=obj,
+                                               second_list_of_nums=abst,
+                                               set_max=0.3)
+
+    @staticmethod
+    def get_common_data(metrics_obj_list):
+        standard = [m.common_percent for m in metrics_obj_list]
+        specific = [m.poem_percent for m in metrics_obj_list]
+
+        return Metrics._get_percent_data(first_list_of_nums=standard,
+                                         second_list_of_nums=specific)
+
+    @staticmethod
+    def get_gender_data(metrics_obj_list):
+        male = [m.male_percent for m in metrics_obj_list]
+        female = [m.female_percent for m in metrics_obj_list]
+
+        return Metrics._get_small_percent_data(first_list_of_nums=male,
+                                               second_list_of_nums=female,
+                                               set_max=0.2)
+
+    @staticmethod
+    def get_active_data(metrics_obj_list):
+        active = [m.active_percent for m in metrics_obj_list]
+        passive = [m.passive_percent for m in metrics_obj_list]
+
+        return Metrics._get_small_percent_data(first_list_of_nums=active,
+                                               second_list_of_nums=passive,
+                                               set_max=0.3)
+
+    @staticmethod
+    def get_pos_neg_data(metrics_obj_list):
+        pos = [m.positive for m in metrics_obj_list]
+        neg = [m.negative for m in metrics_obj_list]
+
+        return Metrics._get_small_percent_data(first_list_of_nums=pos,
+                                               second_list_of_nums=neg,
+                                               set_max=0.3)
+
+    @staticmethod
     def get_rhyme_rep_data(metrics_obj_list):
         rhyme = [m.rhyme for m in metrics_obj_list]
         end_repeat = [m.end_repeat for m in metrics_obj_list]
@@ -2093,7 +2196,7 @@ class Metrics(db.Model):
         i_freq = [m.i_freq for m in metrics_obj_list]
         you_freq = [m.you_freq for m in metrics_obj_list]
 
-        return Metrics._get_percent_data(i_freq, you_freq)
+        return Metrics._get_small_percent_data(i_freq, you_freq, set_max=0.3)
 
     @staticmethod
     def get_alliteration_data(metrics_obj_list):

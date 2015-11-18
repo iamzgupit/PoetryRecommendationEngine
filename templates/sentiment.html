@@ -5,7 +5,7 @@ ReadMe: Sentiment
 {% block content %}
 <div class="container">
 <div class="row large-content">
-    <div class="col-md-8 col-md-offset-2">
+    <div class="col-md-10 col-md-offset-1">
         <div class="row algorithm-header">
             <h4>Sentiment Data</h4>
             <br>
@@ -16,37 +16,237 @@ ReadMe: Sentiment
             <p>Here is some information about what this category is. Blah Blah Blah.</p>
         </div>  <!-- end of algorithm-catagory row -->
         <div class="row algorithm-graph">
-            <p>COOL D3 VISUALIZATION GOES HERE</p>
+            <div class="legend" id="pos-neg-graph"></div>
+            <div class="axis y-axis" id="pos-neg-y-axis">Freq.</div>
+            <canvas class="graph-chart" id="PNChart" width="950" height="500"></canvas>
+            <div class="axis x-axis" id="pos-neg-x-axis">Score</div>
         </div>  <!-- end of algorithm-graph row -->
         <div class="row algorithm-catagory">
             <h5>Objects/Abstract Language</h5>
             <p>Here is some information about what this category is. Blah Blah Blah.</p>
         </div>  <!-- end of algorithm-catagory row -->
         <div class="row algorithm-graph">
-            <p>COOL D3 VISUALIZATION GOES HERE</p>
+            <div class="legend" id="obj-abs-graph"></div>
+            <div class="axis y-axis" id="obj-abs-y-axis">Freq.</div>
+            <canvas class="graph-chart" id="OAChart" width="950" height="500"></canvas>
+            <div class="axis x-axis" id="obj-abs-x-axis">Score</div>
         </div>  <!-- end of algorithm-graph row -->
         <div class="row algorithm-catagory">
             <h5>Uncommon Language: Our Corpus and Common English</h5>
             <p>Here is some information about what this category is. Blah Blah Blah.</p>
         </div>  <!-- end of algorithm-catagory row -->
         <div class="row algorithm-graph">
-            <p>COOL D3 VISUALIZATION GOES HERE</p>
+            <div class="legend" id="common-graph"></div>
+            <div class="axis y-axis" id="common-y-axis">Freq.</div>
+            <canvas class="graph-chart" id="CWChart" width="950" height="500"></canvas>
+            <div class="axis x-axis" id="common-x-axis">Score</div>
         </div>  <!-- end of algorithm-graph row -->
         <div class="row algorithm-catagory">
             <h5>Human Presence: Male and Female</h5>
             <p>Here is some information about what this category is. Blah Blah Blah.</p>
         </div>  <!-- end of algorithm-catagory row -->
         <div class="row algorithm-graph">
-            <p>COOL D3 VISUALIZATION GOES HERE</p>
+            <div class="legend" id="gender-graph"></div>
+            <div class="axis y-axis" id="gender-y-axis">Freq.</div>
+            <canvas class="graph-chart" id="GFChart" width="950" height="500"></canvas>
+            <div class="axis x-axis" id="gender-x-axis">Score</div>
         </div>  <!-- end of algorithm-graph row -->
         <div class="row algorithm-catagory">
             <h5>Active/Passive Language</h5>
             <p>Here is some information about what this category is. Blah Blah Blah.</p>
         </div>  <!-- end of algorithm-catagory row -->
         <div class="row algorithm-graph">
-            <p>COOL D3 VISUALIZATION GOES HERE</p>
+            <div class="legend" id="active-graph"></div>
+            <div class="axis y-axis" id="active-y-axis">Freq.</div>
+            <canvas class="graph-chart" id="APChart" width="950" height="500"></canvas>
+            <div class="axis x-axis" id="active-x-axis">Score</div>
         </div>  <!-- end of algorithm-graph row -->
     </div>  <!-- end of column -->
 </div> <!-- end of main-content row -->
 </div> <!-- end of container -->
+<script>
+
+// setting up positive and negative percent graph //
+    var templabel = []
+    {% for label in pos_neg["labels"] %}
+    templabel.push("{{label}}")
+    {% endfor %}
+
+    var pnData = {
+        labels: templabel,
+        datasets: [
+            {
+                label: "Positive Words",
+                fillColor: "rgba(220,220,220,0.2)",
+                strokeColor: "rgba(220,220,220,1)",
+                pointColor: "rgba(220,220,220,1)",
+                pointStrokeColor: "#fff",
+                pointHighlightFill: "#fff",
+                pointHighlightStroke: "rgba(220,220,220,1)",
+                data: {{ pos_neg["first"] }}
+            },{
+                label: "Negative Words",
+                fillColor: "rgba(151,187,205,0.2)",
+                strokeColor: "rgba(151,187,205,1)",
+                pointColor: "rgba(151,187,205,1)",
+                pointStrokeColor: "#fff",
+                pointHighlightFill: "#fff",
+                pointHighlightStroke: "rgba(151,187,205,1)",
+                data: {{ pos_neg["second"] }}
+            }]
+    };
+
+    var options = {
+        legendTemplate : '<% for (var i=0; i<datasets.length; i++) { %>'
+                            + '<svg height="15" width="15">'
+                            + '<circle cx="7" cy="9" r="5" stroke="black" stroke-width="1" fill="<%=datasets[i].strokeColor%>" /></svg>'
+                            +'<% if (datasets[i].label) { %> <%= datasets[i].label %> <% } %>'
+                          +'<br>'
+                        +'<% } %>',
+        bezierCurve: false,
+        pointHitDetectionRadius : 2
+    };
+
+    var pnctx = $("#PNChart").get(0).getContext("2d");
+    var PNChart = new Chart(pnctx).Line(pnData, options);
+
+    var pnLegend = PNChart.generateLegend();
+    $('#pos-neg-graph').append(pnLegend);
+
+// setting up object/abstract percentage graph //
+    var oaData = {
+        labels: templabel,
+        datasets: [
+            {
+                label: "Concrete (Object) Words",
+                fillColor: "rgba(220,220,220,0.2)",
+                strokeColor: "rgba(220,220,220,1)",
+                pointColor: "rgba(220,220,220,1)",
+                pointStrokeColor: "#fff",
+                pointHighlightFill: "#fff",
+                pointHighlightStroke: "rgba(220,220,220,1)",
+                data: {{ obj_abs["first"] }}
+            },{
+                label: "Abstract Words",
+                fillColor: "rgba(151,187,205,0.2)",
+                strokeColor: "rgba(151,187,205,1)",
+                pointColor: "rgba(151,187,205,1)",
+                pointStrokeColor: "#fff",
+                pointHighlightFill: "#fff",
+                pointHighlightStroke: "rgba(151,187,205,1)",
+                data: {{ obj_abs["second"] }}
+            }]
+    };
+
+    var oactx = $("#OAChart").get(0).getContext("2d");
+    var OAChart = new Chart(oactx).Line(oaData, options);
+
+    var oaLegend = OAChart.generateLegend();
+    $('#obj-abs-graph').append(oaLegend);
+
+// setting up common percentage graph //
+    var longlabel = []
+    {% for label in common["labels"] %}
+    longlabel.push("{{label}}")
+    {% endfor %}
+
+    var cwData = {
+        labels: longlabel,
+        datasets: [
+            {
+                label: "Common Generally",
+                fillColor: "rgba(220,220,220,0.2)",
+                strokeColor: "rgba(220,220,220,1)",
+                pointColor: "rgba(220,220,220,1)",
+                pointStrokeColor: "#fff",
+                pointHighlightFill: "#fff",
+                pointHighlightStroke: "rgba(220,220,220,1)",
+                data: {{ common["first"] }}
+            },{
+                label: "Common For Our Corpus",
+                fillColor: "rgba(151,187,205,0.2)",
+                strokeColor: "rgba(151,187,205,1)",
+                pointColor: "rgba(151,187,205,1)",
+                pointStrokeColor: "#fff",
+                pointHighlightFill: "#fff",
+                pointHighlightStroke: "rgba(151,187,205,1)",
+                data: {{ common["second"] }}
+            }]
+    };
+
+    var cwctx = $("#CWChart").get(0).getContext("2d");
+    var CWChart = new Chart(cwctx).Line(cwData, options);
+
+    var cwLegend = CWChart.generateLegend();
+    $('#common-graph').append(cwLegend);
+
+// setting up gender percentage graph //
+    var otherlabel = []
+    {% for label in gender["labels"] %}
+    otherlabel.push("{{label}}")
+    {% endfor %}
+
+    var gfData = {
+        labels: otherlabel,
+        datasets: [
+            {
+                label: "Male Words",
+                fillColor: "rgba(220,220,220,0.2)",
+                strokeColor: "rgba(220,220,220,1)",
+                pointColor: "rgba(220,220,220,1)",
+                pointStrokeColor: "#fff",
+                pointHighlightFill: "#fff",
+                pointHighlightStroke: "rgba(220,220,220,1)",
+                data: {{ gender["first"] }}
+            },{
+                label: "Female Words",
+                fillColor: "rgba(151,187,205,0.2)",
+                strokeColor: "rgba(151,187,205,1)",
+                pointColor: "rgba(151,187,205,1)",
+                pointStrokeColor: "#fff",
+                pointHighlightFill: "#fff",
+                pointHighlightStroke: "rgba(151,187,205,1)",
+                data: {{ gender["second"] }}
+            }]
+    };
+
+    var gfctx = $("#GFChart").get(0).getContext("2d");
+    var GFChart = new Chart(gfctx).Line(gfData, options);
+
+    var gfLegend = GFChart.generateLegend();
+    $('#gender-graph').append(gfLegend);
+
+// setting up active/passive percentage graph //
+
+    var apData = {
+        labels: templabel,
+        datasets: [
+            {
+                label: "Male Words",
+                fillColor: "rgba(220,220,220,0.2)",
+                strokeColor: "rgba(220,220,220,1)",
+                pointColor: "rgba(220,220,220,1)",
+                pointStrokeColor: "#fff",
+                pointHighlightFill: "#fff",
+                pointHighlightStroke: "rgba(220,220,220,1)",
+                data: {{ active["first"] }}
+            },{
+                label: "Female Words",
+                fillColor: "rgba(151,187,205,0.2)",
+                strokeColor: "rgba(151,187,205,1)",
+                pointColor: "rgba(151,187,205,1)",
+                pointStrokeColor: "#fff",
+                pointHighlightFill: "#fff",
+                pointHighlightStroke: "rgba(151,187,205,1)",
+                data: {{ active["second"] }}
+            }]
+    };
+
+    var apctx = $("#APChart").get(0).getContext("2d");
+    var APChart = new Chart(apctx).Line(apData, options);
+
+    var apLegend = APChart.generateLegend();
+    $('#active-graph').append(apLegend);
+
+</script>
 {% endblock %}
