@@ -1,0 +1,157 @@
+{% extends 'base.html' %}
+{% block title %}
+ReadMe: Terms
+{% endblock %}
+{% block content %}
+
+<div class="container">
+<div class="row large-content">
+    <div class="col-md-10 col-md-offset-1">
+        <div class="row algorithm-header">
+            <h4>Term</h4>
+            <br>
+            <p>term information will to here!</p>
+        </div>  <!-- end of algorithm-header row -->
+        <div class="graph-info" id="criteria-info">
+        </div> <!-- end of graph-information row -->
+
+        <div class="row context-graph" id="graph-space">
+
+        {% for term in term_data %}
+            <div class="col-md-4 graph">
+                <div class="graph-box">
+                    <canvas class="donut-chart" id="{{ term['iden'] }}" width="250" height="250"></canvas>
+                    <div class="region-title" style="padding-bottom:15px;text-align:center;">
+                        <h3>{{ term['name'] }}</h3>
+                        <h5>{{ term['total'] }} Poems Total</h5>
+                    </div> <!-- end of region title div -->
+                </div> <!-- end of graph-box div -->
+            </div> <!-- end of graph column -->
+        {% endfor %}
+
+        </div>  <!-- end of algorithm-graph row -->
+    </div>  <!-- end of column -->
+</div> <!-- end of main-content row -->
+</div> <!-- end of container -->
+<script>
+var colorDic = {"Rhymed Stanza": "#EE7942",
+                "Free Verse": "#FFEFDB",
+                "Sonnet": "#8B8378",
+                "Syllabic": "#7FFFD4",
+                "Refrain": "#98F5FF",
+                "Blank Verse": "#D2691E",
+                "Ode": "#8B8878",
+                "Couplet": "#FFB90F",
+                "Ekphrasis": "#00008B",
+                "Persona": "#B8860B",
+                "Imagery": "black",
+                "Epistle": "#A9A9A9",
+                "Metaphor": "#6CA6CD",
+                "Consonance": "#C1FFC1",
+                "Mixed": "#483D8B",
+                "Ballad": "#528B8B",
+                "Dramatic Monologue": "#E9967A",
+                "Simile": "#C63D0F",
+                "Elegy": "#7E8F7C",
+                "Allusion": "#D9853B",
+                "Epigram": "#74AFAD",
+                "Alliteration": "#558C89",
+                "Pastoral": "#67BCDB",
+                "Prose Poem": "#E44424",
+                "Aphorism": "#6DBDD6",
+                "Aubade": "#118C4E",
+                "Confessional": "#585858",
+                "Sestina": "#C1E1A6",
+                "Common Measure": "#FF9009",
+                "Nursery Rhymes": "#A8ADB4",
+                "Limerick": "#CAB388",
+                "Concrete or Pattern Poetry": "B7A6AD",
+                "Imagist": "#7D9EC0",
+                "Villanelle": "#555555",
+                "Epithalamion": "#2E8B57",
+                "Ghazal": "#4169E1",
+                "Ars Poetica": "#B0E0E6",
+                "Ottava Rima": "#DB7093",
+                "Epic": "#9AFF9A",
+                "Epigraph": "#96CDCD",
+                "Assonance": "#EE4000",
+                "Terza Rima": "#EECFA1",
+                "Quatrain": "#CAE1FF",
+                "Series/Sequence": "#8470FF",
+                "Haiku": "#90EE90",
+                "Symbolist": "#CD8C95",
+                "Visual Poetry": "#FF6347",
+                "Pantoum": "#F0E68C",
+                "Tercet": "#CD5C5C",
+                "Only Rhymed Stanza": "#EE7942",
+                "Only Free Verse": "#FFEFDB",
+                "Only Sonnet": "#8B8378",
+                "Only Syllabic": "#7FFFD4",
+                "Only Refrain": "#98F5FF",
+                "Only Blank Verse": "#D2691E",
+                "Only Ode": "#8B8878",
+                "Only Couplet": "#FFB90F",
+                "Only Ekphrasis": "#00008B",
+                "Only Persona": "#B8860B",
+                "Only Imagery": "black",
+                "Only Epistle": "#A9A9A9",
+                "Only Metaphor": "#6CA6CD",
+                "Only Consonance": "#C1FFC1",
+                "Only Mixed": "#483D8B",
+                "Only Ballad": "#528B8B",
+                "Only Dramatic Monologue": "#E9967A",
+                "Only Simile": "#C63D0F",
+                "Only Elegy": "#7E8F7C",
+                "Only Allusion": "#D9853B",
+                "Only Epigram": "#74AFAD",
+                "Only Alliteration": "#558C89",
+                "Only Pastoral": "#67BCDB",
+                "Only Prose Poem": "#E44424",
+                "Only Aphorism": "#6DBDD6",
+                "Only Aubade": "#118C4E",
+                "Only Confessional": "#585858",
+                "Only Sestina": "#C1E1A6",
+                "Only Common Measure": "#FF9009",
+                "Only Nursery Rhymes": "#A8ADB4",
+                "Only Limerick": "#CAB388",
+                "Only Concrete or Pattern Poetry": "B7A6AD",
+                "Only Imagist": "#7D9EC0",
+                "Only Villanelle": "#555555",
+                "Only Epithalamion": "#2E8B57",
+                "Only Ghazal": "#4169E1",
+                "Only Ars Poetica": "#B0E0E6",
+                "Only Ottava Rima": "#DB7093",
+                "Only Epic": "#9AFF9A",
+                "Only Epigraph": "#96CDCD",
+                "Only Assonance": "#EE4000",
+                "Only Terza Rima": "#EECFA1",
+                "Only Quatrain": "#CAE1FF",
+                "Only Series/Sequence": "#8470FF",
+                "Only Haiku": "#90EE90",
+                "Only Symbolist": "#CD8C95",
+                "Only Visual Poetry": "#FF6347",
+                "Only Pantoum": "#F0E68C",
+                "Only Tercet": "#CD5C5C"}
+
+{% for term in term_data %}
+    
+    var {{ term['iden'] }}data = [
+    {% for t, number in term['others'] %}
+        {
+            value: {{ number }},
+            color: colorDic["{{ t }}"],
+            highlight: "#696969",
+            label: "{{ t }}"
+        },
+    {% endfor %}
+    ]
+
+    var {{ term['iden'] }}ctx = $("#{{ term['iden'] }}").get(0).getContext("2d");
+    var {{ term['iden'] }}Chart = new Chart({{ term['iden'] }}ctx).Doughnut({{ term['iden'] }}data);
+
+{% endfor %}
+    // var ldLegend = LDChart.generateLegend();
+    // $('#lex-div-graph').append(ldLegend);
+</script>
+
+{% endblock %}

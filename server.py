@@ -2,10 +2,9 @@ from flask import (Flask, render_template, redirect, jsonify,
                    request, session)
 from flask_debugtoolbar import DebugToolbarExtension
 from random import choice
-from Model import Poem, Metrics, UserMetrics, connect_to_db, db
+from Model import Poem, Metrics, Region, Term, UserMetrics, connect_to_db, db
 from requests import get
 from bs4 import BeautifulSoup
-from word_lists import all_regions, all_terms, all_subjects
 
 app = Flask(__name__)
 
@@ -15,28 +14,31 @@ app.secret_key = "TEMPORARY SECRET KEY"
 def get_wiki_info(poem):
     """returns wikipedia url and link to main picture if applicable"""
 
-    # name = poem.poet.name.replace(" ", "_")
-    # wikipedia_url = "https://en.wikipedia.org/wiki/" + name
-    # page = get(wikipedia_url).text
-    # if "does not have an article with this exact name" in page:
-    #     wikipedia_url = None
-    #     source = None
-    # else:
-    #     soup = BeautifulSoup(page, "html5lib")
-    #     info_box = soup.find("table", class_="infobox vcard")
-    #     if info_box:
-    #         image = info_box.find("img")
-    #         if image:
-    #             attrib = image.attrs
-    #             source = attrib['src']
-    #             source = "https:" + source
-    #         else:
-    #             source = '/static/parchment.jpg'
-    #     else:
-    #         wikipedia_url = None
-    #         source = None
+    name = poem.poet.name.replace(" ", "_")
+    wikipedia_url = "https://en.wikipedia.org/wiki/" + name
+    try:
+        page = get(wikipedia_url).text
+    except:
+        return (None, None)
 
-    return (None, None)
+    if "does not have an article with this exact name" in page:
+        wikipedia_url = None
+        source = None
+    else:
+        soup = BeautifulSoup(page, "html5lib")
+        info_box = soup.find("table", class_="infobox vcard")
+        if info_box:
+            image = info_box.find("img")
+            if image:
+                attrib = image.attrs
+                source = attrib['src']
+                source = "https:" + source
+            else:
+                source = '/static/parchment.jpg'
+        else:
+            wikipedia_url = None
+            source = None
+    return (wikipedia_url, source)
 
 
 @app.route('/')
@@ -151,7 +153,17 @@ def display_macro_page():
 
 @app.route('/algorithm/micro')
 def display_micro_page():
-    return render_template("micro.html")
+    metrics_list = Metrics.query.all()
+
+    rhyme_rep = Metrics.get_rhyme_rep_data(metrics_list)
+    lex_div = Metrics.get_lex_data(metrics_list)
+    filler = Metrics.get_filler_data(metrics_list)
+    narrator = Metrics.get_narrator_data(metrics_list)
+    alliteration = Metrics.get_alliteration_data(metrics_list)
+
+    return render_template("micro.html", rhyme_rep=rhyme_rep, lex_div=lex_div,
+                           filler=filler, narrator=narrator,
+                           alliteration=alliteration)
 
 
 @app.route('/algorithm/sentiment')
@@ -180,30 +192,15 @@ def display_subject_graph():
 
 @app.route('/algorithm/terms')
 def display_term_graph():
-    terms = all_terms
-    link = "../static/termgraph.csv"
-    category = "Term: "
-    page_title = "Term Graph"
-    explanation_text = "Explanation text will go here!"
+    term_data = Term.get_term_data()
 
-    return render_template("contextgraph.html", data_url=link,
-                           data_categories=terms, category=category,
-                           page_title=page_title,
-                           explanation_text=explanation_text)
+    return render_template("terms.html", term_data=term_data)
 
 
 @app.route('/algorithm/regions')
 def display_region_graph():
-    regions = all_regions
-    link = "../static/regiongraph.csv"
-    category = "Region: "
-    page_title = "Region Graph"
-    explanation_text = "Explanation text will go here!"
-
-    return render_template("contextgraph.html", data_url=link,
-                           data_categories=regions, category=category,
-                           page_title=page_title,
-                           explanation_text=explanation_text)
+    region_data = Region.get_region_data()
+    return render_template("region.html", region_data=region_data)
 
 
 @app.route('/writer-mode')

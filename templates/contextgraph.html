@@ -63,6 +63,7 @@ function makeForceGraph(error, links) {
                   .links(links)
                   .size([width, height])
                   .linkDistance(5)
+                  .friction(0.4)
                   .charge(setCharge)
                   .on("tick", tick)
                   .start();
@@ -120,17 +121,14 @@ function makeForceGraph(error, links) {
 
     function pclass(d) {
         if (category_names.indexOf(d.name) >= 0) {
-            console.log("node subject-node")
             return "node subject-node";
         } else {
-            console.log("node poem-node")
             return "node poem-node";
         };
     }
 
     function storeInfo(d) {
         if (category_names.indexOf(d.name) >= 0) {
-            console.log(d.name)
             return d.name;
         } else {
             var poemData = d.name.split("//");
@@ -229,12 +227,7 @@ function makeForceGraph(error, links) {
 
     $('.poem-node').hover(displayData, removeData);
     $('.poem-node').on('dblclick', changeURL);
-    $('.subject-node').hover(displaySubject, removeData);
-
-    setTimeout(function() {
-        force.stop();
-        alert("Six Seconds Over!");
-    }, 6000);
+    $('.subject-node').hover(displaySubject, removeData); 
 
 };
 

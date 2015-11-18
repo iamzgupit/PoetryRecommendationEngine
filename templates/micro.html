@@ -5,7 +5,7 @@ ReadMe: Micro
 {% block content %}
 <div class="container">
 <div class="row large-content">
-    <div class="col-md-8 col-md-offset-2">
+    <div class="col-md-10 col-md-offset-1">
         <div class="row algorithm-header">
             <h4>Micro Lexical Data</h4>
             <br>
@@ -17,7 +17,21 @@ ReadMe: Micro
             <p>Here is some information about what this category is. Blah Blah Blah.</p>
         </div>  <!-- end of algorithm-catagory row -->
         <div class="row algorithm-graph">
-            <p>COOL D3 VISUALIZATION GOES HERE</p>
+            <div class="legend" id="rhyme-rep-graph"></div>
+            <div class="axis y-axis" id="rhyme-rep-y-axis">Freq.</div>
+            <canvas class="graph-chart" id="RRChart" width="950" height="500"></canvas>
+            <div class="axis x-axis" id="rhyme-rep-x-axis">Score</div>
+        </div>  <!-- end of algorithm-graph row -->
+
+        <div class="row algorithm-catagory">
+            <h5>Lexical Diversity</h5>
+            <p>Here is some information about what this category is. Blah Blah Blah.</p>
+        </div>  <!-- end of algorithm-catagory row -->
+        <div class="row algorithm-graph">
+            <div class="legend" id="lex-div-graph"></div>
+            <div class="axis y-axis" id="lex-div-y-axis">Freq.</div>
+            <canvas class="graph-chart" id="LDChart" width="950" height="500"></canvas>
+            <div class="axis x-axis" id="lex-div-x-axis">Score</div>
         </div>  <!-- end of algorithm-graph row -->
 
         <div class="row algorithm-catagory">
@@ -25,7 +39,10 @@ ReadMe: Micro
             <p>Here is some information about what this category is. Blah Blah Blah.</p>
         </div>  <!-- end of algorithm-catagory row -->
         <div class="row algorithm-graph">
-            <p>COOL D3 VISUALIZATION GOES HERE</p>
+            <div class="legend" id="filler-freq-graph"></div>
+            <div class="axis y-axis" id="filler-freq-y-axis">Freq.</div>
+            <canvas class="graph-chart" id="FFChart" width="950" height="500"></canvas>
+            <div class="axis x-axis" id="filler-freq-x-axis">Score</div>
         </div>  <!-- end of algorithm-graph row -->
 
         <div class="row algorithm-catagory">
@@ -33,7 +50,10 @@ ReadMe: Micro
             <p>Here is some information about what this category is. Blah Blah Blah.</p>
         </div>  <!-- end of algorithm-catagory row -->
         <div class="row algorithm-graph">
-            <p>COOL D3 VISUALIZATION GOES HERE</p>
+            <div class="legend" id="narrator-freq-graph"></div>
+            <div class="axis y-axis" id="narrator-freq-y-axis">Freq.</div>
+            <canvas class="graph-chart" id="NFChart" width="950" height="500"></canvas>
+            <div class="axis x-axis" id="narrator-freq-x-axis">Score</div>
         </div>  <!-- end of algorithm-graph row -->
 
         <div class="row algorithm-catagory">
@@ -44,14 +64,154 @@ ReadMe: Micro
             <p>COOL D3 VISUALIZATION GOES HERE</p>
         </div>  <!-- end of algorithm-graph row -->
 
-        <div class="row algorithm-catagory">
-            <h5>Shared Words</h5>
-            <p>Here is some information about what this category is. Blah Blah Blah.</p>
-        </div>  <!-- end of algorithm-catagory row -->
-        <div class="row algorithm-graph">
-            <p>COOL D3 VISUALIZATION GOES HERE</p>
-        </div>  <!-- end of algorithm-graph row -->
     </div>  <!-- end of column -->
 </div> <!-- end of main-content row -->
 </div> <!-- end of container -->
+<script>
+// setting up Rhyme and Repetition Graph //
+    var templabel = []
+    {% for label in rhyme_rep["labels"] %}
+    templabel.push("{{label}}")
+    {% endfor %}
+
+    var rrData = {
+        labels: templabel,
+        datasets: [
+            {
+                label: "Rhyme",
+                fillColor: "rgba(220,220,220,0.2)",
+                strokeColor: "rgba(220,220,220,1)",
+                pointColor: "rgba(220,220,220,1)",
+                pointStrokeColor: "#fff",
+                pointHighlightFill: "#fff",
+                pointHighlightStroke: "rgba(220,220,220,1)",
+                data: {{ rhyme_rep["first"] }}
+            },{
+                label: "Repetition",
+                fillColor: "rgba(151,187,205,0.2)",
+                strokeColor: "rgba(151,187,205,1)",
+                pointColor: "rgba(151,187,205,1)",
+                pointStrokeColor: "#fff",
+                pointHighlightFill: "#fff",
+                pointHighlightStroke: "rgba(151,187,205,1)",
+                data: {{ rhyme_rep["second"] }}
+            }]
+    };
+
+    var options = {
+        legendTemplate : '<% for (var i=0; i<datasets.length; i++) { %>'
+                            + '<svg height="15" width="15">'
+                            + '<circle cx="7" cy="9" r="5" stroke="black" stroke-width="1" fill="<%=datasets[i].strokeColor%>" /></svg>'
+                            +'<% if (datasets[i].label) { %> <%= datasets[i].label %> <% } %>'
+                          +'<br>'
+                        +'<% } %>',
+        bezierCurve: false,
+        pointHitDetectionRadius : 2
+    };
+
+    var rrctx = $("#RRChart").get(0).getContext("2d");
+    var RRChart = new Chart(rrctx).Line(rrData, options);
+
+    var rrLegend = RRChart.generateLegend();
+    $('#rhyme-rep-graph').append(rrLegend);
+
+// setting up Lexical Diversity Graph //
+
+    var ldData = {
+        labels: templabel,
+        datasets: [
+            {
+                label: "Lexical Diversity",
+                fillColor: "rgba(220,220,220,0.2)",
+                strokeColor: "rgba(220,220,220,1)",
+                pointColor: "rgba(220,220,220,1)",
+                pointStrokeColor: "#fff",
+                pointHighlightFill: "#fff",
+                pointHighlightStroke: "rgba(220,220,220,1)",
+                data: {{ lex_div["first"] }}
+            }]
+    };
+
+    var ldctx = $("#LDChart").get(0).getContext("2d");
+    var LDChart = new Chart(ldctx).Line(ldData, options);
+
+    var ldLegend = LDChart.generateLegend();
+    $('#lex-div-graph').append(ldLegend);
+
+// setting up filler frequency graph //
+    var smalllabel = []
+    {% for label in filler["labels"] %}
+    smalllabel.push("{{label}}")
+    {% endfor %}
+
+    var ffData = {
+        labels: smalllabel,
+        datasets: [
+            {
+                label: "Frequency of \"The\"",
+                fillColor: "rgba(220,220,220,0.2)",
+                strokeColor: "rgba(220,220,220,1)",
+                pointColor: "rgba(220,220,220,1)",
+                pointStrokeColor: "#fff",
+                pointHighlightFill: "#fff",
+                pointHighlightStroke: "rgba(220,220,220,1)",
+                data: {{ filler["first"] }}
+            },{
+                label: "Frequency of \"A\"",
+                fillColor: "rgba(151,187,205,0.2)",
+                strokeColor: "rgba(151,187,205,1)",
+                pointColor: "rgba(151,187,205,1)",
+                pointStrokeColor: "#fff",
+                pointHighlightFill: "#fff",
+                pointHighlightStroke: "rgba(151,187,205,1)",
+                data: {{ filler["second"] }}
+            },{
+                label: "Frequency of \"Is\"",
+                fillColor: "rgba(64,64,64,0.2)",
+                strokeColor: "rgba(64,64,64,1)",
+                pointColor: "rgba(64,64,64,1)",
+                pointStrokeColor: "#fff",
+                pointHighlightFill: "#fff",
+                pointHighlightStroke: "rgba(64,64,64,1)",
+                data: {{ filler["third"] }}
+            }]
+    };
+
+    var ffctx = $("#FFChart").get(0).getContext("2d");
+    var FFChart = new Chart(ffctx).Line(ffData, options);
+
+    var ffLegend = FFChart.generateLegend();
+    $('#filler-freq-graph').append(ffLegend);
+
+// setting up narrator frequency graph //
+    var nfData = {
+        labels: templabel,
+        datasets: [
+            {
+                label: "Frequency of \"I\"",
+                fillColor: "rgba(220,220,220,0.2)",
+                strokeColor: "rgba(220,220,220,1)",
+                pointColor: "rgba(220,220,220,1)",
+                pointStrokeColor: "#fff",
+                pointHighlightFill: "#fff",
+                pointHighlightStroke: "rgba(220,220,220,1)",
+                data: {{ filler["first"] }}
+            },{
+                label: "Frequency of \"You\"",
+                fillColor: "rgba(151,187,205,0.2)",
+                strokeColor: "rgba(151,187,205,1)",
+                pointColor: "rgba(151,187,205,1)",
+                pointStrokeColor: "#fff",
+                pointHighlightFill: "#fff",
+                pointHighlightStroke: "rgba(151,187,205,1)",
+                data: {{ filler["second"] }}
+            }]
+    };
+
+    var nfctx = $("#NFChart").get(0).getContext("2d");
+    var NFChart = new Chart(nfctx).Line(nfData, options);
+
+    var nfLegend = NFChart.generateLegend();
+    $('#narrator-freq-graph').append(nfLegend);
+</script>
 {% endblock %}

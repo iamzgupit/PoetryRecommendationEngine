@@ -1,0 +1,125 @@
+{% extends 'base.html' %}
+{% block title %}
+ReadMe: Regions
+{% endblock %}
+{% block content %}
+
+<div class="container">
+<div class="row large-content">
+    <div class="col-md-10 col-md-offset-1">
+        <div class="row algorithm-header">
+            <h4>Region</h4>
+            <br>
+            <p>region information will to here!</p>
+        </div>  <!-- end of algorithm-header row -->
+        <div class="graph-info" id="criteria-info">
+        </div> <!-- end of graph-information row -->
+
+        <div class="row context-graph" id="graph-space">
+        {% for region in region_data %}
+            <div class="col-md-4 graph">
+                <div class="graph-box">
+                    <canvas class="donut-chart" id="{{region['iden']}}" width="250" height="250" style="clear:both;"></canvas>
+                    <div class="region-title" style="padding-bottom:15px;text-align:center;">
+                        <h3>{{ region['name'] }}</h3>
+                        <h5>{{region['total']}} Poems Total</h5>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+        </div>  <!-- end of algorithm-graph row -->
+    </div>  <!-- end of column -->
+</div> <!-- end of main-content row -->
+</div> <!-- end of container -->
+<script>
+var colorDic = {"U.S.": "#EE7942",
+                "Midwestern": "#FFEFDB",
+                "Southern": "#8B8378",
+                "New England": "#7FFFD4",
+                "Ireland": "#98F5FF",
+                "Western": "#D2691E",
+                "Mid-Atlantic": "#8B8878",
+                "Poland": "#FFB90F",
+                "Canada": "#00008B",
+                "Northwestern": "#B8860B",
+                "Southwestern": "black",
+                "England": "#A9A9A9",
+                "Scotland": "#6CA6CD",
+                "Wales": "#C1FFC1",
+                "Germany": "#483D8B",
+                "Asia": "#528B8B",
+                "South": "#E9967A",
+                "Russia": "#CD5C5C",
+                "China": "#F0E68C",
+                "Latin America": "#FF6347",
+                "Australia and Pacific": "#CD8C95",
+                "Caribbean": "#90EE90",
+                "Spain": "#8470FF",
+                "Italy": "#CAE1FF",
+                "Middle East": "#EECFA1",
+                "Israel": "#EE4000",
+                "Greece": "#96CDCD",
+                "France": "#9AFF9A",
+                "Mexico": "#DB7093",
+                "Africa": "#B0E0E6",
+                "East": "#4169E1",
+                "Eastern Europe": "#2E8B57",
+                "Scandinavia": "#555555",
+                "Japan": "#7D9EC0",
+                "Only U.S.": "#EE7942",
+                "Only Midwestern": "#FFEFDB",
+                "Only Southern": "#8B8378",
+                "Only New England": "#7FFFD4",
+                "Only Ireland": "#98F5FF",
+                "Only Western": "#D2691E",
+                "Only Mid-Atlantic": "#8B8878",
+                "Only Poland": "#FFB90F",
+                "Only Canada": "#00008B",
+                "Only Northwestern": "#B8860B",
+                "Only Southwestern": "black",
+                "Only England": "#A9A9A9",
+                "Only Scotland": "#6CA6CD",
+                "Only Wales": "#C1FFC1",
+                "Only Germany": "#483D8B",
+                "Only Asia": "#528B8B",
+                "Only South": "#E9967A",
+                "Only Russia": "#CD5C5C",
+                "Only China": "#F0E68C",
+                "Only Latin America": "#FF6347",
+                "Only Australia and Pacific": "#CD8C95",
+                "Only Caribbean": "#90EE90",
+                "Only Spain": "#8470FF",
+                "Only Italy": "#CAE1FF",
+                "Only Middle East": "#EECFA1",
+                "Only Israel": "#EE4000",
+                "Only Greece": "#96CDCD",
+                "Only France": "#9AFF9A",
+                "Only Mexico": "#DB7093",
+                "Only Africa": "#B0E0E6",
+                "Only East": "#4169E1",
+                "Only Eastern Europe": "#2E8B57",
+                "Only Scandinavia": "#555555",
+                "Only Japan": "#7D9EC0"}
+
+{% for region in region_data %}
+    
+    var {{ region['iden'] }}data = [
+    {% for place, number in region['other_reg'] %}
+        {
+            value: {{ number }},
+            color: colorDic["{{ place }}"],
+            highlight: "#696969",
+            label: "{{ place }}"
+        },
+    {% endfor %}
+    ]
+
+    var {{ region['iden'] }}ctx = $("#{{ region['iden'] }}").get(0).getContext("2d");
+    var {{ region['iden'] }}Chart = new Chart({{ region['iden'] }}ctx).Doughnut({{ region['iden'] }}data);
+
+{% endfor %}
+    // var ldLegend = LDChart.generateLegend();
+    // $('#lex-div-graph').append(ldLegend);
+</script>
+
+{% endblock %}

@@ -547,6 +547,38 @@ class Region(db.Model):
                               secondary='poem_region',
                               backref='regions')
 
+    @staticmethod
+    def get_region_data():
+        regions = db.session.query(Region).options(joinedload('metrics').joinedload('regions')).all()
+        region_data = []
+        for region in regions:
+            name = region.region
+            iden = name.replace(".", "").replace("-", "").split(" ")
+            iden = iden[0]
+            metrics = region.metrics
+            total = len(metrics)
+            other_reg = []
+            other_data = []
+            shared = 0
+            for met in metrics:
+                other_reg.extend([reg for reg in met.regions if reg != region])
+
+            all_other = set(other_reg)
+            for reg in all_other:
+                count = other_reg.count(reg)
+                shared += count
+                other_data.append((reg.region, count))
+
+            if shared < total:
+                other_data.append(("Only " + region.region, total - shared))
+            reg_data = {"name": name,
+                        "total": total,
+                        "iden": iden,
+                        "other_reg": other_data}
+            region_data.append(reg_data)
+
+        return region_data
+
 
 class PoemRegion(db.Model):
     """ connects poem to region"""
@@ -577,6 +609,42 @@ class Term(db.Model):
     metrics = db.relationship("Metrics",
                               secondary='poem_terms',
                               backref="terms")
+
+    @staticmethod
+    def get_term_data():
+        terms = db.session.query(Term).options(joinedload('metrics').joinedload('terms')).all()
+
+        term_data = []
+        for term in terms:
+            name = term.term
+            iden = name.replace(".", "").replace("-", "").replace("/", "").split(" ")
+            iden = iden[0]
+            metrics = term.metrics
+            total = len(metrics)
+
+            other_terms = []
+            for met in metrics:
+                other_terms.extend([t for t in met.terms if t != term])
+
+            other_data = []
+            shared = 0
+
+            all_other = set(other_terms)
+            for t in all_other:
+                count = other_terms.count(t)
+                shared += count
+                other_data.append((t.term, count))
+
+            if shared < total:
+                other_data.append(("Only " + term.term, total - shared))
+            t_data = {"name": name,
+                      "total": total,
+                      "iden": iden,
+                      "others": other_data}
+
+            term_data.append(t_data)
+
+        return term_data
 
 
 class PoemTerm(db.Model):
@@ -1888,6 +1956,150 @@ class Metrics(db.Model):
                 "range": range_count}
 
         return data
+
+    @staticmethod
+    def _get_percent_data(first_list_of_nums, second_list_of_nums=None, third_list_of_nums=None, set_max=None):
+        """returns a dict w/ lists of of word length average data
+
+        called by server.py and fed through to Chart.js to make a graph of
+        the spread of our wl_mean, wl_median, and wl_mode values.
+        """
+
+        nums = [0.000, 0.025, 0.050, 0.075, 0.100, 0.125, 0.150, 0.175, 0.200,
+                0.225, 0.250, 0.275, 0.300, 0.325, 0.350, 0.375, 0.400, 0.425,
+                0.450, 0.475, 0.500, 0.525, 0.550, 0.575, 0.600, 0.625, 0.650,
+                0.675, 0.700, 0.725, 0.750, 0.775, 0.800, 0.825, 0.850, 0.875,
+                0.900, 0.925, 0.950, 0.975, 1.000]
+        if set_max:
+            nums = [n for n in nums if n <= set_max]
+
+        labels = []
+        first_range_count = []
+        second_range_count = []
+        third_range_count = []
+
+        for i in range(len(nums) - 1):
+            num1 = nums[i]
+            num2 = nums[i + 1]
+
+            label = str(num1) + " -- " + str(num2)
+            labels.append(label)
+
+            count1 = [n for n in first_list_of_nums if n >= num1 and n < num2]
+            first_range_count.append(len(count1))
+            if second_list_of_nums:
+                count2 = [n for n in second_list_of_nums if n >= num1 and n < num2]
+                second_range_count.append(len(count2))
+            if third_list_of_nums:
+                count3 = [n for n in third_list_of_nums if n >= num1 and n < num2]
+                third_range_count.append(len(count3))
+
+        if all([first_range_count, second_range_count, third_range_count]):
+            data = {"labels": labels,
+                    "first": first_range_count,
+                    "second": second_range_count,
+                    "third": third_range_count}
+        elif first_range_count and second_range_count:
+            data = {"labels": labels,
+                    "first": first_range_count,
+                    "second": second_range_count}
+        else:
+            data = {"labels": labels,
+                    "first": first_range_count}
+
+        return data
+
+    @staticmethod
+    def _get_small_percent_data(first_list_of_nums, second_list_of_nums=None,
+                                third_list_of_nums=None, set_max=None):
+        """returns a dict w/ lists of of word length average data
+
+        called by server.py and fed through to Chart.js to make a graph of
+        the spread of our wl_mean, wl_median, and wl_mode values.
+        """
+
+        nums = [0.000, 0.010, 0.020, 0.030, 0.040, 0.050, 0.060, 0.070, 0.080,
+                0.090, 0.100, 0.110, 0.120, 0.130, 0.140, 0.150, 0.160, 0.170,
+                0.180, 0.190, 0.200, 0.210, 0.220, 0.230, 0.240, 0.250, 0.260,
+                0.270, 0.280, 0.290, 0.300, 0.310, 0.320, 0.330, 0.340, 0.350,
+                0.360, 0.370, 0.380, 0.390, 0.400, 0.410, 0.420, 0.430, 0.440,
+                0.450, 0.460, 0.470, 0.480, 0.490, 0.500]
+        if set_max:
+            nums = [n for n in nums if n <= set_max]
+
+        labels = []
+        first_range_count = []
+        second_range_count = []
+        third_range_count = []
+
+        for i in range(len(nums) - 1):
+            num1 = nums[i]
+            num2 = nums[i + 1]
+
+            label = str(num1) + " -- " + str(num2)
+            labels.append(label)
+
+            count1 = [n for n in first_list_of_nums if n >= num1 and n < num2]
+            first_range_count.append(len(count1))
+            if second_list_of_nums:
+                count2 = [n for n in second_list_of_nums if n >= num1 and n < num2]
+                second_range_count.append(len(count2))
+            if third_list_of_nums:
+                count3 = [n for n in third_list_of_nums if n >= num1 and n < num2]
+                third_range_count.append(len(count3))
+
+        if all([first_range_count, second_range_count, third_range_count]):
+            data = {"labels": labels,
+                    "first": first_range_count,
+                    "second": second_range_count,
+                    "third": third_range_count}
+        elif first_range_count and second_range_count:
+            data = {"labels": labels,
+                    "first": first_range_count,
+                    "second": second_range_count}
+        else:
+            data = {"labels": labels,
+                    "first": first_range_count}
+
+        return data
+
+    @staticmethod
+    def get_rhyme_rep_data(metrics_obj_list):
+        rhyme = [m.rhyme for m in metrics_obj_list]
+        end_repeat = [m.end_repeat for m in metrics_obj_list]
+
+        return Metrics._get_percent_data(first_list_of_nums=rhyme,
+                                         second_list_of_nums=end_repeat)
+
+    @staticmethod
+    def get_lex_data(metrics_obj_list):
+        lex_div = [m.lex_div for m in metrics_obj_list]
+
+        return Metrics._get_percent_data(first_list_of_nums=lex_div)
+
+    @staticmethod
+    def get_filler_data(metrics_obj_list):
+        the_freq = [m.the_freq for m in metrics_obj_list]
+        a_freq = [m.a_freq for m in metrics_obj_list]
+        is_freq = [m.is_freq for m in metrics_obj_list]
+
+        return Metrics._get_small_percent_data(first_list_of_nums=the_freq,
+                                               second_list_of_nums=a_freq,
+                                               third_list_of_nums=is_freq,
+                                               set_max=0.3)
+
+    @staticmethod
+    def get_narrator_data(metrics_obj_list):
+        i_freq = [m.i_freq for m in metrics_obj_list]
+        you_freq = [m.you_freq for m in metrics_obj_list]
+
+        return Metrics._get_percent_data(i_freq, you_freq)
+
+    @staticmethod
+    def get_alliteration_data(metrics_obj_list):
+        alliteration = [m.alliteration for m in metrics_obj_list]
+
+        return Metrics._get_percent_data(alliteration)
 
     @staticmethod
     def get_wl_average_data(metrics_obj_list):
