@@ -16,10 +16,7 @@ def get_wiki_info(poem):
 
     name = poem.poet.name.replace(" ", "_")
     wikipedia_url = "https://en.wikipedia.org/wiki/" + name
-    try:
-        page = get(wikipedia_url).text
-    except:
-        return (None, None)
+    page = get(wikipedia_url).text
 
     if "does not have an article with this exact name" in page:
         wikipedia_url = None
@@ -113,6 +110,15 @@ def display_search_poems(poem_id, index):
     return render_template("displaymatches.html", main_poem=main_poem,
                            match_poem=match_poem, wikipedia_url=wikipedia_url,
                            source=source, match_poems=match_poems)
+
+
+@app.route('/feedback', methods=['POST'])
+def log_feedback():
+    main_poem = request.form.get("main_poem")
+    match_poem = request.form.get("match_poem")
+    print main_poem
+    print match_poem
+    return "success"
 
 
 @app.route('/about')

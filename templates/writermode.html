@@ -39,6 +39,7 @@ My mistress when she walks treads on the ground.
                     <br><br>
                     <span class="centered">
                         <input id="submit"type="submit" value="Submit">
+                        <span id="notice"></span>
                     </span>
                 </form>
             </div> <!-- end of column -->
@@ -56,14 +57,6 @@ function success() {
     window.location.href = '/writer-mode/results';
 }
 
-// $('textarea .input-poem').keypress(function(e) {
-//     if(e.which == 32) {
-//         string = poem.value
-//         string += '&nbsp;&nbsp;&nbsp;'
-//         poem.value = string
-//     }
-// });
-
 
 function checkContent(evt) {
     evt.preventDefault();
@@ -78,6 +71,7 @@ function checkContent(evt) {
     } else {
         var poemString = poem.value;
         poemString = poemString.replace('<', '&lt;').replace('>', '&gt;').replace(/\r|\n|\r\n/g, '<br>');
+        $('#notice').html("Analyzing Poem...");
         $.post('/writer-mode/interim', {"title": title.value, "text": poemString}, success);
     };
 }

@@ -1312,19 +1312,22 @@ class Metrics(db.Model):
 
                 >>> fake = Metrics(poem_id=0,\
                                    wl_mean=1,\
+                                   wl_mode=2,\
                                    wl_range=4,\
+                                   wl_mode=3,\
                                    ll_mean=5,\
+                                   ll_mode=6,\
                                    ll_range=8,\
                                    pl_lines=10)
                 >>>
                 >>> fake._get_macro_lex_data()
-                [1, 4, 5, 8, 10]
+                [1, 2, 4, 3, 5, 6, 8, 10]
 
         This function is called in Metrics.find_matches and will not need to be
         used directly."""
 
-        macro_lex = [self.wl_mean, self.wl_range, self.ll_mean, self.ll_range,
-                     self.pl_lines]
+        macro_lex = [self.wl_mean, self.wl_mode, self.wl_range, self.wl_mode,
+                     self.ll_mean, self.ll_mode, self.ll_range, self.pl_lines]
 
         return macro_lex
 
@@ -1339,17 +1342,19 @@ class Metrics(db.Model):
                                    a_freq=5,\
                                    alliteration=6,\
                                    rhyme=7,\
-                                   lex_div=8)
+                                   lex_div=8,
+                                   end_repeat=9)
                 >>>
                 >>> fake._get_micro_lex_data()
-                [1, 2, 3, 4, 5, 6, 7, 8]
+                [1, 2, 3, 4, 5, 6, 7, 8, 9]
 
         This function is called in Metrics.find_matches and will not need to be
         used directly.
         """
 
         micro_lex = [self.the_freq, self.i_freq, self.you_freq, self.is_freq,
-                     self.a_freq, self.alliteration, self.rhyme, self.lex_div]
+                     self.a_freq, self.alliteration, self.rhyme, self.lex_div,
+                     self.end_repeat]
 
         return micro_lex
 

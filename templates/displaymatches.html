@@ -9,6 +9,9 @@ ReadMe: Recommendations
     <div class="col-md-8 col-md-offset-1 reading">
         <h2 class="title main"> {{ match_poem.title }}</h2>
         <h4 class="author main"> by {{ match_poem.poet.name }}</h4>
+        {% if match_poem.title != main_poem.title %}
+        <p><a href="/{{match_poem.poem_id}}">More Like This</a></p>
+        {% endif %}
         <br>
         <div class="poem-content">
             {{ match_poem.formatted_text|safe }}
@@ -39,12 +42,29 @@ ReadMe: Recommendations
                 <a href='/{{main_poem.poem_id}}/{{i}}'>{{ poem.title }}</a>
             </h5>
             <h6 class="author">{{ poem.poet.name }}</h6>
-            <p class="match-percent">{{ match }}</p>
+            <p class="match-percent">{{ match }}
+            <img class="best-button" id="{{ poem.poem_id }}/{{i}}" src="../static/greyheart.png" style="height:30px;position:absolute;padding-bottom:15px;padding-left:15px;"></p>
         </div>
         {% endfor %}
 
     </div> <!-- end of results column -->
 </div> <!-- end of main-content row -->
 </div> <!-- end of container div -->
+<script>
+var main_poem = {{ main_poem.poem_id }};
 
+function success() {
+    console.log("Success!");
+}
+
+function changeImage(evt) {
+    var information = evt.currentTarget.id
+    evt.currentTarget.src = '../static/blackheart.png';
+    // send the id to a route to log it
+    $.post('/feedback', {"main_poem": main_poem, "match_poem": information}, success);
+    $(".best-button").off('click');
+}
+
+$(".best-button").on('click', changeImage)
+</script>
 {% endblock %}
