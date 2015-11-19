@@ -43,10 +43,12 @@ ReadMe: Recommendations
         {% for poem, i in match_poems %}
         <div class="row results">
             <h5 class="title">
-                <a href='/{{main_poem.poem_id}}/{{poem.poem_id}}'>{{ poem.title }}</a>
+                <a href='/{{main_poem.poem_id}}/{{poem.poem_id}}'>
+                    {{ poem.title }}
+                </a>
             </h5>
             <h6 class="author">{{ poem.poet.name }}
-            <img class="best-button {{ poem.poet.name }}" id="{{ poem.poem_id }}/{{i}}" src="../static/greyheart.png" style="height:30px;position:absolute;padding-bottom:15px;padding-left:15px;"></h6>
+            <img class="best-button {{ poem.poet.name }}" id="{{ poem.poem_id }}/{{i}}" src="../static/greyheart.png"></h6>
         </div>
         {% endfor %}
 
@@ -61,15 +63,15 @@ function success() {
 }
 
 function changeImage(evt) {
-    var information = evt.currentTarget.id
+    var information = evt.currentTarget.id;
     evt.currentTarget.src = '../static/blackheart.png';
     // send the id to a route to log it
     $.post('/feedback', {"main_poem": main_poem, "match_poem": information}, success);
     $(".best-button").off('click');
 }
 
-{% if best_selected %}
-    $(".{{ best_selected}}").attr('src', '../static/blackheart.png');
+{% if best_selected != None %}
+    $(".{{ best_selected }}").attr('src', '../static/blackheart.png');
 {% else %}
     $(".best-button").on('click', changeImage);
 {% endif %}

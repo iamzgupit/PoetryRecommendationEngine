@@ -1271,6 +1271,8 @@ class Metrics(db.Model):
 
         self_macro = self._get_macro_lex_data()
         other_macro = other._get_macro_lex_data()
+        print self_macro
+        print other_macro
 
         macro_compare = map(Metrics.difference_percent, self_macro, other_macro)
         macro_compare.extend(map(Metrics.difference_percent, other_macro, self_macro))
@@ -1308,8 +1310,8 @@ class Metrics(db.Model):
         This function is called in Metrics.find_matches and will not need to be
         used directly."""
 
-        macro_lex = [self.wl_mean, self.wl_mode, self.wl_range, self.wl_mode,
-                     self.ll_mean, self.ll_mode, self.ll_range, self.pl_lines]
+        macro_lex = [self.wl_mean, self.wl_mode, self.wl_range, self.ll_mean,
+                     self.ll_mode, self.ll_range, self.pl_lines]
 
         return macro_lex
 
@@ -2394,8 +2396,7 @@ class BestMatch(db.Model):
 
     pm_id = db.Column(db.Integer, autoincrement=True, primary_key=True)
     primary_poem_id = db.Column(db.Integer,
-                                db.ForeignKey('poems.poem_id'),
-                                nullable=False)
+                                db.ForeignKey('poems.poem_id'))
     match_poem_id = db.Column(db.Integer,
                               db.ForeignKey('poems.poem_id'),
                               nullable=False)
@@ -2443,12 +2444,14 @@ class UserMetrics(Metrics):
         wl_data = Metrics._get_wl_data(word_list)
 
         self.wl_mean = wl_data["wl_mean"]
+        self.wl_mode = wl_data["wl_mode"]
         self.wl_range = wl_data["wl_range"]
         self.lex_div = wl_data["lex_div"]
 
         ll_data = Metrics._get_ll_data(line_dict)
 
         self.ll_mean = ll_data["ll_mean"]
+        self.ll_mode = ll_data["ll_mode"]
         self.ll_range = ll_data["ll_range"]
         self.pl_lines = ll_data["pl_lines"]
 
@@ -2462,6 +2465,7 @@ class UserMetrics(Metrics):
 
         self.alliteration = Metrics._get_alliteration_score(line_dict)
         self.rhyme = Metrics._get_rhyme_score(line_dict)
+        self.end_repeat = Metrics._get_end_rep_score(line_dict)
 
         self.common_percent = Metrics._get_percent_out(word_list, COMMON_W)
         self.poem_percent = Metrics._get_percent_out(word_list, POEM_W)

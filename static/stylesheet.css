@@ -21,6 +21,13 @@
            padding-left:750px;
         }
 
+        .best-button {
+            width:30px;
+            position:absolute;
+            padding-bottom:15px;
+            padding-left:15px;
+        }
+
         .main-search {
             margin-top: 220px;
         }

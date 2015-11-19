@@ -2,7 +2,7 @@ from flask import (Flask, render_template, redirect, jsonify,
                    request, session)
 from flask_debugtoolbar import DebugToolbarExtension
 from random import choice
-from model import Poem, Metrics, Region, Term, Subject, UserMetrics, connect_to_db, db
+from model import Poem, Metrics, Region, Term, Subject, BestMatch, UserMetrics, connect_to_db, db
 from requests import get
 from bs4 import BeautifulSoup
 from random import shuffle
@@ -116,6 +116,7 @@ def display_search_poems(poem_id, match_id):
     wikipedia_url, source = get_wiki_info(match_poem)
 
     best_selected = session.get(str(poem_id))
+    print best_selected
 
     return render_template("displaymatches.html", main_poem=main_poem,
                            match_poem=match_poem, wikipedia_url=wikipedia_url,
@@ -128,7 +129,7 @@ def log_feedback():
     main_id = request.form.get("main_poem")
     match_data = request.form.get("match_poem")
     match_list = match_data.split("/")
-    match_id = match_list[0]
+    match_id = int(match_list[0])
     index = match_list[1]
     id_string = str(main_id)
 
@@ -139,19 +140,72 @@ def log_feedback():
 
     session[id_string] = match_author
 
-    print main_id
-    print match_id
-    print index
+    match_metrics = session.get("match")
+    print match_metrics
+    match_info = match_metrics[str(match_id)]
+    methods = match_info["methods"]
+    list_index = match_info["list_index"]
+    euc_distance = match_info["euc_distance"]
+    for i in range(len(methods)):
+        x = BestMatch(primary_poem_id=main_id, match_poem_id=match_id,
+                      euc_distance=euc_distance[i], page_order=index,
+                      match_index=list_index[i], method_code=methods[i])
+        db.session.add(x)
+        db.session.commit()
+
+    return "success"
+
+
+@app.route('/writerfeedback', methods=['POST'])
+def log_writer_feedback():
+
+    main_id = None
+    match_data = request.form.get("match_poem")
+    match_list = match_data.split("/")
+    match_id = int(match_list[0])
+    index = match_list[1]
+
+    #creating a re-creatable key from the text to store in the session
+    #so that the best match can be saved properly
+    text = session.get("text")
+    id_string = text.replace(" ", "")
+    id_string = id_string[0:5] + id_string[-6:-1]
+
+    match_poem = Poem.query.get(match_id)
+    # storing the match_author's last name as the value -- this will be
+    # in the class of the appropriate button so that we can mark it as
+    # checked if it's already been pressedn.
+    match_author = match_poem.poet.name
+    match_author = match_author.split(" ")
+    match_author = match_author[-1]
+
+    session[id_string] = match_author
+
+    match_metrics = session.get("match")
+
+    match_info = match_metrics[str(match_id)]
+    methods = match_info["methods"]
+    list_index = match_info["list_index"]
+    euc_distance = match_info["euc_distance"]
+    for i in range(len(methods)):
+        x = BestMatch(primary_poem_id=main_id, match_poem_id=match_id,
+                      euc_distance=euc_distance[i], page_order=index,
+                      match_index=list_index[i], method_code=methods[i])
+        db.session.add(x)
+        db.session.commit()
+
     return "success"
 
 
 @app.route('/about')
 def display_about():
+
     return render_template("about.html")
 
 
 @app.route('/algorithm')
 def display_algorithm_page():
+
     return render_template("algorithm.html")
 
 
@@ -211,6 +265,7 @@ def display_sentiment_page():
 
 @app.route('/algorithm/context')
 def display_context_page():
+
     return render_template("context.html")
 
 
@@ -236,13 +291,12 @@ def display_region_graph():
 
 @app.route('/writer-mode')
 def display_writer_input():
+
     return render_template("writermode.html")
 
 
 @app.route('/writer-mode/interim', methods=["POST"])
 def save_info():
-
-    NUM_RESULTS = 5
 
     title = request.form.get("title")
     text = request.form.get("text")
@@ -251,16 +305,9 @@ def save_info():
 
     temp_text = text.replace("<br>", "\n")
     poem = UserMetrics(title=title, text=temp_text)
-    matches = poem.find_matches(limit=NUM_RESULTS)
+    match_metrics = poem.vary_methods()
 
-    match_data = []
-    for i in range(NUM_RESULTS):
-        poem, poet, match = matches[i]
-        match = 100 - (match * 10)
-        match = "{:.2f}%".format(match)
-        match_data.append((poem, match, i + 1))
-
-    session["match"] = match_data
+    session["match"] = match_metrics
 
     return "success!"
 
@@ -270,43 +317,66 @@ def display_results():
     title = session.get("title")
     text = session.get("text")
 
-    match_data = session.get("match")
-    match_poems = [(Poem.query.get(poem), match, i)
-                   for poem, match, i in match_data]
+    match_metrics = session.get("match")
+    match_poems = []
+    poem_ids = match_metrics.keys()
+    for i in range(1, 6):
+        poem = Poem.query.get(poem_ids[i - 1])
+        match_poems.append((poem, i))
 
     wikipedia_url = None
     source = None
 
+    id_string = text.replace(" ", "")
+    id_string = id_string[0:5] + id_string[-6:-1]
+    best_selected = session.get(id_string)
+
     return render_template("writerresults.html", text=text, title=title,
                            main_title=title, match_poems=match_poems,
                            wikipedia_url=wikipedia_url, source=source,
-                           poet="User")
+                           poet="User", best_selected=best_selected,
+                           main_id=None)
 
 
-@app.route('/writer-mode/results<int:index>')
-def display_result_poem(index):
+@app.route('/writer-mode/<int:match_id>')
+def display_result_poem(match_id):
 
     title = session.get("title")
-    match_data = session.get("match")
-    match_poems = [(Poem.query.get(poem), match, i)
-                   for poem, match, i in match_data]
-    if index:
-        main_poem = match_poems[index - 1][0]
-        text = main_poem.formatted_text
-        main_title = main_poem.title
-        poet = main_poem.poet.name
-        wikipedia_url, source = get_wiki_info(main_poem)
+    best_selected = session.get(title)
+
+    text = session.get("text")
+    id_string = text.replace(" ", "")
+    id_string = id_string[0:5] + id_string[-6:-1]
+    best_selected = session.get(id_string)
+
+    match_metrics = session.get("match")
+
+    match_poems = []
+    poem_ids = match_metrics.keys()
+    for i in range(1, 6):
+        poem = Poem.query.get(poem_ids[i - 1])
+        match_poems.append((poem, i))
+
+    if match_id:
+        match_poem = Poem.query.get(match_id)
+        text = match_poem.formatted_text
+        main_title = match_poem.title
+        main_id = match_poem.poem_id
+        poet = match_poem.poet.name
+        wikipedia_url, source = get_wiki_info(match_poem)
 
     else:
-        text = session.get("text")
         main_title = title
         wikipedia_url = None
         source = None
+        main_id = None
         poet = "User"
 
     return render_template("writerresults.html", text=text, title=title,
-                           main_title=main_title, match_poems=match_poems,
-                           wikipedia_url=wikipedia_url, source=source, poet=poet)
+                           main_title=main_title, main_id=main_id,
+                           match_poems=match_poems, wikipedia_url=wikipedia_url,
+                           source=source, poet=poet, best_selected=best_selected)
+
 
 if __name__ == "__main__":
     # We have to set debug=True here, since it has to be True at the point

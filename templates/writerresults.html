@@ -9,6 +9,9 @@ ReadMe: Writer Mode Recommendations
     <div class="col-md-8 col-md-offset-1 reading">
         <h2 class="title main"> {{ main_title }}</h2>
         <h4 class="author main"> by {{ poet }} </h4>
+        {% if main_id != None %}
+        <p><a href="/{{ main_id }}">More Like This</a></p>
+        {% endif %}
         <br>
         <div class="poem-content">
             {{ text|safe }}
@@ -27,23 +30,45 @@ ReadMe: Writer Mode Recommendations
         {% endif %}
 
         <div class="row results">
-            <h5 class="title"><a href="/writer-mode/results0">{{ title }}</a></h5>
+            <h5 class="title"><a href="/writer-mode/0">{{ title }}</a></h5>
             <h6 class="author">By User</h6>
             <p class="main-poem">Matched Poem</p>
         </div>
 
-        {% for poem, match, i in match_poems %}
+        {% for poem, i in match_poems %}
         <div class="row results">
             <h5 class="title">
-                <a href='/writer-mode/results{{i}}'>{{ poem.title }}</a>
+                <a href='/writer-mode/{{ poem.poem_id }}'>{{ poem.title }}</a>
             </h5>
-            <h6 class="author">{{ poem.poet.name }}</h6>
-            <p class="match-percent">{{ match }}</p>
+            <h6 class="author">{{ poem.poet.name }}
+                <img class="best-button {{ poem.poet.name }}" id="{{ poem.poem_id }}/{{i}}" src="../static/greyheart.png"></h6>
         </div>
         {% endfor %}
 
     </div> <!-- end of results column -->
 </div> <!-- end of main-content row -->
 </div> <!-- end of container div -->
+
+<script>
+
+function success() {
+    console.log("Success!");
+}
+
+function changeImage(evt) {
+    var information = evt.currentTarget.id
+    evt.currentTarget.src = '../static/blackheart.png';
+    // send the id to a route to log it
+    $.post('/writerfeedback', {"match_poem": information}, success);
+    $(".best-button").off('click');
+}
+
+{% if best_selected %}
+    $(".{{ best_selected }}").attr('src', '../static/blackheart.png');
+{% else %}
+    $(".best-button").on('click', changeImage);
+{% endif %}
+
+</script>
 
 {% endblock %}
