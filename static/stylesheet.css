@@ -28,6 +28,10 @@
             padding-left:15px;
         }
 
+        .checkbox-img {
+            width:12px;
+            padding-bottom:3px;
+        }
         .main-search {
             margin-top: 220px;
         }
@@ -102,10 +106,12 @@
             width: 600px;
             height: 600px;
         }
-        li.search-option {
+
+        .search-option {
             margin: 10px 15px;
             font-size: small;
             display: inline-block;
+            color: gray;
         }
 
         .right-align {

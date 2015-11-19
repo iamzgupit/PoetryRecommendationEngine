@@ -6,10 +6,11 @@ from model import Poem, Metrics, Region, Term, Subject, BestMatch, UserMetrics, 
 from requests import get
 from bs4 import BeautifulSoup
 from random import shuffle
+from os import environ
 
 app = Flask(__name__)
 
-app.secret_key = "TEMPORARY SECRET KEY"
+app.secret_key = environ['SESSION_KEY']
 
 
 def get_wiki_info(poem):
@@ -17,7 +18,11 @@ def get_wiki_info(poem):
 
     name = poem.poet.name.replace(" ", "_")
     wikipedia_url = "https://en.wikipedia.org/wiki/" + name
-    page = get(wikipedia_url).text
+    try:
+        page = get(wikipedia_url).text
+    except:
+        print "ERROR WITH WIKIPEDIA PAGE"
+        return (None, None)
 
     if "does not have an article with this exact name" in page:
         wikipedia_url = None
@@ -65,15 +70,43 @@ def get_random_poem():
     return redirect(url)
 
 
+@app.route('/settings', methods=['POST'])
+def set_params():
+    new_auth = request.form.get("new")
+    print new_auth
+    print type(new_auth)
+    session["new_auth"] = new_auth
+    print session["new_auth"]
+    unique_auth = request.form.get("unique")
+    print unique_auth
+    print type(unique_auth)
+    session["unique_auth"] = unique_auth
+    print session["unique_auth"]
+
+    return "Success!"
+
+
 @app.route('/<int:poem_id>')
 def display_search_results(poem_id):
 
     main_poem = Poem.query.get(poem_id)
     main_metrics = Metrics.query.get(main_poem.poem_id)
 
-    match_metrics = main_metrics.vary_methods()
+    unique_auth = session.get("unique_auth")
+    if unique_auth == "False":
+        unique_auth = False
+    else:
+        unique_auth = True
 
-    # testing, can I do this?
+    new_auth = session.get("new_auth")
+    if new_auth == "False":
+        new_auth = False
+    else:
+        new_auth = True
+
+    match_metrics = main_metrics.vary_methods(unique_auth=unique_auth,
+                                              new_auth=new_auth)
+
     session["match"] = match_metrics
 
     match_poems = []
@@ -99,7 +132,11 @@ def display_search_poems(poem_id, match_id):
 
     main_poem = Poem.query.get(poem_id)
 
-    match_metrics = session.get("match")
+    try:
+        match_metrics = session.get("match")
+    except:
+        new_url = "/" + str(poem_id)
+        redirect(new_url)
 
     match_poems = []
     poem_ids = match_metrics.keys()

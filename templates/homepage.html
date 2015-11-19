@@ -62,10 +62,6 @@
         <li><a href="/writer-mode">Writer Mode</a></li>
         <li><a href="/algorithm">The Algorithm</a></li>
       </ul>
-<!-- beginning of right side of menu -->
-      <ul class="nav navbar-nav navbar-right">
-        <li><a href="#">Login</a></li>
-      </ul>
   </div><!-- /.container-fluid -->
 </nav>
  <!--- end of nav bar container -->
@@ -83,8 +79,17 @@
 <div class="row">
     <div class="col-md-8 col-md-offset-2">
         <ul>
-            <li class="search-option"><a href="/random">Random Poem</a></li>
-            <li class="search-option"><a href="#">Advanced Search</a></li>
+            <li class="search-option">
+                <a href="/random">Random Poem</a>
+            </li>
+            <li class="search-option">
+                <img src="../static/checked.png" class="checkbox-img" id="new-auth" value='True'>
+                    Only Show New Poets
+            </li>
+            <li class="search-option">
+               <img src="../static/checked.png" class="checkbox-img" id="unique-auth" value='True'>
+                    Only Show One Results Per Poet
+            </li>
         </ul>
     </div> <!-- end of column -->
 </div> <!-- end of row -->
@@ -92,19 +97,25 @@
 <script>
 
 // var searchCriteria = []
-var poemID = 0
-var button = $("#search-button")
+var poemID = 0;
+var button = $("#search-button");
+var uniqueAuth = 'True';
+var newAuth = 'True';
 
 $("#search").on('input', checkId);
 $('.typeahead').on('typeahead:selected', checkId);
 $('.typeahead').on('typeahead:autocompleted', checkId);
 $("#search-button").on('click', startSearch);
 
-function startSearch() {
-    url = "/" + poemID.toString()
+function success() {
+    console.log("Success!");
+    var url = "/" + poemID.toString();
     window.location.href = url;
-};
+}
 
+function startSearch() {
+    $.post("/settings", {"unique": uniqueAuth, "new": newAuth}, success);
+}
 
 function checkId() {
     poemID = 0;
@@ -114,11 +125,32 @@ function checkId() {
         if (x.title == $("#search").val()) {
             console.log(x.id);
             poemID = x.id;
-            button.removeAttr('disabled')
+            button.removeAttr('disabled');
             break;
         };
     };
-};
+}
+
+function checkBox(evt) {
+    var logId = evt.currentTarget.id;
+    var trueFalse = null;
+    if (evt.currentTarget.value == 'True' || evt.currentTarget.value == null) {
+        evt.currentTarget.src = '../static/unchecked.png';
+        evt.currentTarget.value = 'False'
+        trueFalse = 'False';
+    } else {
+        evt.currentTarget.src = '../static/checked.png';
+        evt.currentTarget.value = 'True'
+        trueFalse = 'True';
+    };
+    if (logId == 'new-auth') {
+        newAuth = trueFalse;
+    } else {
+        uniqueAuth = trueFalse;
+    }
+}
+
+$('.checkbox-img').on('click', checkBox);
 
 
 </script>

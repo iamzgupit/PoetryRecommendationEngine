@@ -701,7 +701,41 @@ class Metrics(db.Model):
     poem = db.relationship('Poem', backref='metrics')
 
     def _get_ranges_dict(self):
-        """returns a dictionary with acceptable ranges for a given metrics obj"""
+        """returns a dict w/ initial acceptable ranges for a given metrics obj
+
+        when finding matches, we want to first narrow down our query by four
+        macro lexical catagories so that we aren't running our distance algorithm
+        on over 10,000 poems each time -- this method get's the inital acceptable
+        ranges which we will use to grab a subset of our poems.
+
+            >>> x = Metrics(wl_range=6, ll_mean=50,ll_range=10, pl_lines=50)
+            >>> ranges_dict = x._get_ranges_dict()
+            >>> expected = {'llrange': {'max': 30,\
+                                        'up_adj': 2,\
+                                        'down_adj': 4,\
+                                        'val': 10,\
+                                        'min': -10},\
+                            'mean_ll': {'max': 70,\
+                                        'up_adj': 2.5,\
+                                        'down_adj': 4,\
+                                        'val': 50,\
+                                        'min': 30},\
+                            'plength': {'max': 60,\
+                                        'up_adj': 1,\
+                                        'down_adj': 2,\
+                                        'val': 50,\
+                                        'min': 40},\
+                            'wlrange': {'max': 10,\
+                                        'up_adj': 1,\
+                                        'down_adj': 1,\
+                                        'val': 6,\
+                                        'min': 2}}
+            >>> expected == range_dict
+            True
+
+        This method is called by Metrics.find_matches and won't need to be used
+        directly.
+        """
 
         wlr = self.wl_range
         llm = self.ll_mean
@@ -740,34 +774,58 @@ class Metrics(db.Model):
     def _get_within_range(self, ranges):
         """returns a list of metrics objects fitting the parameters in ranges
 
-        excludes current poem_id"""
+        excludes current poem_id. In the case of a UserMetrics instance, poem_id
+        will be Null, so this query will go through without any issues -- we
+        drop the joined load in the case of a UserMetrics object to make the
+        query faster, since we won't be grabbing context data (calling .subjects,
+        .terms, or .regions) for UserMetrics objects (which have no context data)
+        """
 
-        o_met = (db.session.query(Metrics)
-                   .filter(Metrics.poem_id != self.poem_id,
-                           Metrics.pl_lines <= ranges["plength"]["max"],
-                           Metrics.pl_lines >= ranges["plength"]["min"],
-                           Metrics.ll_mean <= ranges["mean_ll"]["max"],
-                           Metrics.ll_mean >= ranges["mean_ll"]["min"],
-                           Metrics.ll_range >= ranges["llrange"]["min"],
-                           Metrics.ll_range <= ranges["llrange"]["max"],
-                           Metrics.wl_range >= ranges["wlrange"]["min"],
-                           Metrics.wl_range <= ranges["wlrange"]["max"])
-                   .options(joinedload('subjects'))
-                   .options(joinedload('terms'))
-                   .options(joinedload('regions'))
-                   .all())
+        if self.poem_id is None:
+            o_met = (db.session.query(Metrics)
+                       .filter(Metrics.poem_id != self.poem_id,
+                               Metrics.pl_lines <= ranges["plength"]["max"],
+                               Metrics.pl_lines >= ranges["plength"]["min"],
+                               Metrics.ll_mean <= ranges["mean_ll"]["max"],
+                               Metrics.ll_mean >= ranges["mean_ll"]["min"],
+                               Metrics.ll_range >= ranges["llrange"]["min"],
+                               Metrics.ll_range <= ranges["llrange"]["max"],
+                               Metrics.wl_range >= ranges["wlrange"]["min"],
+                               Metrics.wl_range <= ranges["wlrange"]["max"])
+                       .all())
+        else:
+            o_met = (db.session.query(Metrics)
+                       .filter(Metrics.poem_id != self.poem_id,
+                               Metrics.pl_lines <= ranges["plength"]["max"],
+                               Metrics.pl_lines >= ranges["plength"]["min"],
+                               Metrics.ll_mean <= ranges["mean_ll"]["max"],
+                               Metrics.ll_mean >= ranges["mean_ll"]["min"],
+                               Metrics.ll_range >= ranges["llrange"]["min"],
+                               Metrics.ll_range <= ranges["llrange"]["max"],
+                               Metrics.wl_range >= ranges["wlrange"]["min"],
+                               Metrics.wl_range <= ranges["wlrange"]["max"])
+                       .options(joinedload('subjects'))
+                       .options(joinedload('terms'))
+                       .options(joinedload('regions'))
+                       .all())
 
         return o_met
 
-    def _increment_down(self, range_dict):
-        """reduces ranges to provide lower number of results"""
+    @staticmethod
+    def _increment_down(range_dict):
+        """reduces ranges in dic to provide lower number of results
 
-        ranges = range_dict
+        given the ranges dictionary, modifies the 'min' and 'max' values for
+        each attribute to provide a narrower range of accepted values.
+
+        This method is called by Metrics.find_matches and won't need to be used
+        directly.
+        """
 
         # for each attribute, we don't want to set the maximum value below,
         # or the minimum value above, the value of the poem we're trying to
         # match, so we check that and adjust as necessary.
-        for c in ranges.values():
+        for c in range_dict.values():
             if c['max'] - c['down_adj'] >= c['val']:
                 c['max'] -= c['down_adj']
             else:
@@ -778,12 +836,24 @@ class Metrics(db.Model):
             else:
                 c['min'] = c['val']
 
-        return ranges
-
     @staticmethod
     def _slim_metrics(ranges, other_metrics):
         """given ranges dict & list of metrics, returns new list fitting ranges
+
+            >>> ranges = {"plength": {"min": 5, "max": 10},\
+                          "mean_ll": {"min": 5, "max": 10},\
+                          "llrange": {"min": 5, "max": 10},\
+                          "wlrange": {"min": 5, "max": 10}}
+            >>> met1 = Metric(pl_length=6, ll_mean=6, ll_range=6, wl_range=6)
+            >>> met2 = Metrics(pl_length=12, ll_mean=6, ll_range=6, wl_range=6)
+            >>> new_list = Metrics._slim_metrics(ranges, [met1, met2])
+            >>> new_list == [met1]
+            True
+
+        this method is called by Metrics._get_other_metrics which is in turn
+        called by Metrics.find_matches and will not need to be used directly.
         """
+
         new_metrics = []
         for metric in other_metrics:
             if all([metric.pl_lines <= ranges["plength"]['max'],
@@ -798,14 +868,39 @@ class Metrics(db.Model):
 
         return new_metrics
 
-    def _increment_up(self, range_dict):
-        """increases ranges to provide higher number of results"""
-        ranges = range_dict
-        for r in ranges.values():
+    @staticmethod
+    def _increment_up(range_dict):
+        """increases ranges to provide higher number of results
+
+        given the ranges dictionary, modifies the 'min' and 'max' values for
+        each attribute to provide a larger range of accepted values.
+
+        This method is called by Metrics._get_other_metrics as part of
+        Metrics.find_matches and won't need to be used directly.
+        """
+
+        for r in range_dict.values():
             r['max'] += r['up_adj']
             r['min'] -= r['up_adj']
 
-        return ranges
+    def _far_increment_up(range_dict, mult):
+        """increases min/max in range_dict to provide higher number of results
+
+        given the ranges dictionary, modifies the 'min' and 'max' values for
+        each attribute to provide a larger range of accepted values. This method
+        works the same as Metrics._increment_up but allows you to increase the
+        amount that you are incrementing by a multiple of the 'up_adjustment'
+        criteria. This is useful for poems with outlier values where you need
+        to greatly increase the range of accepted values in order to have a
+        sufficient number of poems to test.
+
+        This method is called by Metrics._get_other_metrics as part of
+        Metrics.find_matches and won't need to be used directly.
+        """
+
+        for r in range_dict.values():
+            r['max'] += r['up_adj'] * mult
+            r['min'] -= r['up_adj'] * mult
 
     def _get_other_metrics(self):
         """ returns list of 200-600 metrics obj w/similar macro attributes.
@@ -828,25 +923,65 @@ class Metrics(db.Model):
 
         o_met = self._get_within_range(ranges)
 
-        print len(o_met)  # For debugging, to see how many iterations we go
+                          # For debugging, to see how many iterations we go
                           # through, and what the values were at each point
 
         i = 0   # we increment i to avoid being stuck in a loop
-        while len(o_met) > 400 and i <= 15:
 
-            ranges = self._increment_down(ranges)
+        past_length = 0
+        length = len(o_met)
+
+        print length      # for debugging, we want to see how many iterations a
+                          # given poem requires.
+
+        while length > 400 and i <= 15:
+
+            self._increment_down(range_dict=ranges)
             o_met = Metrics._slim_metrics(ranges=ranges, other_metrics=o_met)
 
-            print len(o_met)
+            past_length = length
+            length = len(o_met)
             i += 1
 
-        # if it gets too low, we adjust back up and keep incrementing i
-        while len(o_met) < 150 and i <= 15:
-            ranges = self._increment_up(ranges)
+            print length  # for debugging, we want to see how many iterations a
+                          # given poem requires.
+
+        # if it gets too low, we adjust back up
+        while length < 100 and i <= 15:
+
+            if all([length < 40, past_length < 40, i >= 14]):
+                # this is for the extreme case where we've been incrementing
+                # up for awhile and we still don't have enough results -- we
+                # increase the ranges more drastically, and set i back so that
+                # it can readjust a bit
+
+                self._far_increment_up(range_dict=ranges, mult=20)
+                i = 10
+
+            elif all([length < 50, past_length < 50, i >= 9]):
+                # this is for the cases slightly less extreme than the former
+                # so that we grab a larger range if after 9 interations we're
+                # still below 50, and have been below 50.
+
+                self._far_increment_up(range_dict=ranges, mult=12)
+
+            elif length < 50 and past_length < 50:
+                # if that last two lengths were very low, we want to jump up a
+                # bit higher than the normal increment up
+
+                self._far_increment_up(range_dict=ranges, mult=6)
+
+            else:
+                self._increment_up(range_dict=ranges)
+
             o_met = self._get_within_range(ranges)
 
-            print len(o_met)
+            past_length = length
+            length = len(o_met)
             i += 1
+
+            print length  # for debugging, we want to see how many iterations a
+                          # given poem requires.
 
         return o_met
 
@@ -921,10 +1056,12 @@ class Metrics(db.Model):
                                     "list_index": [i]}
                 return
 
-    def vary_methods(self):
+    def vary_methods(self, unique_auth=True, new_auth=True):
         """retuns matches with different weights applied"""
 
-        matches = self.find_matches(micwgt=1, sentwgt=1, conwgt=1, macwgt=1, limit=75)
+        matches = self.find_matches(micwgt=1, sentwgt=1, conwgt=1, macwgt=1,
+                                    limit=75, unique_auth=unique_auth,
+                                    new_auth=new_auth)
         results = {}
         poem_id, poet_id, euc_distance, euc_raw = matches[0]
 
@@ -1271,8 +1408,6 @@ class Metrics(db.Model):
 
         self_macro = self._get_macro_lex_data()
         other_macro = other._get_macro_lex_data()
-        print self_macro
-        print other_macro
 
         macro_compare = map(Metrics.difference_percent, self_macro, other_macro)
         macro_compare.extend(map(Metrics.difference_percent, other_macro, self_macro))
