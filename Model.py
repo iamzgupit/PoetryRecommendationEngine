@@ -29,12 +29,12 @@ class Poem(db.Model):
     poet = db.relationship('Poet', backref='poems')
 
     matches = db.relationship("Poem",
-                              secondary="poem_matches",
-                              foreign_keys="PoemMatch.primary_poem_id")
+                              secondary="best_matches",
+                              foreign_keys="BestMatch.primary_poem_id")
 
     matched_to = db.relationship("Poem",
-                                 secondary="poem_matches",
-                                 foreign_keys="PoemMatch.match_poem_id")
+                                 secondary="best_matches",
+                                 foreign_keys="BestMatch.match_poem_id")
 
     @staticmethod
     def create_search_params():
@@ -550,38 +550,10 @@ class Region(db.Model):
     @staticmethod
     def get_region_data():
         regions = db.session.query(Region).options(joinedload('metrics').joinedload('regions')).all()
-        region_data = []
-        for region in regions:
-            name = region.region
-            iden = name.replace(".", "").replace("-", "").split(" ")
-            iden = iden[0]
-            metrics = region.metrics
-            total = len(metrics)
 
-            other_reg = []
-            other_data = []
-            only_this = 0
-            for met in metrics:
-                more = [reg for reg in met.regions if reg != region]
-                if more:
-                    other_reg.extend(more)
-                else:
-                    only_this += 1
-
-            all_other = set(other_reg)
-            for reg in all_other:
-                count = other_reg.count(reg)
-                other_data.append((reg.region, count))
-
-            if only_this > 0:
-                other_data.append(("Only " + region.region, only_this))
-            reg_data = {"name": name,
-                        "total": total,
-                        "iden": iden,
-                        "other_reg": other_data}
-            region_data.append(reg_data)
-
-        return region_data
+        return Metrics.get_context_graph_data(list_of_context_obj=regions,
+                                              name_of_context="region",
+                                              metrics_backref="regions")
 
 
 class PoemRegion(db.Model):
@@ -618,41 +590,9 @@ class Term(db.Model):
     def get_term_data():
         terms = db.session.query(Term).options(joinedload('metrics').joinedload('terms')).all()
 
-        term_data = []
-        for term in terms:
-            name = term.term
-            iden = name.replace(".", "").replace("-", "").replace("/", "").split(" ")
-            iden = iden[0]
-            metrics = term.metrics
-            total = len(metrics)
-
-            other_terms = []
-            only_this = 0
-            for met in metrics:
-                more = [t for t in met.terms if t != term]
-                if more:
-                    other_terms.extend(more)
-                else:
-                    only_this += 1
-
-            other_data = []
-
-            all_other = set(other_terms)
-            for t in all_other:
-                count = other_terms.count(t)
-                other_data.append((t.term, count))
-
-            if only_this > 0:
-                other_data.append(("Only " + term.term, only_this))
-
-            t_data = {"name": name,
-                      "total": total,
-                      "iden": iden,
-                      "others": other_data}
-
-            term_data.append(t_data)
-
-        return term_data
+        return Metrics.get_context_graph_data(list_of_context_obj=terms,
+                                              name_of_context="term",
+                                              metrics_backref="terms")
 
 
 class PoemTerm(db.Model):
@@ -688,44 +628,9 @@ class Subject(db.Model):
     def get_subject_data():
         subjects = db.session.query(Subject).options(joinedload('metrics').joinedload('subjects')).all()
 
-        subject_data = []
-        for subject in subjects:
-            name = subject.subject
-            iden = name.replace(".", "").replace("-", "").replace("/", "").replace(",", "").split(" ")
-            if iden[0].lower() != "the":
-                iden = iden[0]
-            else:
-                iden = iden[1]
-            metrics = subject.metrics
-            total = len(metrics)
-
-            other_subjects = []
-            only_this = 0
-            for met in metrics:
-                others = [s for s in met.subjects if s != subject]
-                if others:
-                    other_subjects.extend(others)
-                else:
-                    only_this += 1
-
-            other_data = []
-            all_other = set(other_subjects)
-
-            for s in all_other:
-                count = other_subjects.count(s)
-                other_data.append((s.subject, count))
-
-            if only_this > 0:
-                other_data.append(("Only " + subject.subject, only_this))
-
-            s_data = {"name": name,
-                      "total": total,
-                      "iden": iden,
-                      "others": other_data}
-
-            subject_data.append(s_data)
-
-        return subject_data
+        return Metrics.get_context_graph_data(list_of_context_obj=subjects,
+                                              name_of_context="subject",
+                                              metrics_backref="subjects")
 
 
 class PoemSubject(db.Model):
@@ -774,6 +679,7 @@ class Metrics(db.Model):
     a_freq = db.Column(db.Float)        # Micro Lexical Data: (0 - 1) Percentage
     alliteration = db.Column(db.Float)  # Micro Lexical Data: (0 - 1) Percentage
     rhyme = db.Column(db.Float)         # Micro Lexical Data: (0 - 1) Percentage
+    end_repeat = db.Column(db.Float)    # Micro Lexical Data: (0 - 1) Percentage
     common_percent = db.Column(db.Float)   # Sentiment Data: (0 - 1) Percentage
     poem_percent = db.Column(db.Float)     # Sentiment Data: (0 - 1) Percentage
     object_percent = db.Column(db.Float)   # Sentiment Data: (0 - 1) Percentage
@@ -786,7 +692,6 @@ class Metrics(db.Model):
     passive_percent = db.Column(db.Float)  # Sentiment Data: (0 - 1) Percentage
 
     # upon analysis, this metrics were found to not be meaningful for our set:
-    end_repeat = db.Column(db.Float)       # (0 - 1) Percentage
     stanzas = db.Column(db.Float)          # larger integer ( > 1)
     sl_mean = db.Column(db.Float)          # larger integer ( > 1)
     sl_median = db.Column(db.Float)        # larger integer ( > 1)
@@ -882,13 +787,13 @@ class Metrics(db.Model):
         new_metrics = []
         for metric in other_metrics:
             if all([metric.pl_lines <= ranges["plength"]['max'],
-                   metric.pl_lines >= ranges["plength"]["min"],
-                   metric.ll_mean <= ranges["mean_ll"]['max'],
-                   metric.ll_mean >= ranges["mean_ll"]["min"],
-                   metric.ll_range <= ranges["llrange"]["max"],
-                   metric.ll_range >= ranges["llrange"]["min"],
-                   metric.wl_range <= ranges["wlrange"]["max"],
-                   metric.wl_range >= ranges["wlrange"]["min"]]):
+                    metric.pl_lines >= ranges["plength"]["min"],
+                    metric.ll_mean <= ranges["mean_ll"]['max'],
+                    metric.ll_mean >= ranges["mean_ll"]["min"],
+                    metric.ll_range <= ranges["llrange"]["max"],
+                    metric.ll_range >= ranges["llrange"]["min"],
+                    metric.wl_range <= ranges["wlrange"]["max"],
+                    metric.wl_range >= ranges["wlrange"]["min"]]):
                 new_metrics.append(metric)
 
         return new_metrics
@@ -970,7 +875,7 @@ class Metrics(db.Model):
             final_matches = []
             used_poets = set()
             for match in sorted_matches:
-                poem_id, poet_id, euc_distance = match
+                poet_id = match[1]
                 if poet_id not in used_poets:
                     final_matches.append(match)
                     used_poets.add(poet_id)
@@ -980,6 +885,71 @@ class Metrics(db.Model):
             final_matches = sorted_matches
 
         return final_matches
+
+    @staticmethod
+    def _recalculate_match(matches, sentwgt, micwgt, macwgt, conwgt):
+        """reruns euc distance algorithm with altered weightings"""
+
+        new_matches = []
+        for poem_id, poet_id, euc_dist, euc_raw in matches:
+            euc_squared = 0
+            euc_squared += euc_raw["context"] * conwgt
+            euc_squared += euc_raw["sentiment"] * sentwgt
+            euc_squared += euc_raw["micro"] * micwgt
+            euc_squared += euc_raw["macro"] * macwgt
+            euc_distance = sqrt(euc_squared)
+            new_matches.append((poem_id, poet_id, euc_distance))
+
+        distance_idx = 2
+        sorted_matches = sorted(new_matches, key=lambda tup: tup[distance_idx])
+
+        return sorted_matches
+
+    @staticmethod
+    def select_five(results, matches_list, match_code):
+        """"""
+        for i in range(5):
+            poem_id, poet_id, euc_distance = matches_list[i]
+            if poem_id in results:
+                results[poem_id]["methods"].append(match_code)
+                results[poem_id]["euc_distance"].append(euc_distance)
+                results[poem_id]["list_index"].append(i)
+            else:
+                results[poem_id] = {"poet_id": poet_id,
+                                    "euc_distance": [euc_distance],
+                                    "methods": [match_code],
+                                    "list_index": [i]}
+                return
+
+    def vary_methods(self):
+        """retuns matches with different weights applied"""
+
+        matches = self.find_matches(micwgt=1, sentwgt=1, conwgt=1, macwgt=1, limit=75)
+        results = {}
+        poem_id, poet_id, euc_distance, euc_raw = matches[0]
+
+        results[poem_id] = {"poet_id": poet_id,
+                            "euc_distance": [euc_distance],
+                            "list_index": [0],
+                            "methods": ["unwgt"]}
+
+        stmic = Metrics._recalculate_match(matches=matches, sentwgt=1, micwgt=2,
+                                           macwgt=1, conwgt=1)
+
+        stmac = Metrics._recalculate_match(matches=matches, sentwgt=1, micwgt=1,
+                                           macwgt=2, conwgt=1)
+
+        stcon = Metrics._recalculate_match(matches=matches, sentwgt=1, micwgt=1,
+                                           macwgt=1, conwgt=2)
+
+        stsent = Metrics._recalculate_match(matches=matches, sentwgt=2, micwgt=1,
+                                            macwgt=1, conwgt=1)
+        Metrics.select_five(results=results, matches_list=stsent, match_code="stsent")
+        Metrics.select_five(results=results, matches_list=stcon, match_code="stcon")
+        Metrics.select_five(results=results, matches_list=stmac, match_code="stmac")
+        Metrics.select_five(results=results, matches_list=stmic, match_code="stmic")
+
+        return results
 
     def find_matches(self, micwgt=1, sentwgt=1, conwgt=1, macwgt=1, unique_auth=True, new_auth=True, limit=10):
         """returns a list with (poem_id, match percent) for limit other poems
@@ -1077,7 +1047,8 @@ class Metrics(db.Model):
         o_context = comparison_dict["o_context"]
 
         if context and o_context:
-            euc_squared += Metrics._get_euc_raw(context, o_context, conwgt)
+            con_raw = Metrics._get_euc_raw(context, o_context, conwgt)
+            euc_squared += con_raw
 
             # if we don't have context data, we increase the weighting of the
             # other criteria.
@@ -1086,20 +1057,29 @@ class Metrics(db.Model):
             micwgt += addwgt
             sentwgt += addwgt
             macwgt += addwgt
+            con_raw = 0
 
-        euc_squared += Metrics._get_euc_raw(comparison_dict["temp_micro"],
-                                            comparison_dict["o_micro_lex"],
-                                            micwgt)
-        euc_squared += Metrics._get_euc_raw(comparison_dict["sentiment"],
-                                            comparison_dict["o_sentiment"],
-                                            sentwgt)
-        euc_squared += Metrics._get_euc_raw(comparison_dict["macro"],
-                                            comparison_dict["o_macro"],
-                                            macwgt)
+        mic_raw = Metrics._get_euc_raw(comparison_dict["temp_micro"],
+                                       comparison_dict["o_micro_lex"],
+                                       micwgt)
+        euc_squared += mic_raw
+
+        sent_raw = Metrics._get_euc_raw(comparison_dict["sentiment"],
+                                        comparison_dict["o_sentiment"],
+                                        sentwgt)
+        euc_squared += sent_raw
+
+        mac_raw = Metrics._get_euc_raw(comparison_dict["macro"],
+                                       comparison_dict["o_macro"],
+                                       macwgt)
+        euc_squared += mac_raw
 
         euc_distance = sqrt(euc_squared)
 
-        return euc_distance
+        results = (euc_distance, {"context": con_raw, "macro": mac_raw,
+                                  "micro": mic_raw, "sentiment": sent_raw})
+
+        return results
 
     def _calc_matches(self, other_metrics, micwgt, sentwgt, conwgt, macwgt):
         """given self and other poem objects, returns list w/ match closeness
@@ -1131,14 +1111,16 @@ class Metrics(db.Model):
                                               word_list=word_list,
                                               context=context)
 
-            euc_distance = self._get_euc_distance(comparison_dict=compare_dict,
-                                                  conwgt=conwgt, micwgt=micwgt,
-                                                  sentwgt=sentwgt,
-                                                  macwgt=macwgt)
+            euc_dist, euc_raw = self._get_euc_distance(comparison_dict=compare_dict,
+                                                       conwgt=conwgt,
+                                                       micwgt=micwgt,
+                                                       sentwgt=sentwgt,
+                                                       macwgt=macwgt)
 
             matches.append((o_metrics.poem_id,
                             o_metrics.poem.poet_id,
-                            euc_distance))
+                            euc_dist,
+                            euc_raw))
 
         # we sort by euclidian distance, smallest (i.e. best match to largest)
         distance_idx = 2
@@ -2359,11 +2341,56 @@ class Metrics(db.Model):
 
         return Metrics._get_range_data(list_of_numbers=stanzas, set_max=76)
 
+    @staticmethod
+    def get_context_graph_data(list_of_context_obj, name_of_context, metrics_backref):
+        """"""
+        final_data = []
 
-class PoemMatch(db.Model):
-    """ connects poem to its matches """
+        for item in list_of_context_obj:
+            name = getattr(item, name_of_context)
 
-    __tablename__ = "poem_matches"
+            iden = name.replace(".", "").replace("-", "").replace("/", "").replace(",", "").split(" ")
+            if iden[0].lower() != "the":
+                iden = iden[0]
+            else:
+                iden = iden[1]
+
+            metrics = item.metrics
+            total = len(metrics)
+
+            connected_items = []
+            only_this = 0
+            for met in metrics:
+                others = getattr(met, metrics_backref)
+                if others:
+                    connected_items.extend(others)
+                else:
+                    only_this += 1
+
+            connected_data = []
+            unique_other = [i for i in set(connected_items) if i != item]
+
+            for other in unique_other:
+                count = connected_items.count(other)
+                connected_data.append((getattr(other, name_of_context), count))
+
+            if only_this > 0:
+                connected_data.append(("Only " + name, only_this))
+
+            data = {"name": name,
+                    "total": total,
+                    "iden": iden,
+                    "others": connected_data}
+
+            final_data.append(data)
+
+        return final_data
+
+
+class BestMatch(db.Model):
+    """ records instance of best match selected by user """
+
+    __tablename__ = "best_matches"
 
     pm_id = db.Column(db.Integer, autoincrement=True, primary_key=True)
     primary_poem_id = db.Column(db.Integer,
@@ -2372,11 +2399,30 @@ class PoemMatch(db.Model):
     match_poem_id = db.Column(db.Integer,
                               db.ForeignKey('poems.poem_id'),
                               nullable=False)
-    match_percent = db.Column(db.Float,
-                              nullable=False)
+    euc_distance = db.Column(db.Float,
+                             nullable=False)
+    page_order = db.Column(db.Integer)
+    match_index = db.Column(db.Integer)
+    method_code = db.Column(db.String(10),
+                            db.ForeignKey('methods.method_code'),
+                            nullable=False)
 
-    poem = db.relationship("Poem", backref="pmatches", foreign_keys="PoemMatch.primary_poem_id")
-    match = db.relationship("Poem", backref="pmatched_to", foreign_keys="PoemMatch.match_poem_id")
+    poem = db.relationship("Poem", backref="best_matches", foreign_keys="BestMatch.primary_poem_id")
+    match = db.relationship("Poem", backref="best_matched_for", foreign_keys="BestMatch.match_poem_id")
+    method = db.relationship("Method", backref="best_matches")
+
+
+class Method(db.Model):
+    """variations on the algorithm weighing the catagories differently"""
+
+    __tablename__ = "methods"
+
+    method_code = db.Column(db.String(10), primary_key=True, nullable=False)
+    description = db.Column(db.Text)
+    macro = db.Column(db.Float, nullable=False)
+    micro = db.Column(db.Float, nullable=False)
+    sentiment = db.Column(db.Float, nullable=False)
+    context = db.Column(db.Float)
 
 
 class UserMetrics(Metrics):
@@ -2440,7 +2486,7 @@ def connect_to_db(app):
     db.init_app(app)
 
 
-if __name__ == "__main__" or __name__ == "__console__":
+if __name__ == "__main__":
     from server import app
 
     connect_to_db(app)

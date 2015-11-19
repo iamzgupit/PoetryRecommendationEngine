@@ -1,4 +1,4 @@
-from Model import *
+from model import *
 from server import app
 from statistics import stdev, mean
 import numpy as np

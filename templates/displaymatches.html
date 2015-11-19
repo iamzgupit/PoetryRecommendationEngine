@@ -36,14 +36,17 @@ ReadMe: Recommendations
             <p class="main-poem">Matched Poem</p>
         </div>
 
-        {% for poem, match, i in match_poems %}
+        <div class="row results">
+            <h5>Best Recommendations:</h5>
+            <p style="font-size:small">Select which recommendation you think is the best by selecting the heart next to its title.</p>
+        </div>
+        {% for poem, i in match_poems %}
         <div class="row results">
             <h5 class="title">
-                <a href='/{{main_poem.poem_id}}/{{i}}'>{{ poem.title }}</a>
+                <a href='/{{main_poem.poem_id}}/{{poem.poem_id}}'>{{ poem.title }}</a>
             </h5>
-            <h6 class="author">{{ poem.poet.name }}</h6>
-            <p class="match-percent">{{ match }}
-            <img class="best-button" id="{{ poem.poem_id }}/{{i}}" src="../static/greyheart.png" style="height:30px;position:absolute;padding-bottom:15px;padding-left:15px;"></p>
+            <h6 class="author">{{ poem.poet.name }}
+            <img class="best-button {{ poem.poet.name }}" id="{{ poem.poem_id }}/{{i}}" src="../static/greyheart.png" style="height:30px;position:absolute;padding-bottom:15px;padding-left:15px;"></h6>
         </div>
         {% endfor %}
 
@@ -65,6 +68,11 @@ function changeImage(evt) {
     $(".best-button").off('click');
 }
 
-$(".best-button").on('click', changeImage)
+{% if best_selected %}
+    $(".{{ best_selected}}").attr('src', '../static/blackheart.png');
+{% else %}
+    $(".best-button").on('click', changeImage);
+{% endif %}
+
 </script>
 {% endblock %}

@@ -1,4 +1,4 @@
-from Model import *
+from model import *
 from sqlalchemy import func
 from os import listdir
 from unidecode import unidecode
@@ -186,7 +186,7 @@ def adjust_end_score():
         print "{} complete".format(i)
         i += 1
 
-if __name__ == "__main__" or __name__ == "__console__":
+if __name__ == "__main__":
 
     connect_to_db(app)
     print "Connected to DB."

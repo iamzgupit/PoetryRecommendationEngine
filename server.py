@@ -2,9 +2,10 @@ from flask import (Flask, render_template, redirect, jsonify,
                    request, session)
 from flask_debugtoolbar import DebugToolbarExtension
 from random import choice
-from Model import Poem, Metrics, Region, Term, Subject, UserMetrics, connect_to_db, db
+from model import Poem, Metrics, Region, Term, Subject, UserMetrics, connect_to_db, db
 from requests import get
 from bs4 import BeautifulSoup
+from random import shuffle
 
 app = Flask(__name__)
 
@@ -67,57 +68,80 @@ def get_random_poem():
 @app.route('/<int:poem_id>')
 def display_search_results(poem_id):
 
-    NUM_RESULTS = 5
-
     main_poem = Poem.query.get(poem_id)
     main_metrics = Metrics.query.get(main_poem.poem_id)
 
-    match_metrics = main_metrics.find_matches(limit=NUM_RESULTS)
+    match_metrics = main_metrics.vary_methods()
 
-    match_data = []
-    for i in range(NUM_RESULTS):
-        poem, poet, match = match_metrics[i]
-        match = 100 - (match * 10)
-        match = "{:.2f}%".format(match)
-        match_data.append((poem, match, i + 1))
+    # testing, can I do this?
+    session["match"] = match_metrics
 
-    session["match"] = match_data
-    match_poems = [(Poem.query.get(p), m, i) for p, m, i in match_data]
+    match_poems = []
+    poem_ids = match_metrics.keys()
+    shuffle(poem_ids)
+
+    for i in range(1, 6):
+        poem = Poem.query.get(poem_ids[i - 1])
+        match_poems.append((poem, i))
 
     wikipedia_url, source = get_wiki_info(main_poem)
 
+    best_selected = session.get(str(poem_id))
+
     return render_template("displaymatches.html", main_poem=main_poem,
                            match_poem=main_poem, wikipedia_url=wikipedia_url,
-                           source=source, match_poems=match_poems)
+                           source=source, match_poems=match_poems,
+                           best_selected=best_selected)
 
 
-@app.route('/<int:poem_id>/<int:index>')
-def display_search_poems(poem_id, index):
+@app.route('/<int:poem_id>/<int:match_id>')
+def display_search_poems(poem_id, match_id):
 
     main_poem = Poem.query.get(poem_id)
 
-    match_data = session.get("match")
-    match_poems = [(Poem.query.get(poem), match, i)
-                   for poem, match, i in match_data]
+    match_metrics = session.get("match")
 
-    if index:
-        match_poem = match_poems[index - 1][0]
+    match_poems = []
+    poem_ids = match_metrics.keys()
+    for i in range(1, 6):
+        poem = Poem.query.get(poem_ids[i - 1])
+        match_poems.append((poem, i))
+
+    if match_id:
+        match_poem = Poem.query.get(match_id)
+
     else:
         match_poem = main_poem
 
     wikipedia_url, source = get_wiki_info(match_poem)
 
+    best_selected = session.get(str(poem_id))
+
     return render_template("displaymatches.html", main_poem=main_poem,
                            match_poem=match_poem, wikipedia_url=wikipedia_url,
-                           source=source, match_poems=match_poems)
+                           source=source, match_poems=match_poems,
+                           best_selected=best_selected)
 
 
 @app.route('/feedback', methods=['POST'])
 def log_feedback():
-    main_poem = request.form.get("main_poem")
-    match_poem = request.form.get("match_poem")
-    print main_poem
-    print match_poem
+    main_id = request.form.get("main_poem")
+    match_data = request.form.get("match_poem")
+    match_list = match_data.split("/")
+    match_id = match_list[0]
+    index = match_list[1]
+    id_string = str(main_id)
+
+    match_poem = Poem.query.get(match_id)
+    match_author = match_poem.poet.name
+    match_author = match_author.split(" ")
+    match_author = match_author[-1]
+
+    session[id_string] = match_author
+
+    print main_id
+    print match_id
+    print index
     return "success"
 
 
