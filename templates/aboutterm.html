@@ -1,39 +1,44 @@
 {% extends 'base.html' %}
-{% block title %}
-ReadMe: Terms
+{% block title%}
+ReadMe: About {{ term.term }}
 {% endblock %}
 {% block content %}
 
 <div class="container">
 <div class="row large-content">
     <div class="col-md-10 col-md-offset-1">
-        <div class="row algorithm-header">
-            <h4>Term</h4>
-            <br>
-            <p>term information will to here!</p>
-        </div>  <!-- end of algorithm-header row -->
-        <div class="graph-info" id="criteria-info">
-        </div> <!-- end of graph-information row -->
+        <div class="col-md-8 poems">
+            <div class="row algorithm-header">
+                <h4>{{ term.term }}</h4>
+                <br>
+            </div>  <!-- end of algorithm-header row -->
+            <div class="row associated poems">
+                <h4> Associated Poems:</h4>
+                <ul class="list-unstyled">
+                {% for poem in poems %}
+                    <li><a href="/{{poem.poem_id}}">{{ poem.title }}</a> by {{ poem.poet.name }}</li>
+                {% endfor %}
+                </ul>
+            </div> <!-- end of poems row -->
+        </div> <!-- end of poems column -->
 
         <div class="row context-graph" id="graph-space">
-
-        {% for term in term_data %}
             <div class="col-md-4 graph">
                 <div class="graph-box">
-                    <canvas class="donut-chart" id="{{ term['iden'] }}" width="250" height="250"></canvas>
+                    <canvas class="donut-chart" id="{{ term_data['iden'] }}" width="250" height="250"></canvas>
                     <div class="region-title">
-                        <h3><a href="/terms/{{ all_terms[term['name']] }}">{{ term['name'] }}</a></h3>
-                        <h5>{{ term['total'] }} Poems Total</h5>
+                        <h3>{{ term_data['name'] }}</h3>
+                        <h5>{{ term_data['total'] }} Poems Total</h5>
                     </div> <!-- end of region title div -->
                 </div> <!-- end of graph-box div -->
             </div> <!-- end of graph column -->
-        {% endfor %}
+        </div> <!-- end of graph space -->
 
-        </div>  <!-- end of algorithm-graph row -->
     </div>  <!-- end of column -->
 </div> <!-- end of main-content row -->
 </div> <!-- end of container -->
 <script>
+
 var colorDic = {"Rhymed Stanza": "#EE7942",
                 "Free Verse": "#FFEFDB",
                 "Sonnet": "#8B8378",
@@ -133,25 +138,21 @@ var colorDic = {"Rhymed Stanza": "#EE7942",
                 "Only Pantoum": "#F0E68C",
                 "Only Tercet": "#CD5C5C"}
 
-{% for term in term_data %}
     
-    var {{ term['iden'] }}data = [
-    {% for t, number in term['others'] %}
-        {
-            value: {{ number }},
-            color: colorDic["{{ t }}"],
-            highlight: "#696969",
-            label: "{{ t }}"
-        },
-    {% endfor %}
-    ];
-
-    var {{ term['iden'] }}ctx = $("#{{ term['iden'] }}").get(0).getContext("2d");
-    var {{ term['iden'] }}Chart = new Chart({{ term['iden'] }}ctx).Doughnut({{ term['iden'] }}data);
-
+var {{ term_data['iden'] }}data = [
+{% for t, number in term_data['others'] %}
+    {
+        value: {{ number }},
+        color: colorDic["{{ t }}".replace("&amp;", "&")],
+        highlight: "#696969",
+        label: "{{ t }}".replace("&amp;", "&")
+    },
 {% endfor %}
-    // var ldLegend = LDChart.generateLegend();
-    // $('#lex-div-graph').append(ldLegend);
+]
+
+var {{ term_data['iden'] }}ctx = $("#{{ term_data['iden'] }}").get(0).getContext("2d");
+var {{ term_data['iden'] }}Chart = new Chart({{ term_data['iden'] }}ctx).Doughnut({{ term_data['iden'] }}data);
+
 </script>
 
 {% endblock %}

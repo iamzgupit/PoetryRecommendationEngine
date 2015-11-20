@@ -1,35 +1,39 @@
 {% extends 'base.html' %}
-{% block title %}
-ReadMe: Subjects
+{% block title%}
+ReadMe: About {{ subject.subject }}
 {% endblock %}
 {% block content %}
 
 <div class="container">
 <div class="row large-content">
     <div class="col-md-10 col-md-offset-1">
-        <div class="row algorithm-header">
-            <h4>Subject</h4>
-            <br>
-            <p>Subject information will go here!</p>
-        </div>  <!-- end of algorithm-header row -->
-        <div class="graph-info" id="criteria-info">
-        </div> <!-- end of graph-information row -->
+        <div class="col-md-8 poems">
+            <div class="row algorithm-header">
+                <h4>{{ subject.subject }}</h4>
+                <br>
+            </div>  <!-- end of algorithm-header row -->
+            <div class="row associated poems">
+                <h4> Associated Poems:</h4>
+                <ul class="list-unstyled">
+                {% for poem in poems %}
+                    <li><a href="/{{poem.poem_id}}">{{ poem.title }}</a> by {{ poem.poet.name }}</li>
+                {% endfor %}
+                </ul>
+            </div> <!-- end of poems row -->
+        </div> <!-- end of poems column -->
 
         <div class="row context-graph" id="graph-space">
-
-        {% for subject in subject_data %}
             <div class="col-md-4 graph">
                 <div class="graph-box">
-                    <canvas class="donut-chart" id="{{ subject['iden'] }}" width="250" height="250"></canvas>
+                    <canvas class="donut-chart" id="{{ subject_data['iden'] }}" width="250" height="250"></canvas>
                     <div class="region-title">
-                        <h3><a href="/subjects/{{ all_subjects[subject['name']] }}">{{ subject['name'] }}</a></h3>
-                        <h5>{{ subject['total'] }} Poems Total</h5>
+                        <h3>{{ subject_data['name'] }}</h3>
+                        <h5>{{ subject_data['total'] }} Poems Total</h5>
                     </div> <!-- end of region title div -->
                 </div> <!-- end of graph-box div -->
             </div> <!-- end of graph column -->
-        {% endfor %}
+        </div> <!-- end of graph space -->
 
-        </div>  <!-- end of algorithm-graph row -->
     </div>  <!-- end of column -->
 </div> <!-- end of main-content row -->
 </div> <!-- end of container -->
@@ -312,25 +316,21 @@ var colorDic = {"Marriage & Companionship": "#9AFF9A",
                 "Only Tercet": "#FFEFDB",
                 "Only Quatrain": "#EE7942"};
 
-{% for subject in subject_data %}
     
-    var {{ subject['iden'] }}data = [
-    {% for t, number in subject['others'] %}
-        {
-            value: {{ number }},
-            color: colorDic["{{ t }}".replace("&amp;", "&")],
-            highlight: "#696969",
-            label: "{{ t }}".replace("&amp;", "&")
-        },
-    {% endfor %}
-    ]
-
-    var {{ subject['iden'] }}ctx = $("#{{ subject['iden'] }}").get(0).getContext("2d");
-    var {{ subject['iden'] }}Chart = new Chart({{ subject['iden'] }}ctx).Doughnut({{ subject['iden'] }}data);
-
+var {{ subject_data['iden'] }}data = [
+{% for t, number in subject_data['others'] %}
+    {
+        value: {{ number }},
+        color: colorDic["{{ t }}".replace("&amp;", "&")],
+        highlight: "#696969",
+        label: "{{ t }}".replace("&amp;", "&")
+    },
 {% endfor %}
-    // var ldLegend = LDChart.generateLegend();
-    // $('#lex-div-graph').append(ldLegend);
+]
+
+var {{ subject_data['iden'] }}ctx = $("#{{ subject_data['iden'] }}").get(0).getContext("2d");
+var {{ subject_data['iden'] }}Chart = new Chart({{ subject_data['iden'] }}ctx).Doughnut({{ subject_data['iden'] }}data);
+
 </script>
 
 {% endblock %}

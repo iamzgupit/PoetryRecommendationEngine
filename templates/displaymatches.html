@@ -9,6 +9,8 @@ ReadMe: Recommendations
     <div class="col-md-8 col-md-offset-1 reading">
         <h2 class="title main"> {{ match_poem.title }}</h2>
         <h4 class="author main"> by {{ match_poem.poet.name }}</h4>
+        <p><a href="{{match_poem.url}}">Read on The Poetry Foundation</a></p>
+        <p><a href="/{{match_poem.poem_id}}/about">See Stats</a></p>
         {% if match_poem.title != main_poem.title %}
         <p><a href="/{{match_poem.poem_id}}">More Like This</a></p>
         {% endif %}
@@ -56,6 +58,7 @@ ReadMe: Recommendations
 </div> <!-- end of main-content row -->
 </div> <!-- end of container div -->
 <script>
+
 var main_poem = {{ main_poem.poem_id }};
 
 function success() {
@@ -63,18 +66,23 @@ function success() {
 }
 
 function changeImage(evt) {
+    $('.best-button').attr('src', '../static/greyheart.png');
     var information = evt.currentTarget.id;
     evt.currentTarget.src = '../static/blackheart.png';
     // send the id to a route to log it
     $.post('/feedback', {"main_poem": main_poem, "match_poem": information}, success);
-    $(".best-button").off('click');
+    // $(".best-button").off('click');
 }
 
-{% if best_selected != None %}
+
+{% if best_selected %}
+
     $(".{{ best_selected }}").attr('src', '../static/blackheart.png');
-{% else %}
-    $(".best-button").on('click', changeImage);
+
 {% endif %}
+
+$(".best-button").on('click', changeImage);
+
 
 </script>
 {% endblock %}

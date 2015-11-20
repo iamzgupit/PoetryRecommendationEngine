@@ -39,7 +39,9 @@ My mistress when she walks treads on the ground.
                     <br><br>
                     <span class="centered">
                         <input id="submit"type="submit" value="Submit">
-                        <span id="notice"></span>
+                        <span class="slight-indent"><img src="../static/checked.png" class="checkbox-img" id="unique-auth" value='True'>
+                        Only Show One Results Per Poet</span>
+                        <span id="notice" class="slight-indent"></span>
                     </span>
                 </form>
             </div> <!-- end of column -->
@@ -74,11 +76,29 @@ function checkContent(evt) {
         var poemString = poem.value;
         poemString = poemString.replace('<', '&lt;').replace('>', '&gt;').replace(/\r|\n|\r\n/g, '<br>');
         $('#notice').html("Analyzing Poem...");
-        $.post('/writer-mode/interim', {"title": title.value, "text": poemString}, success);
+        $.post('/writer-mode/interim', {"title": title.value, "text": poemString, "unique_auth": uniqueAuth}, success);
     };
 }
 
 $("#submit").on('click', checkContent)
+
+
+var uniqueAuth = 'True';
+
+
+function checkBox(evt) {
+    if (evt.currentTarget.value == 'True' || evt.currentTarget.value == null) {
+        evt.currentTarget.src = '../static/unchecked.png';
+        evt.currentTarget.value = 'False'
+        uniqueAuth = 'False';
+    } else {
+        evt.currentTarget.src = '../static/checked.png';
+        evt.currentTarget.value = 'True'
+        uniqueAuth = 'True';
+    };
+}
+
+$('.checkbox-img').on('click', checkBox);
 
 </script>
 

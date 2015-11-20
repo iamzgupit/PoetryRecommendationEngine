@@ -7,12 +7,28 @@
             display: inline;
         }
 
+        .slight-indent {
+            padding-left: 30px;
+        }
+
+        .metric-title {
+            font-weight: bold;
+        }
+
         .navbar {
             border-color: white;
         }
 
         .graph-chart {
             margin-left:15px;
+        }
+
+        .donut-chart {
+            padding-left: 20px;
+        }
+
+        .stats {
+            padding-bottom: 75px;
         }
 
         .legend {

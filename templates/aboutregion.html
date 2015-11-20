@@ -1,37 +1,44 @@
 {% extends 'base.html' %}
-{% block title %}
-ReadMe: Regions
+{% block title%}
+ReadMe: About {{ region.region }}
 {% endblock %}
 {% block content %}
 
 <div class="container">
 <div class="row large-content">
     <div class="col-md-10 col-md-offset-1">
-        <div class="row algorithm-header">
-            <h4>Region</h4>
-            <br>
-            <p>region information will to here!</p>
-        </div>  <!-- end of algorithm-header row -->
-        <div class="graph-info" id="criteria-info">
-        </div> <!-- end of graph-information row -->
+        <div class="col-md-8 poems">
+            <div class="row algorithm-header">
+                <h4>{{ region.region }}</h4>
+                <br>
+            </div>  <!-- end of algorithm-header row -->
+            <div class="row associated poems">
+                <h4> Associated Poems:</h4>
+                <ul class="list-unstyled">
+                {% for poem in poems %}
+                    <li><a href="/{{poem.poem_id}}">{{ poem.title }}</a> by {{ poem.poet.name }}</li>
+                {% endfor %}
+                </ul>
+            </div> <!-- end of poems row -->
+        </div> <!-- end of poems column -->
 
         <div class="row context-graph" id="graph-space">
-        {% for region in region_data %}
             <div class="col-md-4 graph">
                 <div class="graph-box">
-                    <canvas class="donut-chart" id="{{region['iden']}}" width="250" height="250" style="clear:both;"></canvas>
+                    <canvas class="donut-chart" id="{{ region_data['iden'] }}" width="250" height="250"></canvas>
                     <div class="region-title">
-                        <h3><a href="/regions/{{ all_regions[region['name']] }}">{{ region['name'] }}</a></h3>
-                        <h5>{{ region['total'] }} Poems Total</h5>
-                    </div>
-                </div>
-            </div>
-        {% endfor %}
-        </div>  <!-- end of algorithm-graph row -->
+                        <h3>{{ region_data['name'] }}</h3>
+                        <h5>{{ region_data['total'] }} Poems Total</h5>
+                    </div> <!-- end of region title div -->
+                </div> <!-- end of graph-box div -->
+            </div> <!-- end of graph column -->
+        </div> <!-- end of graph space -->
+
     </div>  <!-- end of column -->
 </div> <!-- end of main-content row -->
 </div> <!-- end of container -->
 <script>
+
 var colorDic = {"U.S.": "#EE7942",
                 "Midwestern": "#FFEFDB",
                 "Southern": "#8B8378",
@@ -100,28 +107,21 @@ var colorDic = {"U.S.": "#EE7942",
                 "Only Eastern Europe": "#2E8B57",
                 "Only Scandinavia": "#555555",
                 "Only Japan": "#7D9EC0"};
-
-{% for region in region_data %}
     
-    var {{ region['iden'] }}data = [
-
-    {% for place, number in region['others'] %}
-        {
-            value: {{ number }},
-            color: colorDic["{{ place }}"],
-            highlight: "#696969",
-            label: "{{ place }}"
-        },
-    {% endfor %}
-    ];
-
-    console.log({{ region['iden'] }}data);
-    var {{ region['iden'] }}ctx = $("#{{ region['iden'] }}").get(0).getContext("2d");
-    var {{ region['iden'] }}Chart = new Chart({{ region['iden'] }}ctx).Doughnut({{ region['iden'] }}data);
-
+var {{ region_data['iden'] }}data = [
+{% for t, number in region_data['others'] %}
+    {
+        value: {{ number }},
+        color: colorDic["{{ t }}".replace("&amp;", "&")],
+        highlight: "#696969",
+        label: "{{ t }}".replace("&amp;", "&")
+    },
 {% endfor %}
-    // var ldLegend = LDChart.generateLegend();
-    // $('#lex-div-graph').append(ldLegend);
+]
+
+var {{ region_data['iden'] }}ctx = $("#{{ region_data['iden'] }}").get(0).getContext("2d");
+var {{ region_data['iden'] }}Chart = new Chart({{ region_data['iden'] }}ctx).Doughnut({{ region_data['iden'] }}data);
+
 </script>
 
 {% endblock %}

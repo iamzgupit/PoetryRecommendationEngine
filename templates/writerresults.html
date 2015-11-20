@@ -10,6 +10,8 @@ ReadMe: Writer Mode Recommendations
         <h2 class="title main"> {{ main_title }}</h2>
         <h4 class="author main"> by {{ poet }} </h4>
         {% if main_id != None %}
+        <p><a href="{{ url }}">Read on The Poetry Foundation</a></p>
+        <p><a href="/{{ main_id }}/about">See Stats</a></p>
         <p><a href="/{{ main_id }}">More Like This</a></p>
         {% endif %}
         <br>
@@ -56,18 +58,19 @@ function success() {
 }
 
 function changeImage(evt) {
-    var information = evt.currentTarget.id
+    $('.best-button').attr('src', '../static/greyheart.png');
+    var information = evt.currentTarget.id;
     evt.currentTarget.src = '../static/blackheart.png';
     // send the id to a route to log it
     $.post('/writerfeedback', {"match_poem": information}, success);
-    $(".best-button").off('click');
+    // $(".best-button").off('click');
 }
 
 {% if best_selected %}
     $(".{{ best_selected }}").attr('src', '../static/blackheart.png');
-{% else %}
-    $(".best-button").on('click', changeImage);
 {% endif %}
+    $(".best-button").on('click', changeImage);
+
 
 </script>
 

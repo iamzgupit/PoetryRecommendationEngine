@@ -560,6 +560,32 @@ class Region(db.Model):
                                               name_of_context="region",
                                               metrics_backref="regions")
 
+    def get_graph_data(self, metrics):
+
+        name = self.region
+
+        iden = name.replace(".", "").replace("-", "")
+        iden = iden.replace("/", "").replace(",", "").split(" ")
+
+        if iden[0].lower() != "the":
+            iden = iden[0]
+        else:
+            iden = iden[1]
+
+        total = len(metrics)
+
+        connected_data = Metrics.get_single_graph_data(metrics_list=metrics,
+                                                       name_of_context="region",
+                                                       name=name,
+                                                       metrics_backref="regions")
+
+        data = {"name": name,
+                "total": total,
+                "iden": iden,
+                "others": connected_data}
+
+        return data
+
 
 class PoemRegion(db.Model):
     """ connects poem to region"""
@@ -603,6 +629,30 @@ class Term(db.Model):
                                               name_of_context="term",
                                               metrics_backref="terms")
 
+    def get_graph_data(self, metrics):
+
+        name = self.term
+
+        iden = name.replace(".", "").replace("-", "").replace("/", "").replace(",", "").split(" ")
+        if iden[0].lower() != "the":
+            iden = iden[0]
+        else:
+            iden = iden[1]
+
+        total = len(metrics)
+
+        connected_data = Metrics.get_single_graph_data(metrics_list=metrics,
+                                                       name_of_context="term",
+                                                       name=name,
+                                                       metrics_backref="terms")
+
+        data = {"name": name,
+                "total": total,
+                "iden": iden,
+                "others": connected_data}
+
+        return data
+
 
 class PoemTerm(db.Model):
     """ connects poem to poetic term"""
@@ -644,6 +694,29 @@ class Subject(db.Model):
         return Metrics.get_context_graph_data(list_of_context_obj=subjects,
                                               name_of_context="subject",
                                               metrics_backref="subjects")
+
+    def get_graph_data(self, metrics):
+
+        name = self.subject
+
+        iden = name.replace(".", "").replace("-", "").replace("/", "").replace(",", "").split(" ")
+        if iden[0].lower() != "the":
+            iden = iden[0]
+        else:
+            iden = iden[1]
+
+        total = len(metrics)
+
+        connected_data = Metrics.get_single_graph_data(metrics_list=metrics,
+                                                       name_of_context="subject",
+                                                       name=name,
+                                                       metrics_backref="subjects")
+
+        data = {"name": name,
+                "total": total,
+                "iden": iden,
+                "others": connected_data}
+        return data
 
 
 class PoemSubject(db.Model):
@@ -997,14 +1070,14 @@ class Metrics(db.Model):
 
         return o_met
 
-    def _remove_main_auth(self, new_auth, sorted_matches):
+    def _remove_main_auth(self, sorted_matches):
         """is new_auth is True, returns a list without poems by self.poet
 
         if new_auth is False or if this is a UserMetrics instance, just returns
         sorted_matches as given.
         """
 
-        if new_auth and self.poem:
+        if self.poem:
             new_matches = [tup for tup in sorted_matches
                            if tup[1] != self.poem.poet_id]
             return new_matches
@@ -1137,15 +1210,16 @@ class Metrics(db.Model):
         # include poems by the author of our initial poem, otherwise we sort
         # those out by default. Checking for self.poem means that we can use
         # same method with the child class UserMetrics.
-
-        sorted_matches = self._remove_main_auth(new_auth=new_auth,
-                                                sorted_matches=sorted_matches)
+        if new_auth:
+            sorted_matches = self._remove_main_auth(sorted_matches=sorted_matches)
 
         # if we turn unique_auth off, we will receive multiple matches by the
         # same author, otherwise, we sort out other matches by the same author
         # keeping only those that are the best fit.
-        final_matches = self._remove_dupl_auths(unique_auth=unique_auth,
-                                                sorted_matches=sorted_matches)
+        if unique_auth:
+            final_matches = self._remove_dupl_auths(sorted_matches=sorted_matches)
+        else:
+            final_matches = sorted_matches
 
         # final_matches = [(180676, 310, 1.1730658920581396), (180649, 232, 1.1992932205497298), (181032, 283, 1.2108784028951076), (238448, 269, 1.2135422970758867), (2085, 196, 1.2359146103377696)]
         return final_matches[:limit]
@@ -1999,33 +2073,35 @@ class Metrics(db.Model):
         will not need to be used directly. It requires a the the api key
         to be loaded to the environment, or else will return an empty set.
         """
+        print "GONE TO WORDS API"
+        return set()
 
-        key = environ['WORDS_PRODUCTION_KEY']
-        url = 'https://wordsapiv1.p.mashape.com/words/' + word + '/rhymes?mashape-key=' + key
-        rhyme_data = get(url)
+        # key = environ['WORDS_PRODUCTION_KEY']
+        # url = 'https://wordsapiv1.p.mashape.com/words/' + word + '/rhymes?mashape-key=' + key
+        # rhyme_data = get(url)
 
-        print "Using Words API"  # Prints to the server for debugging purposes
+        # print "Using Words API"  # Prints to the server for debugging purposes
 
-        if rhyme_data.status_code == 200:
-            results = rhyme_data.json()
-            rhyming_words = []
-            try:
-                rhyming_words.extend(results["rhymes"]["verb"])
-            except KeyError:
-                pass
-            try:
-                rhyming_words.extend(results["rhymes"]["all"])
-                # all does not actually include all rhyming words
-            except KeyError:
-                pass
-            try:
-                rhyming_words.extend(results["rhymes"]["noun"])
-            except KeyError:
-                pass
+        # if rhyme_data.status_code == 200:
+        #     results = rhyme_data.json()
+        #     rhyming_words = []
+        #     try:
+        #         rhyming_words.extend(results["rhymes"]["verb"])
+        #     except KeyError:
+        #         pass
+        #     try:
+        #         rhyming_words.extend(results["rhymes"]["all"])
+        #         # all does not actually include all rhyming words
+        #     except KeyError:
+        #         pass
+        #     try:
+        #         rhyming_words.extend(results["rhymes"]["noun"])
+        #     except KeyError:
+        #         pass
 
-            return set(rhyming_words)
-        else:
-            return set()
+        #     return set(rhyming_words)
+        # else:
+        #     return set()
 
     @staticmethod
     def _get_rhyme_list(word):
@@ -2541,44 +2617,23 @@ class Metrics(db.Model):
         return Metrics._get_range_data(list_of_numbers=stanzas, set_max=76)
 
     @staticmethod
-    def get_single_graph_data(context_obj, name_of_context, metrics_backref):
+    def get_single_graph_data(metrics_list, name_of_context, name, metrics_backref):
         """"""
-        name = getattr(context_obj, name_of_context)
 
-        iden = name.replace(".", "").replace("-", "").replace("/", "").replace(",", "").split(" ")
-        if iden[0].lower() != "the":
-            iden = iden[0]
-        else:
-            iden = iden[1]
+        connected_items = {}
 
-        metrics = context_obj.metrics
-        total = len(metrics)
-
-        connected_items = []
-        only_this = 0
-        for met in metrics:
+        for met in metrics_list:
             others = getattr(met, metrics_backref)
-            if others:
-                connected_items.extend(others)
+            if len(others) > 1:
+                for o in others:
+                    context_name = getattr(o, name_of_context)
+                    if context_name != name:
+                        connected_items[context_name] = connected_items.get(context_name, 0) + 1
             else:
-                only_this += 1
+                only = "Only " + name
+                connected_items[only] = connected_items.get(only, 0) + 1
 
-        connected_data = []
-        unique_other = [i for i in set(connected_items) if i != context_obj]
-
-        for other in unique_other:
-            count = connected_items.count(other)
-            connected_data.append((getattr(other, name_of_context), count))
-
-        if only_this > 0:
-            connected_data.append(("Only " + name, only_this))
-
-        data = {"name": name,
-                "total": total,
-                "iden": iden,
-                "others": connected_data}
-
-        return data
+        return connected_items.items()
 
     @staticmethod
     def get_context_graph_data(list_of_context_obj, name_of_context, metrics_backref):
@@ -2597,30 +2652,23 @@ class Metrics(db.Model):
             metrics = item.metrics
             total = len(metrics)
 
-            connected_items = []
-            only_this = 0
+            connected_items = {}
+
             for met in metrics:
                 others = getattr(met, metrics_backref)
-
                 if len(others) > 1:
-                    connected_items.extend(others)
+                    for o in others:
+                        context_name = getattr(o, name_of_context)
+                        if context_name != name:
+                            connected_items[context_name] = connected_items.get(context_name, 0) + 1
                 else:
-                    only_this += 1
-
-            connected_data = []
-            unique_other = [i for i in set(connected_items) if i != item]
-
-            for other in unique_other:
-                count = connected_items.count(other)
-                connected_data.append((getattr(other, name_of_context), count))
-
-            if only_this > 0:
-                connected_data.append(("Only " + name, only_this))
+                    only = "Only " + name
+                    connected_items[only] = connected_items.get(only, 0) + 1
 
             data = {"name": name,
                     "total": total,
                     "iden": iden,
-                    "others": connected_data}
+                    "others": connected_items.items()}
 
             final_data.append(data)
 

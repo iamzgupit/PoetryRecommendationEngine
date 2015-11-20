@@ -6,6 +6,7 @@ from model import Poem, Metrics, Region, Term, Subject, BestMatch, UserMetrics, 
 from requests import get
 from bs4 import BeautifulSoup
 from random import shuffle
+from sqlalchemy.orm import joinedload
 # from os import environ
 
 app = Flask(__name__)
@@ -126,6 +127,27 @@ def display_search_results(poem_id):
                            match_poem=main_poem, wikipedia_url=wikipedia_url,
                            source=source, match_poems=match_poems,
                            best_selected=best_selected)
+
+
+@app.route('/<int:poem_id>/about')
+def diplay_poem_about_page(poem_id):
+    metric = (db.session.query(Metrics)
+                        .filter(Metrics.poem_id == poem_id)
+                        .options(joinedload('subjects'))
+                        .options(joinedload('poem').joinedload('poet'))
+                        .options(joinedload('terms'))
+                        .options(joinedload('regions'))
+                        .first())
+
+    subjects = metric.subjects
+    terms = metric.terms
+    regions = metric.regions
+    poem = metric.poem
+    wikipedia_url, source = get_wiki_info(poem)
+
+    return render_template("aboutpoem.html", poem=poem, subjects=subjects,
+                           wikipedia_url=wikipedia_url, source=source,
+                           regions=regions, terms=terms, metric=metric)
 
 
 @app.route('/<int:poem_id>/<int:match_id>')
@@ -317,7 +339,26 @@ def display_subject_graph():
     subject_data = Subject.get_subject_data(start_at=start_at,
                                             stop_before=stop_before)
 
-    return render_template("subjects.html", subject_data=subject_data)
+    rough_subjects = db.session.query(Subject.subject, Subject.subject_id).all()
+    all_subjects = {}
+    for subject, subject_id in rough_subjects:
+        all_subjects[subject] = subject_id
+
+    return render_template("subjects.html", subject_data=subject_data, all_subjects=all_subjects)
+
+
+@app.route('/subjects/<int:subject_id>')
+def display_subject_about(subject_id):
+    subject = (db.session.query(Subject)
+                         .options(joinedload('metrics').joinedload('subjects'))
+                         .options(joinedload('metrics').joinedload('poem').joinedload('poet'))
+                         .get(subject_id))
+    metrics = subject.metrics
+    poems = [m.poem for m in metrics]
+    subject_data = subject.get_graph_data(metrics=metrics)
+
+    return render_template("aboutsubject.html", subject=subject, poems=poems,
+                           subject_data=subject_data)
 
 
 @app.route('/algorithm/terms')
@@ -330,7 +371,26 @@ def display_term_graph():
 
     term_data = Term.get_term_data(start_at=start_at, stop_before=stop_before)
 
-    return render_template("terms.html", term_data=term_data)
+    rough_terms = db.session.query(Term.term, Term.term_id).all()
+    all_terms = {}
+    for term, term_id in rough_terms:
+        all_terms[term] = term_id
+
+    return render_template("terms.html", term_data=term_data, all_terms=all_terms)
+
+
+@app.route('/terms/<int:term_id>')
+def display_term_about(term_id):
+    term = (db.session.query(Term)
+                      .options(joinedload('metrics').joinedload('terms'))
+                      .options(joinedload('metrics').joinedload('poem').joinedload('poet'))
+                      .get(term_id))
+    metrics = term.metrics
+    poems = [m.poem for m in metrics]
+    term_data = term.get_graph_data(metrics=metrics)
+
+    return render_template("aboutterm.html", term=term, poems=poems,
+                           term_data=term_data)
 
 
 @app.route('/algorithm/regions')
@@ -344,7 +404,27 @@ def display_region_graph():
     region_data = Region.get_region_data(start_at=start_at,
                                          stop_before=stop_before)
 
-    return render_template("region.html", region_data=region_data)
+    rough_regions = db.session.query(Region.region, Region.region_id).all()
+    all_regions = {}
+    for region, region_id in rough_regions:
+        all_regions[region] = region_id
+
+    return render_template("region.html", region_data=region_data, all_regions=all_regions)
+
+
+@app.route('/regions/<int:region_id>')
+def display_region_about(region_id):
+    region = (db.session.query(Region)
+                        .options(joinedload('metrics').joinedload('regions'))
+                        .options(joinedload('metrics').joinedload('poem').joinedload('poet'))
+                        .get(region_id))
+
+    metrics = region.metrics
+    poems = [m.poem for m in metrics]
+    region_data = region.get_graph_data(metrics=metrics)
+
+    return render_template("aboutregion.html", region=region, poems=poems,
+                           region_data=region_data)
 
 
 @app.route('/writer-mode')
@@ -358,12 +438,21 @@ def save_info():
 
     title = request.form.get("title")
     text = request.form.get("text")
+    unique_auth = request.form.get("unique_auth")
+    if unique_auth == "False":
+        unique_auth = False
+    else:
+        unique_auth = True
+
+    print unique_auth
+    print type(unique_auth)
+
     session["title"] = title
     session["text"] = text
 
     temp_text = text.replace("<br>", "\n")
     poem = UserMetrics(title=title, text=temp_text)
-    match_metrics = poem.vary_methods()
+    match_metrics = poem.vary_methods(unique_auth=unique_auth)
 
     session["match"] = match_metrics
 
@@ -384,6 +473,8 @@ def display_results():
 
     wikipedia_url = None
     source = None
+    url = None
+    main_id = None
 
     id_string = text.replace(" ", "")
     id_string = id_string[0:5] + id_string[-6:-1]
@@ -393,7 +484,7 @@ def display_results():
                            main_title=title, match_poems=match_poems,
                            wikipedia_url=wikipedia_url, source=source,
                            poet="User", best_selected=best_selected,
-                           main_id=None)
+                           main_id=main_id, url=url)
 
 
 @app.route('/writer-mode/<int:match_id>')
@@ -421,6 +512,7 @@ def display_result_poem(match_id):
         main_title = match_poem.title
         main_id = match_poem.poem_id
         poet = match_poem.poet.name
+        url = match_poem.url
         wikipedia_url, source = get_wiki_info(match_poem)
 
     else:
@@ -429,9 +521,10 @@ def display_result_poem(match_id):
         source = None
         main_id = None
         poet = "User"
+        url = None
 
     return render_template("writerresults.html", text=text, title=title,
-                           main_title=main_title, main_id=main_id,
+                           main_title=main_title, main_id=main_id, url=url,
                            match_poems=match_poems, wikipedia_url=wikipedia_url,
                            source=source, poet=poet, best_selected=best_selected)
 
