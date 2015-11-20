@@ -62,14 +62,14 @@ function success() {
 function changeImage(evt) {
     $('.best-button').attr('src', '../static/greyheart.png');
     var information = evt.currentTarget.id;
-    evt.currentTarget.src = '../static/blackheart.png';
+    evt.currentTarget.src = '../static/goldheart.png';
     // send the id to a route to log it
     $.post('/writerfeedback', {"match_poem": information}, success);
     // $(".best-button").off('click');
 }
 
 {% if best_selected %}
-    $(".{{ best_selected }}").attr('src', '../static/blackheart.png');
+    $(".{{ best_selected }}").attr('src', '../static/goldheart.png');
 {% endif %}
     $(".best-button").on('click', changeImage);
 

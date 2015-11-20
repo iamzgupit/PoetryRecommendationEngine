@@ -1513,21 +1513,24 @@ class Metrics(db.Model):
                 >>> fake = Metrics(poem_id=0,\
                                    wl_mean=1,\
                                    wl_mode=2,\
+                                   wl_median=3,
                                    wl_range=4,\
                                    wl_mode=3,\
                                    ll_mean=5,\
+                                   ll_median=9,\
                                    ll_mode=6,\
                                    ll_range=8,\
                                    pl_lines=10)
                 >>>
                 >>> fake._get_macro_lex_data()
-                [1, 2, 4, 3, 5, 6, 8, 10]
+                [1, 2, 3, 4, 3, 5, 9, 6, 8, 10]
 
         This function is called in Metrics.find_matches and will not need to be
         used directly."""
 
-        macro_lex = [self.wl_mean, self.wl_mode, self.wl_range, self.ll_mean,
-                     self.ll_mode, self.ll_range, self.pl_lines]
+        macro_lex = [self.wl_mean, self.wl_mode, self.wl_median, self.wl_range,
+                     self.ll_mean, self.ll_median, self.ll_mode, self.ll_range,
+                     self.pl_lines]
 
         return macro_lex
 
