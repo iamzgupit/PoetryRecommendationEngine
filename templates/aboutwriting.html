@@ -1,0 +1,116 @@
+{% extends 'base.html' %}
+{% block title %}
+ReadMe: About Your Writing
+{% endblock %}
+{% block content %}
+<div class="container">
+
+<div class="row main-content">
+    <div class="col-md-6 col-md-offset-1 reading">
+        <h2 class="title main"> {{ title }}</h2>
+        <h4 class="author main"> by User </h4>
+        <p><a href="/writer-mode/results">Show Similar</a></p>
+        <br>
+        <div class="poem-content">
+            {{ text|safe }}
+        </div>
+    </div> <!-- end of first column -->
+    <div class="col-md-4 reading">  <!-- about column -->
+
+        <div class="row stats">
+            <h3 class="title"> Poem Stats </h5>
+            <br>
+            <h4>Macro Lexical Characteristics</h5>
+            <h5> Word Length (by Character) </h5>
+            <p class="slight-indent">
+                <span class="metric-title">Mean:</span> {{ metric.wl_mean }}<br>
+                <span class="metric-title">Median:</span> {{ metric.wl_median }}<br>
+                <span class="metric-title">Mode:</span> {{ metric.wl_mode }}<br>
+                <span class="metric-title">Range: </span> {{ metric.wl_range }}
+            </p>
+            <h5> Line Length (by Character)</h5>
+            <p class="slight-indent">
+                <span class="metric-title">Mean:</span> {{ metric.ll_mean }}<br>
+                <span class="metric-title">Median:</span> {{ metric.ll_median }}<br>
+                <span class="metric-title">Mode:</span> {{ metric.ll_mode }}<br>
+                <span class="metric-title">Range:</span> {{ metric.ll_range }}<br>
+            </p>
+            <h5> Poem Length</h5>
+            <p class="slight-indent">
+                <span class="metric-title">By Line:</span> {{ metric.pl_lines }}<br>
+                <span class="metric-title">By Word:</span> {{ metric.pl_words }}<br>
+                <span class="metric-title">By Character:</span> {{ metric.pl_char }}
+            </p>
+            <h5> Poem Structure</h5>
+            <p class="slight-indent">
+                <span class="metric-title">Number of Stanzas:</span> {{ metric.stanzas }}<br>
+                <span class="metric-title">Mean Stanza Length (by Line):</span> {{ metric.sl_mean }}<br>
+                <span class="metric-title">Median Stanza Length (by Line):</span> {{ metric.sl_median }}<br>
+                <span class="metric-title">Mode Stanza Length (by Line):</span> {{ metric.sl_mode }}<br>
+                <span class="metric-title">Stanza Length Range (by Line):</span> {{ metric.sl_range }}
+            </p>
+            <h4>Micro Lexical Characteristics</h4>
+            <h5>Diversity of Word Choice</h5>
+            <p class="slight-indent">
+                <span class="metric-title">Lexical Divisity:</span> {{ metric.lex_div }}
+            </p>
+            <h5>Frequency of Filler Words</h5>
+            <p class="slight-indent">
+                <span class="metric-title">Frequency of "The":</span> {{ metric.the_freq }}<br>
+                <span class="metric-title">Frequenc of "is":</span> {{ metric.is_freq }}<br>
+                <span class="metric-title">Frequenc of "a":</span> {{ metric.a_freq }}
+            </p>
+            <h5>Narrator Presence</h5>
+            <p class="slight-indent">
+                <span class="metric-title">Frequency of First Person: ("I"):</span> {{ metric.i_freq }}<br>
+                <span class="metric-title">Frequenc of Second Person ("you"):</span> {{ metric.you_freq }}<br>
+            </p>
+            <h5>Poetic Form</h5>
+            <p class="slight-indent">
+                <span class="metric-title">Degree of Traditional Rhyme Scheme:</span> {{ metric.rhyme }}<br>
+                <span class="metric-title">Frequency of Alliteration:</span> {{ metric.alliteration }}<br>
+                <span class="metric-title">Degree of End Word Retition:</span> {{ metric.end_repeat }}
+            </p>
+            <h4>Sentiment Data</h4>
+            <h5> Unique vs. Common Language </h5>
+            <p class="slight-indent">
+                <span class="metric-title">Percent Uncommon Relative to General English Language Corpus:</span>
+                 {{ metric.common_percent }}<br>
+                <span class="metric-title">Percent Uncommon Relative to our specific Corpus:</span>
+                 {{ metric.poem_percent }}
+            </p>
+            <h5>Objects vs. Abstraction </h5>
+            <p class="slight-indent">
+                <span class="metric-title">Percent Associated with Objects:</span> {{ metric.object_percent }}<br>
+                <span class="metric-title">Percent Associated with Abstractions:</span> {{ metric.abs_percent }}
+            </p>
+            <h5> Male vs. Female Presence </h5>
+            <p class="slight-indent">
+                <span class="metric-title">Presence of Women (as Percentage of Overall Words):</span>
+                 {{ metric.female_percent }}
+                 <br>
+                <span class="metric-title">Presence of Men (as Percentage of Overall Words):</span>
+                 {{ metric.male_percent }}
+            </p>
+            <h5> Positive vs. Negative Language </h5>
+            <p class="slight-indent">
+                <span class="metric-title">Presence of Positive Words (as Percentage of Overall Words):</span> 
+                {{ metric.positive }}
+                <br>
+                <span class="metric-title">Presence of Negative Words (as Percentage of Overall Words):</span> 
+                {{ metric.negative }}
+            </p>
+            <h5> Active vs. Passive Language </h5>
+            <p class="slight-indent">
+                <span class="metric-title">Presence of Active Words (as Percentage of Overall Words):</span> 
+                {{ metric.active_percent }}
+                <br>
+                <span class="metric-title">Presence of Passive Words (as Percentage of Overall Words):</span> 
+                {{ metric.passive_percent }}
+            </p>
+        </div> <!-- end of stats row -->
+    </div> <!-- end of stats column -->
+</div> <!-- end of main-content row -->
+</div> <!-- end of container div -->    
+
+{% endblock %}
