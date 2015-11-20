@@ -1085,24 +1085,19 @@ class Metrics(db.Model):
         else:
             return sorted_matches
 
-    def _remove_dupl_auths(self, unique_auth, sorted_matches):
+    def _remove_dupl_auths(self, sorted_matches):
         """if unique_auth is True, returns list w/best match for each poet_id
 
         if unique_auth is False, just returns sorted_matches as given.
         """
 
-        if unique_auth:
-            final_matches = []
-            used_poets = set()
-            for match in sorted_matches:
-                poet_id = match[1]
-                if poet_id not in used_poets:
-                    final_matches.append(match)
-                    used_poets.add(poet_id)
-                else:
-                    continue
-        else:
-            final_matches = sorted_matches
+        final_matches = []
+        used_poets = set()
+        for match in sorted_matches:
+            poet_id = match[1]
+            if poet_id not in used_poets:
+                final_matches.append(match)
+                used_poets.add(poet_id)
 
         return final_matches
 
@@ -2730,16 +2725,20 @@ class UserMetrics(Metrics):
         wl_data = Metrics._get_wl_data(word_list)
 
         self.wl_mean = wl_data["wl_mean"]
+        self.wl_median = wl_data["wl_median"]
         self.wl_mode = wl_data["wl_mode"]
         self.wl_range = wl_data["wl_range"]
         self.lex_div = wl_data["lex_div"]
+        self.pl_words = wl_data["pl_words"]
 
         ll_data = Metrics._get_ll_data(line_dict)
 
         self.ll_mean = ll_data["ll_mean"]
+        self.ll_median = ll_data["ll_median"]
         self.ll_mode = ll_data["ll_mode"]
         self.ll_range = ll_data["ll_range"]
         self.pl_lines = ll_data["pl_lines"]
+        self.pl_char = ll_data["pl_char"]
 
         freq_data = Metrics._get_freq_data(word_list)
 
@@ -2748,6 +2747,14 @@ class UserMetrics(Metrics):
         self.the_freq = freq_data["the_freq"]
         self.is_freq = freq_data["is_freq"]
         self.a_freq = freq_data["a_freq"]
+
+        sl_data = Metrics._get_stanza_data(line_dict)
+
+        self.stanzas = sl_data["stanzas"]
+        self.sl_mean = sl_data["sl_mean"]
+        self.sl_median = sl_data["sl_median"]
+        self.sl_mode = sl_data["sl_mode"]
+        self.sl_range = sl_data["sl_range"]
 
         self.alliteration = Metrics._get_alliteration_score(line_dict)
         self.rhyme = Metrics._get_rhyme_score(line_dict)

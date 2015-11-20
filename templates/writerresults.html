@@ -13,6 +13,8 @@ ReadMe: Writer Mode Recommendations
         <p><a href="{{ url }}">Read on The Poetry Foundation</a></p>
         <p><a href="/{{ main_id }}/about">See Stats</a></p>
         <p><a href="/{{ main_id }}">More Like This</a></p>
+        {% else %}
+        <p><a href="/writer-mode/about">See Stats</a></p>
         {% endif %}
         <br>
         <div class="poem-content">

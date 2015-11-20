@@ -444,9 +444,6 @@ def save_info():
     else:
         unique_auth = True
 
-    print unique_auth
-    print type(unique_auth)
-
     session["title"] = title
     session["text"] = text
 
@@ -485,6 +482,18 @@ def display_results():
                            wikipedia_url=wikipedia_url, source=source,
                            poet="User", best_selected=best_selected,
                            main_id=main_id, url=url)
+
+
+@app.route('/writer-mode/about')
+def about_your_poem():
+    title = session.get("title")
+    text = session.get("text")
+
+    temp_text = text.replace("<br>", "\n")
+    metric = UserMetrics(title=title, text=temp_text)
+
+    return render_template("aboutwriting.html", title=title, text=text,
+                           metric=metric)
 
 
 @app.route('/writer-mode/<int:match_id>')
