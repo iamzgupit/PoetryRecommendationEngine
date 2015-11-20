@@ -68,8 +68,8 @@ function checkContent(evt) {
         $('#user-notice').html("<p>Please provide a title.</p>");
     } else if (poemLength < 250) {
         $('#user-notice').html("<p>Please provide a longer poem (250 character min) to receive meaningful results</p>");
-    } else if (poemLength >= 20000) {
-        $('#user-notice').html("<p>Please limit your poem to a reasonbale length (under 20,000 characters) to receive meaningful results</p>");
+    } else if (poemLength >= 3000) {
+        $('#user-notice').html("<p>Please limit your poem to a reasonbale length (under 3,000 characters) to receive meaningful results</p>");
     } else {
         var poemString = poem.value;
         poemString = poemString.replace('<', '&lt;').replace('>', '&gt;').replace(/\r|\n|\r\n/g, '<br>');

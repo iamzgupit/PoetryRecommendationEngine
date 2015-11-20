@@ -21,7 +21,7 @@ ReadMe: Terms
             <div class="col-md-4 graph">
                 <div class="graph-box">
                     <canvas class="donut-chart" id="{{ term['iden'] }}" width="250" height="250"></canvas>
-                    <div class="region-title" style="padding-bottom:15px;text-align:center;">
+                    <div class="region-title">
                         <h3>{{ term['name'] }}</h3>
                         <h5>{{ term['total'] }} Poems Total</h5>
                     </div> <!-- end of region title div -->
@@ -144,7 +144,7 @@ var colorDic = {"Rhymed Stanza": "#EE7942",
             label: "{{ t }}"
         },
     {% endfor %}
-    ]
+    ];
 
     var {{ term['iden'] }}ctx = $("#{{ term['iden'] }}").get(0).getContext("2d");
     var {{ term['iden'] }}Chart = new Chart({{ term['iden'] }}ctx).Doughnut({{ term['iden'] }}data);

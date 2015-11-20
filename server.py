@@ -1,16 +1,17 @@
 from flask import (Flask, render_template, redirect, jsonify,
                    request, session)
 from flask_debugtoolbar import DebugToolbarExtension
-from random import choice
+from random import choice, randint
 from model import Poem, Metrics, Region, Term, Subject, BestMatch, UserMetrics, connect_to_db, db
 from requests import get
 from bs4 import BeautifulSoup
 from random import shuffle
-from os import environ
+# from os import environ
 
 app = Flask(__name__)
 
-app.secret_key = environ['SESSION_KEY']
+# app.secret_key = environ['SESSION_KEY']
+app.secret_key = "Temporary secret key"
 
 
 def get_wiki_info(poem):
@@ -308,21 +309,41 @@ def display_context_page():
 
 @app.route('/algorithm/subjects')
 def display_subject_graph():
-    subject_data = Subject.get_subject_data()
+    show_number = 12
+    last_subj_id = 138
+    start_at = randint(1, last_subj_id - show_number)
+    stop_before = start_at + show_number
+
+    subject_data = Subject.get_subject_data(start_at=start_at,
+                                            stop_before=stop_before)
 
     return render_template("subjects.html", subject_data=subject_data)
 
 
 @app.route('/algorithm/terms')
 def display_term_graph():
-    term_data = Term.get_term_data()
+    show_number = 12
+    last_term_id = 49
+
+    start_at = randint(1, last_term_id - show_number)
+    stop_before = start_at + show_number
+
+    term_data = Term.get_term_data(start_at=start_at, stop_before=stop_before)
 
     return render_template("terms.html", term_data=term_data)
 
 
 @app.route('/algorithm/regions')
 def display_region_graph():
-    region_data = Region.get_region_data()
+    show_number = 12
+    last_region_id = 34
+
+    start_at = randint(1, last_region_id - show_number)
+    stop_before = start_at + show_number
+
+    region_data = Region.get_region_data(start_at=start_at,
+                                         stop_before=stop_before)
+
     return render_template("region.html", region_data=region_data)
 
 

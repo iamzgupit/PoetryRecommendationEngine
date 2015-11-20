@@ -80,6 +80,11 @@
             margin-top: 95px;
         }
 
+        .region-title {
+            text-align:center;
+            height:100px;
+        }
+
         #search {
             width: 600px;
             height: 40px;

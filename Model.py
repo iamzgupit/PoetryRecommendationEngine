@@ -6,6 +6,7 @@ from word_lists import (COMMON_W, POEM_W, ABSTRACT, OBJECTS, MALE, FEMALE,
                         ACTIVE, PASSIVE, POSITIVE, NEGATIVE)
 from requests import get
 from sqlalchemy.orm import joinedload
+from os import environ
 
 db = SQLAlchemy()
 
@@ -548,8 +549,12 @@ class Region(db.Model):
                               backref='regions')
 
     @staticmethod
-    def get_region_data():
-        regions = db.session.query(Region).options(joinedload('metrics').joinedload('regions')).all()
+    def get_region_data(start_at, stop_before):
+        regions = (db.session.query(Region)
+                             .filter(Region.region_id >= start_at,
+                                     Region.region_id < stop_before)
+                             .options(joinedload('metrics').joinedload('regions'))
+                             .all())
 
         return Metrics.get_context_graph_data(list_of_context_obj=regions,
                                               name_of_context="region",
@@ -587,8 +592,12 @@ class Term(db.Model):
                               backref="terms")
 
     @staticmethod
-    def get_term_data():
-        terms = db.session.query(Term).options(joinedload('metrics').joinedload('terms')).all()
+    def get_term_data(start_at, stop_before):
+        terms = (db.session.query(Term)
+                           .filter(Term.term_id >= start_at,
+                                   Term.term_id < stop_before)
+                           .options(joinedload('metrics').joinedload('terms'))
+                           .all())
 
         return Metrics.get_context_graph_data(list_of_context_obj=terms,
                                               name_of_context="term",
@@ -625,8 +634,12 @@ class Subject(db.Model):
                               backref="subjects")
 
     @staticmethod
-    def get_subject_data():
-        subjects = db.session.query(Subject).options(joinedload('metrics').joinedload('subjects')).all()
+    def get_subject_data(start_at, stop_before):
+        subjects = (db.session.query(Subject)
+                              .filter(Subject.subject_id >= start_at,
+                                      Subject.subject_id < stop_before)
+                              .options(joinedload('metrics').joinedload('subjects'))
+                              .all())
 
         return Metrics.get_context_graph_data(list_of_context_obj=subjects,
                                               name_of_context="subject",
@@ -878,11 +891,11 @@ class Metrics(db.Model):
         This method is called by Metrics._get_other_metrics as part of
         Metrics.find_matches and won't need to be used directly.
         """
-
         for r in range_dict.values():
             r['max'] += r['up_adj']
             r['min'] -= r['up_adj']
 
+    @staticmethod
     def _far_increment_up(range_dict, mult):
         """increases min/max in range_dict to provide higher number of results
 
@@ -897,10 +910,9 @@ class Metrics(db.Model):
         This method is called by Metrics._get_other_metrics as part of
         Metrics.find_matches and won't need to be used directly.
         """
-
         for r in range_dict.values():
-            r['max'] += r['up_adj'] * mult
-            r['min'] -= r['up_adj'] * mult
+            r['max'] += (r['up_adj'] * mult)
+            r['min'] -= (r['up_adj'] * mult)
 
     def _get_other_metrics(self):
         """ returns list of 200-600 metrics obj w/similar macro attributes.
@@ -1970,6 +1982,52 @@ class Metrics(db.Model):
         return allit_count / float(total)
 
     @staticmethod
+    def _backup_rhyme_list(word):
+        """uses the Words API to get rhyming words
+
+        this is a backup for Writer Mode, to be used if the rhymer server goes
+        down or blocks scraping.
+
+            >>> rhymes = Metrics._backup_rhyme_list("apple")
+            >>> expected = set([u'funeral chapel', u'side chapel', u'mayapple',\
+                                u'grapple', u'pineapple', u'dapple',\
+                                u'scrapple', u'chapel'])
+            >>> rhymes == expected
+            True
+
+        This method is called by _get_rhyme_list in the event of an error, and
+        will not need to be used directly. It requires a the the api key
+        to be loaded to the environment, or else will return an empty set.
+        """
+
+        key = environ['WORDS_PRODUCTION_KEY']
+        url = 'https://wordsapiv1.p.mashape.com/words/' + word + '/rhymes?mashape-key=' + key
+        rhyme_data = get(url)
+
+        print "Using Words API"  # Prints to the server for debugging purposes
+
+        if rhyme_data.status_code == 200:
+            results = rhyme_data.json()
+            rhyming_words = []
+            try:
+                rhyming_words.extend(results["rhymes"]["verb"])
+            except KeyError:
+                pass
+            try:
+                rhyming_words.extend(results["rhymes"]["all"])
+                # all does not actually include all rhyming words
+            except KeyError:
+                pass
+            try:
+                rhyming_words.extend(results["rhymes"]["noun"])
+            except KeyError:
+                pass
+
+            return set(rhyming_words)
+        else:
+            return set()
+
+    @staticmethod
     def _get_rhyme_list(word):
         """ given word, returns set of rhyming words
 
@@ -1990,7 +2048,11 @@ class Metrics(db.Model):
         BEG_URL = 'http://www.rhymer.com/RhymingDictionary/'
         FIN_URL = '.html'
         url = BEG_URL + word + FIN_URL
-        html_text = get(url).text
+        try:
+            html_text = get(url).text
+        except:
+            return Metrics._backup_rhyme_list(word)
+
         soup = BeautifulSoup(html_text, "html.parser")
         words = soup.find_all("td")
         rough_word_list = [unidecode(w.text).strip() for w in words]
@@ -2479,6 +2541,46 @@ class Metrics(db.Model):
         return Metrics._get_range_data(list_of_numbers=stanzas, set_max=76)
 
     @staticmethod
+    def get_single_graph_data(context_obj, name_of_context, metrics_backref):
+        """"""
+        name = getattr(context_obj, name_of_context)
+
+        iden = name.replace(".", "").replace("-", "").replace("/", "").replace(",", "").split(" ")
+        if iden[0].lower() != "the":
+            iden = iden[0]
+        else:
+            iden = iden[1]
+
+        metrics = context_obj.metrics
+        total = len(metrics)
+
+        connected_items = []
+        only_this = 0
+        for met in metrics:
+            others = getattr(met, metrics_backref)
+            if others:
+                connected_items.extend(others)
+            else:
+                only_this += 1
+
+        connected_data = []
+        unique_other = [i for i in set(connected_items) if i != context_obj]
+
+        for other in unique_other:
+            count = connected_items.count(other)
+            connected_data.append((getattr(other, name_of_context), count))
+
+        if only_this > 0:
+            connected_data.append(("Only " + name, only_this))
+
+        data = {"name": name,
+                "total": total,
+                "iden": iden,
+                "others": connected_data}
+
+        return data
+
+    @staticmethod
     def get_context_graph_data(list_of_context_obj, name_of_context, metrics_backref):
         """"""
         final_data = []
@@ -2499,7 +2601,8 @@ class Metrics(db.Model):
             only_this = 0
             for met in metrics:
                 others = getattr(met, metrics_backref)
-                if others:
+
+                if len(others) > 1:
                     connected_items.extend(others)
                 else:
                     only_this += 1

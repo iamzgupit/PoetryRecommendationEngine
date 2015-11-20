@@ -20,9 +20,9 @@ ReadMe: Regions
             <div class="col-md-4 graph">
                 <div class="graph-box">
                     <canvas class="donut-chart" id="{{region['iden']}}" width="250" height="250" style="clear:both;"></canvas>
-                    <div class="region-title" style="padding-bottom:15px;text-align:center;">
+                    <div class="region-title">
                         <h3>{{ region['name'] }}</h3>
-                        <h5>{{region['total']}} Poems Total</h5>
+                        <h5>{{ region['total'] }} Poems Total</h5>
                     </div>
                 </div>
             </div>
@@ -99,12 +99,13 @@ var colorDic = {"U.S.": "#EE7942",
                 "Only East": "#4169E1",
                 "Only Eastern Europe": "#2E8B57",
                 "Only Scandinavia": "#555555",
-                "Only Japan": "#7D9EC0"}
+                "Only Japan": "#7D9EC0"};
 
 {% for region in region_data %}
     
     var {{ region['iden'] }}data = [
-    {% for place, number in region['other_reg'] %}
+
+    {% for place, number in region['others'] %}
         {
             value: {{ number }},
             color: colorDic["{{ place }}"],
@@ -112,8 +113,9 @@ var colorDic = {"U.S.": "#EE7942",
             label: "{{ place }}"
         },
     {% endfor %}
-    ]
+    ];
 
+    console.log({{ region['iden'] }}data);
     var {{ region['iden'] }}ctx = $("#{{ region['iden'] }}").get(0).getContext("2d");
     var {{ region['iden'] }}Chart = new Chart({{ region['iden'] }}ctx).Doughnut({{ region['iden'] }}data);
 
