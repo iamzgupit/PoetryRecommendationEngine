@@ -2072,34 +2072,33 @@ class Metrics(db.Model):
         to be loaded to the environment, or else will return an empty set.
         """
         print "GONE TO WORDS API"
-        return set()
 
-        # key = environ['WORDS_PRODUCTION_KEY']
-        # url = 'https://wordsapiv1.p.mashape.com/words/' + word + '/rhymes?mashape-key=' + key
-        # rhyme_data = get(url)
+        key = environ['WORDS_PRODUCTION_KEY']
+        url = 'https://wordsapiv1.p.mashape.com/words/' + word + '/rhymes?mashape-key=' + key
+        rhyme_data = get(url)
 
-        # print "Using Words API"  # Prints to the server for debugging purposes
+        print "Using Words API"  # Prints to the server for debugging purposes
 
-        # if rhyme_data.status_code == 200:
-        #     results = rhyme_data.json()
-        #     rhyming_words = []
-        #     try:
-        #         rhyming_words.extend(results["rhymes"]["verb"])
-        #     except KeyError:
-        #         pass
-        #     try:
-        #         rhyming_words.extend(results["rhymes"]["all"])
-        #         # all does not actually include all rhyming words
-        #     except KeyError:
-        #         pass
-        #     try:
-        #         rhyming_words.extend(results["rhymes"]["noun"])
-        #     except KeyError:
-        #         pass
+        if rhyme_data.status_code == 200:
+            results = rhyme_data.json()
+            rhyming_words = []
+            try:
+                rhyming_words.extend(results["rhymes"]["verb"])
+            except KeyError:
+                pass
+            try:
+                rhyming_words.extend(results["rhymes"]["all"])
+                # all does not actually include all rhyming words
+            except KeyError:
+                pass
+            try:
+                rhyming_words.extend(results["rhymes"]["noun"])
+            except KeyError:
+                pass
 
-        #     return set(rhyming_words)
-        # else:
-        #     return set()
+            return set(rhyming_words)
+        else:
+            return set()
 
     @staticmethod
     def _get_rhyme_list(word):
