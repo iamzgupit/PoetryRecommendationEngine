@@ -76,9 +76,7 @@ function changeImage(evt) {
 
 
 {% if best_selected %}
-
-    $(".{{ best_selected }}").attr('src', '../static/goldheart.png');
-
+        $(".{{ best_selected|replace('u&#39;','')|replace('&#39;','') }}").attr('src', '../static/goldheart.png');
 {% endif %}
 
 $(".best-button").on('click', changeImage);

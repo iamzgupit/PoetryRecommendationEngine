@@ -1,7 +1,13 @@
+"""contains single use functions for cleaning up and seeding the database
+
+Once the database is all set up (as it is now) there is no need for any
+of these functions.
+"""
+
+
 from model import *
 from sqlalchemy import func
 from os import listdir
-from unidecode import unidecode
 from server import app
 
 
@@ -126,25 +132,9 @@ def clean_list_text(fileread, filewrite):
     file2.close()
 
 
-def grab_poem_author_list():
-    poems = Poem.query.all()
-    f = open("poemsearch.text", "w")
-    for poem in poems:
-        start = '{\"title\": \"'
-        end = '\", \"id\": ' + str(poem.poem_id) + '},\n'
-        title = unidecode(poem.title)
-        if '"' in title:
-            title = title.replace('"', '\\"')
-        if poem.poet:
-            poet = unidecode(poem.poet.name)
-            content = start + title + " by " + poet + end
-        else:
-            print "{}: {} has no poet".format(poem.poem_id, title)
-            content = start + title + end
-        f.write(content)
-
-
 def seed_metrics(poem_ids):
+    """used to add a metrics object for each poem in poem_ids"""
+
     print "{} metrics to add".format(len(poem_ids))
     i = 1
     for poem_id in poem_ids:
@@ -158,6 +148,11 @@ def seed_metrics(poem_ids):
 
 
 def adjust_rhyme(start):
+    """updates the self.rhyme score for all metrics objects
+
+    Will not need to be used.
+    """
+
     metrics = Metrics.query.all()
     print "{} METRICS TO UPDATE".format(len(metrics))
     i = start
@@ -173,6 +168,11 @@ def adjust_rhyme(start):
 
 
 def adjust_end_score():
+    """updates the self.end_repeat score for all metrics objects
+
+    Will not need to be used.
+    """
+
     metrics = Metrics.query.all()
     print "{} METRICS TO UPDATE".format(len(metrics))
     i = 1
@@ -185,6 +185,54 @@ def adjust_end_score():
         db.session.commit()
         print "{} complete".format(i)
         i += 1
+
+
+def add_poem_subject():
+    """sets the metric_id equal to the poem_id for all PoemSubject instances
+
+    Will not need to be used again.
+    """
+
+    ps = PoemSubject.query.all()
+    print "TOTAL TO DO: {}".format(len(ps))
+    n = 0
+    for i in ps:
+        i.metric_id = i.poem_id
+        n += 1
+        db.session.commit()
+        print "{} complete".format(n)
+
+
+def add_poem_term():
+    """sets the metric_id equal to the poem_id for all PoemTerm instances
+
+    Will not need to be used again.
+    """
+
+    pt = PoemTerm.query.all()
+    print "TOTAL TO DO: {}".format(len(pt))
+    n = 0
+    for i in pt:
+        i.metric_id = i.poem_id
+        n += 1
+        db.session.commit()
+        print "{} complete".format(n)
+
+
+def add_poem_region():
+    """sets the metric_id equal to the poem_id for all PoemRegion instances
+
+    Will not need to be used again.
+    """
+
+    pr = PoemRegion.query.all()
+    print "TOTAL TO DO: {}".format(len(pr))
+    n = 0
+    for i in pr:
+        i.metric_id = i.poem_id
+        n += 1
+        db.session.commit()
+        print "{} complete".format(n)
 
 if __name__ == "__main__":
 

@@ -122,6 +122,7 @@ def display_search_results(poem_id):
     wikipedia_url, source = get_wiki_info(main_poem)
 
     best_selected = session.get(str(poem_id))
+    print best_selected
 
     return render_template("displaymatches.html", main_poem=main_poem,
                            match_poem=main_poem, wikipedia_url=wikipedia_url,
@@ -350,12 +351,11 @@ def display_subject_graph():
 @app.route('/subjects/<int:subject_id>')
 def display_subject_about(subject_id):
     subject = (db.session.query(Subject)
-                         .options(joinedload('metrics').joinedload('subjects'))
-                         .options(joinedload('metrics').joinedload('poem').joinedload('poet'))
+                         .options(joinedload('poems').joinedload('subjects'))
+                         .options(joinedload('poems').joinedload('poet'))
                          .get(subject_id))
-    metrics = subject.metrics
-    poems = [m.poem for m in metrics]
-    subject_data = subject.get_graph_data(metrics=metrics)
+    poems = subject.poems
+    subject_data = subject.get_graph_data(poems=poems)
 
     return render_template("aboutsubject.html", subject=subject, poems=poems,
                            subject_data=subject_data)
@@ -382,12 +382,11 @@ def display_term_graph():
 @app.route('/terms/<int:term_id>')
 def display_term_about(term_id):
     term = (db.session.query(Term)
-                      .options(joinedload('metrics').joinedload('terms'))
-                      .options(joinedload('metrics').joinedload('poem').joinedload('poet'))
+                      .options(joinedload('poems').joinedload('terms'))
+                      .options(joinedload('poems').joinedload('poet'))
                       .get(term_id))
-    metrics = term.metrics
-    poems = [m.poem for m in metrics]
-    term_data = term.get_graph_data(metrics=metrics)
+    poems = term.poems
+    term_data = term.get_graph_data(poems=poems)
 
     return render_template("aboutterm.html", term=term, poems=poems,
                            term_data=term_data)
@@ -415,13 +414,12 @@ def display_region_graph():
 @app.route('/regions/<int:region_id>')
 def display_region_about(region_id):
     region = (db.session.query(Region)
-                        .options(joinedload('metrics').joinedload('regions'))
-                        .options(joinedload('metrics').joinedload('poem').joinedload('poet'))
+                        .options(joinedload('poems').joinedload('regions'))
+                        .options(joinedload('poems').joinedload('poet'))
                         .get(region_id))
 
-    metrics = region.metrics
-    poems = [m.poem for m in metrics]
-    region_data = region.get_graph_data(metrics=metrics)
+    poems = region.poems
+    region_data = region.get_graph_data(poems=poems)
 
     return render_template("aboutregion.html", region=region, poems=poems,
                            region_data=region_data)

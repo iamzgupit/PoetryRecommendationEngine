@@ -2,6 +2,7 @@ from flask_sqlalchemy import SQLAlchemy
 from unidecode import unidecode
 from bs4 import BeautifulSoup
 from math import sqrt
+from statistics import stdev, mean
 from word_lists import (COMMON_W, POEM_W, ABSTRACT, OBJECTS, MALE, FEMALE,
                         ACTIVE, PASSIVE, POSITIVE, NEGATIVE)
 from requests import get
@@ -17,42 +18,40 @@ class Poem(db.Model):
     __tablename__ = "poems"
 
     poem_id = db.Column(db.Integer, nullable=False, primary_key=True)
-    poet_id = db.Column(db.Integer,
-                        db.ForeignKey('poets.poet_id'))
+    poet_id = db.Column(db.Integer, db.ForeignKey('poets.poet_id'))
     title = db.Column(db.Text, nullable=False)
     formatted_text = db.Column(db.Text)
     text = db.Column(db.Text, nullable=False)
     url = db.Column(db.Text)
     copyright = db.Column(db.Text)
 
-    # allowing url, formatted_text, and poet_id to be null allows
-    # us to use the same model for user-submitted poetry
     poet = db.relationship('Poet', backref='poems')
 
-    matches = db.relationship("Poem",
-                              secondary="best_matches",
+    matches = db.relationship("Poem", secondary="best_matches",
                               foreign_keys="BestMatch.primary_poem_id")
 
-    matched_to = db.relationship("Poem",
-                                 secondary="best_matches",
+    matched_to = db.relationship("Poem", secondary="best_matches",
                                  foreign_keys="BestMatch.match_poem_id")
 
     @staticmethod
     def create_search_params():
         """returns dict w/list of dict w/ info for each poem to jsonify
 
-        this is called by the server to create the search parameters for
-        typeahead.
+        This is called by the server for the homepage ('/') route to create the
+        search parameters for typeahead.
         """
 
         search_params = []
-        poems = Poem.query.all()
+        # we do a joined load for poets since we'll be calling poem.poet for
+        # each poem, so this allows us to save time.
+        poems = db.session.query(Poem).options(joinedload('poet')).all()
         for poem in poems:
             info = {}
             info["id"] = poem.poem_id
             info["title"] = poem.title
-            if poem.poet:
-                info["author"] = poem.poet.name
+            poet = poem.poet
+            if poet:
+                info["author"] = poet.name
             else:
                 info["author"] = "anonymous"
             search_params.append(info)
@@ -71,33 +70,46 @@ class Poem(db.Model):
         we can then use this to parse a list and receive the words starting
         at start_word and ending right before stop_word.
 
-        This function is called by _parse, and will not need to be used directly
+        This function is called by Poem.parse, and will not need to be used directly
         """
 
         start = 0
         stop = len(word_list)
+        start_word_found = False
+
+        # just in case you pass start_word and stop_word in with capitalization
+        # differences, we want to make sure we catch all instances of the word.
+        start_word = start_word.lower()
+        stop_word = stop_word.lower()
+
         for i in range(len(word_list)):
+            word = word_list[i].lower()
             # the .lower will control for capitalization differences in the
             # start_word and stop_word as entered compared to their presense
             # in word list. If a word exists mutltiple times and you want to target
             # a particular capitalization, you'd want to remove .lower() from
             # both sides of the if and elif here.
-            if word_list[i].lower() == start_word.lower():
+            if word == start_word:
                 start = i
-            elif word_list[i].lower() == stop_word.lower():
+                start_word_found = True
+
+            elif word == stop_word:
                 stop = i
-                if start_word.lower() in [w.lower() for w in
-                                          word_list[start: stop]]:
-                    break
+                if start_word_found:  # we only want to break after stop_word if
+                    break             # we've already located start_word so that
+                                      # we get the correct order.
+
         return [start, stop]
 
     @staticmethod
     def _find_term(word_list, term_name):
-        """returns index of term_name + 1 and index of next all-caps string
+        """returns index of term_name + 1 and index of the next all-caps string
 
-        This is unique for parsing our context list, in which a term is
-        followed by values of that term up until another term is introduced,
-        in all-caps
+        This is unique for parsing our context list, in which a term label is
+        followed by the values for that term up until another term is
+        introduced, which is included in all-caps.
+
+        For example:
 
             >>> info = ['Subjects', 'Philosophy', 'Love', 'Living',\
                         'Poetic Terms', 'Free Verse', 'Metaphor', 'SUBJECT',\
@@ -110,13 +122,15 @@ class Poem(db.Model):
             >>> info[start:stop]
             ['Free Verse', 'Metaphor']
 
-        This function is called by parse and will never need to be used directly
+        This function is called by Poem.parse and will never need to be used directly
         """
 
         start = 0
         stop = len(word_list)
+        term_name = term_name.lower()
+
         for i in range(len(word_list)):
-            if word_list[i].lower() == term_name.lower():
+            if word_list[i].lower() == term_name:
                 start = i + 1
             elif start > 0 and i > start and word_list[i][0:3].isupper():
                 stop = i
@@ -126,7 +140,15 @@ class Poem(db.Model):
 
     @staticmethod
     def _separate_punctuation(text):
-        """given a list of strings, separates punctionation and returns list"""
+        """given a list of strings, separates punctionation and returns string
+
+            >>> Poem._separate_punctuation("Hello! How are you?")
+            'Hello ! How are you ?'
+
+        this function is called by _clean_listobj and won't need to be used
+        directly -- it allows us to count punctuation as it's own item in the
+        list when we call text.split(" ").
+        """
 
         punctuation = [".", ",", ":", ";", "--", '"', "!", "?"]
         for punc in punctuation:
@@ -151,7 +173,7 @@ class Poem(db.Model):
             >>> Poem._clean_listobj(fake_list)
             ['here', 'is', 'some', 'fake', 'text', 'and', 'some', 'more', '.']
 
-        This is called by parse and will never need to be used directly
+        This is called by Poem.parse and will never need to be used directly
         """
 
         new_list = []
@@ -159,17 +181,12 @@ class Poem(db.Model):
             clean = item.get_text()
             clean = clean.replace("\r", '')
             clean = clean.replace("\t", '')
+            clean = clean.replace("\n", " ")
             clean = Poem._separate_punctuation(clean)
+
             rough_word_list = clean.split(" ")
 
-            word_list = [w for w in rough_word_list if "\n" not in w]
-            rough_word_breaks = [w for w in rough_word_list if "\n" in w]
-
-            for word in rough_word_breaks:
-                words = word.split("\n")
-                word_list.extend(words)
-
-            for word in word_list:
+            for word in rough_word_list:
                 word = word.strip().strip(",")
                 if len(word) >= 1:
                     new_list.append(word)
@@ -180,12 +197,13 @@ class Poem(db.Model):
     def _get_text(html_string):
         """ given an html string, will return a string of just the text
 
-        >>> html_string = "<div>hello there <em>Patrick</em></div>"
-        >>> Poem._get_text(html_string)
-        'hello there Patrick'
+            >>> html_string = "<div>hello there <em>Patrick</em></div>"
+            >>> Poem._get_text(html_string)
+            'hello there Patrick'
 
-        BeautifulSoup's get_text and .text functions seem to malfunction
-        on one or two poems. This is called by parse and will never need
+        BeautifulSoup's get_text method and .text attribute both seem to
+        malfunction on one or two poems, which on manual analysis look fine.
+        This method is called by parse if get_text fails, and will never need
         to be used directly.
         """
 
@@ -284,7 +302,7 @@ class Poem(db.Model):
 
     @staticmethod
     def _create_poet(soup_object, poem_id):
-        """if poet does not exists in table, create's it -- returns poet_id
+        """if poet does not exists in table, creates it -- returns poet_id (int)
 
         this function calls Poem._find_author and Poem._find_birth_year to get
         necessary information to initialize Poet row. This function is in turn
@@ -316,6 +334,13 @@ class Poem(db.Model):
     @staticmethod
     def _get_copyright(soup_object):
         """ returns copyright information as string, given soup object
+
+            >>> fake_html_string = "\"\"<p>This Should Not Be Included</p>\
+                                    <div class='credit'><p>Copyright 2015\
+                                    Reprinted with permission...</p></div>\"\""
+            >>> soup_object = BeautifulSoup(fake_html_string, "html5lib")
+            >>> Poem._get_copyright(soup_object)
+            Copyright 2015
 
         This is unique to the html documents we're parsing, grabs the copyright
         information if it exists and returns it as a string. This is called by
@@ -537,19 +562,57 @@ class Poet(db.Model):
 
 
 class Region(db.Model):
-    """ contains regions as assigned by the Poetry Foundation"""
+    """ contains regions as assigned by the Poetry Foundation """
 
     __tablename__ = "regions"
 
     region_id = db.Column(db.Integer, autoincrement=True, primary_key=True)
     region = db.Column(db.Text, nullable=False)
 
-    metrics = db.relationship("Metrics",
-                              secondary='poem_region',
-                              backref='regions')
+    metrics = db.relationship("Metrics", secondary='poem_region', backref='regions')
+    poems = db.relationship("Poem", secondary='poem_region', backref="regions")
 
     @staticmethod
     def get_region_data(start_at, stop_before):
+        """returns list of dicts w/info on regions(start_at <= id < stop_before)
+
+            >>> region_data = Region.get_region_data(1,3)
+            >>> len(region_data)
+            2
+            >>> index_zero_expected = {'iden': u'US',\
+                                       'total': 5008,\
+                                       'name': u'U.S.',\
+                                       'others': [(u'Northwestern', 375),\
+                                                  (u'New England', 1020),\
+                                                  (u'Southern', 560),\
+                                                  (u'Midwestern', 783),\
+                                                  (u'Mid-Atlantic', 1218),\
+                                                  (u'Western', 762),\
+                                                  (u'Southwestern', 290)]}
+            >>> index_one_expected = {'iden': u'Midwestern',\
+                                      'total': 783,\
+                                      'name': u'Midwestern',\
+                                      'others': [(u'U.S.', 783)]}
+            >>> region_data[0] == index_zero_expected
+            True
+            >>> region_data[1] == index_one_expected
+            True
+
+
+        Queries the database for regions with the id between start_at(inclusive)
+        and stop_before(exclusive), and passes the list of region objects to
+        Metrics.get_context_graph_data, which returns a list of dictinaries,
+        with each dictionary coorresponding to a region, and following this model:
+        {"name": name of region, "total": total number of poems in the regions,
+        "iden": a shortened version of the name(to be used in Chart.js to call
+        specific graphs while avoiding namespace issues),"others": a list of
+        tuples of the model (other region name, number of poems in the main
+        region that are also in this other region)}.
+
+        This is called by the server to provide information to make our Regions
+        graph pages.
+        """
+
         regions = (db.session.query(Region)
                              .filter(Region.region_id >= start_at,
                                      Region.region_id < stop_before)
@@ -560,7 +623,30 @@ class Region(db.Model):
                                               name_of_context="region",
                                               metrics_backref="regions")
 
-    def get_graph_data(self, metrics):
+    def get_graph_data(self, poems):
+        """takes list of metrics(objects) associated w/self, returns dict w/info.
+
+            >>> region = Region.query.get(2)
+            >>> poems = region.poems
+            >>> region_data = region.get_graph_data(poems)
+            >>> data_expected = {'iden': u'Midwestern',\
+                                 'total': 783,\
+                                 'name': u'Midwestern',\
+                                 'others': [(u'U.S.', 783)]}
+            >>> region_data == data_expected
+            True
+
+        Query the database for metrics assocated with this region, then feed it
+        to this function for a dictionary following this model:
+        {"name": name of region, "total": total number of poems in the regions,
+        "iden": a shortened version of the name(to be used in Chart.js to call
+        specific graphs while avoiding namespace issues),"others": a list of
+        tuples of the model (other region name, number of poems in the main
+        region that are also in this other region)}.
+
+        This is called by the server to provide information to make a specific
+        region graph.
+        """
 
         name = self.region
 
@@ -572,12 +658,12 @@ class Region(db.Model):
         else:
             iden = iden[1]
 
-        total = len(metrics)
+        total = len(poems)
 
-        connected_data = Metrics.get_single_graph_data(metrics_list=metrics,
+        connected_data = Metrics.get_single_graph_data(poems_list=poems,
                                                        name_of_context="region",
                                                        name=name,
-                                                       metrics_backref="regions")
+                                                       poems_backref="regions")
 
         data = {"name": name,
                 "total": total,
@@ -588,19 +674,20 @@ class Region(db.Model):
 
 
 class PoemRegion(db.Model):
-    """ connects poem to region"""
+    """ connects metric and poem to region"""
 
     __tablename__ = "poem_region"
 
     pr_id = db.Column(db.Integer, autoincrement=True, primary_key=True)
     poem_id = db.Column(db.Integer,
-                        db.ForeignKey('metrics.poem_id'),
+                        db.ForeignKey('poems.poem_id'),
                         nullable=False)
     region_id = db.Column(db.Integer,
                           db.ForeignKey('regions.region_id'),
                           nullable=False)
+    metric_id = db.Column(db.Integer, db.ForeignKey('metrics.poem_id'))
 
-    # poem = db.relationship("Poem", backref="poem_regions")
+    poem = db.relationship("Poem", backref="poem_regions")
     metrics = db.relationship("Metrics", backref="poem_regions")
     region = db.relationship("Region", backref="poem_regions")
 
@@ -616,9 +703,82 @@ class Term(db.Model):
     metrics = db.relationship("Metrics",
                               secondary='poem_terms',
                               backref="terms")
+    poems = db.relationship("Poem",
+                            secondary='poem_terms',
+                            backref="terms")
 
     @staticmethod
     def get_term_data(start_at, stop_before):
+        """returns list of dicts w/info on terms(start_at <= id < stop_before)
+
+            >>> term_data = Region.get_term_data(1,3)
+            >>> len(term_data)
+            2
+            >>> zero = {'iden': u'Rhymed', 'total': 1429,\
+                        'name': u'Rhymed Stanza',\
+                        'others': [(u'Consonance', 10), (u'Pastoral', 17),\
+                                    (u'Ars Poetica', 2), (u'Free Verse', 9),\
+                                    (u'Epigraph', 3), (u'Common Measure', 53),\
+                                    (u'Epistle', 5), (u'Metaphor', 58),\
+                                    (u'Epic', 4), (u'Assonance', 6),\
+                                    (u'Syllabic', 10), (u'Ballad', 41),\
+                                    (u'Pantoum', 2), (u'Simile', 25),\
+                                    (u'Villanelle', 2), (u'Persona', 19),\
+                                    (u'Refrain', 55), (u'Series/Sequence', 36),\
+                                    (u'Aubade', 2), (u'Tercet', 5),\
+                                    (u'Imagist', 1), (u'Ekphrasis', 9),\
+                                    (u'Imagery', 72), (u'Blank Verse', 3),\
+                                    (u'Symbolist', 3), (u'Nursery Rhymes', 3),\
+                                    (u'Haiku', 1), (u'Only Rhymed Stanza', 859),\
+                                    (u'Aphorism', 2), (u'Sestina', 1),\
+                                    (u'Mixed', 23), (u'Alliteration', 24),\
+                                    (u'Concrete or Pattern Poetry', 3),\
+                                    (u'Dramatic Monologue', 14),\
+                                    (u'Quatrain', 32), (u'Sonnet', 10),\
+                                    (u'Allusion', 47), (u'Confessional', 10),\
+                                    (u'Epigram', 12), (u'Elegy', 41),\
+                                    (u'Couplet', 85), (u'Ode', 25)]}
+            >>> one = {'iden': u'Free', 'total': 3284, 'name': u'Free Verse',\
+                       'others': [(u'Epithalamion', 2), (u'Consonance', 5),\
+                                  (u'Metaphor', 122), (u'Tercet', 23),\
+                                  (u'Concrete or Pattern Poetry', 1),\
+                                  (u'Epigraph', 3), (u'Pastoral', 13),\
+                                  (u'Epistle', 12), (u'Prose Poem', 8),\
+                                  (u'Only Free Verse', 2669), (u'Epic', 6),\
+                                  (u'Assonance', 3), (u'Ballad', 1),\
+                                  (u'Simile', 18), (u'Persona', 33),\
+                                  (u'Refrain', 17), (u'Ghazal', 1),\
+                                  (u'Series/Sequence', 29), (u'Aubade', 2),\
+                                  (u'Imagist', 21), (u'Ekphrasis', 17),\
+                                  (u'Imagery', 136), (u'Blank Verse', 2),\
+                                  (u'Symbolist', 1), (u'Haiku', 2),\
+                                  (u'Rhymed Stanza', 9), (u'Ars Poetica', 7),\
+                                  (u'Mixed', 12), (u'Alliteration', 10),\
+                                  (u'Aphorism', 5), (u'Dramatic Monologue', 23),\
+                                  (u'Quatrain', 19), (u'Sonnet', 10),\
+                                  (u'Allusion', 31), (u'Confessional', 11),\
+                                  (u'Epigram', 9), (u'Elegy', 65),\
+                                  (u'Couplet', 74), (u'Ode', 20)]}
+            >>> region_data[0] == zero
+            True
+            >>> region_data[1] == one
+            True
+
+
+        Queries the database for terms with the id between start_at(inclusive)
+        and stop_before(exclusive), and passes the list of term objects to
+        Metrics.get_context_graph_data, which returns a list of dictinaries,
+        with each dictionary coorresponding to a term, and following this model:
+        {"name": name of term, "total": total number of poems in the terms,
+        "iden": a shortened version of the name(to be used in Chart.js to call
+        specific graphs while avoiding namespace issues),"others": a list of
+        tuples of the model (other term name, number of poems in the main
+        term that are also in this other term)}.
+
+        This is called by the server to provide information to make our Terms
+        graph pages.
+        """
+
         terms = (db.session.query(Term)
                            .filter(Term.term_id >= start_at,
                                    Term.term_id < stop_before)
@@ -629,22 +789,66 @@ class Term(db.Model):
                                               name_of_context="term",
                                               metrics_backref="terms")
 
-    def get_graph_data(self, metrics):
+    def get_graph_data(self, poems):
+        """takes list of metrics(objects) associated w/self, returns dict w/info.
+
+            >>> x = Term.query.get(2)
+            >>> metrics = x.metrics
+            >>> results = x.get_graph_data(metrics)
+            >>> expected = {'iden': u'Free',\
+                            'total': 3284,\
+                            'name': u'Free Verse',\
+                            'others': [(u'Epithalamion', 2), (u'Consonance', 5),\
+                                       (u'Metaphor', 122), (u'Tercet', 23),\
+                                       (u'Concrete or Pattern Poetry', 1),\
+                                       (u'Epigraph', 3), (u'Pastoral', 13),\
+                                       (u'Epistle', 12), (u'Prose Poem', 8),\
+                                       (u'Only Free Verse', 2669), (u'Epic', 6),\
+                                       (u'Assonance', 3), (u'Ballad', 1),\
+                                       (u'Simile', 18), (u'Persona', 33),\
+                                       (u'Refrain', 17), (u'Ghazal', 1),\
+                                       (u'Series/Sequence', 29), (u'Aubade', 2),\
+                                       (u'Imagist', 21), (u'Ekphrasis', 17),\
+                                       (u'Imagery', 136), (u'Blank Verse', 2),\
+                                       (u'Symbolist', 1), (u'Haiku', 2),\
+                                       (u'Rhymed Stanza', 9),\
+                                       (u'Ars Poetica', 7), (u'Mixed', 12),\
+                                       (u'Alliteration', 10), (u'Aphorism', 5),\
+                                       (u'Dramatic Monologue', 23),\
+                                       (u'Quatrain', 19), (u'Sonnet', 10),\
+                                       (u'Allusion', 31), (u'Confessional', 11),\
+                                       (u'Epigram', 9), (u'Elegy', 65),\
+                                       (u'Couplet', 74), (u'Ode', 20)]}
+            >>> expected == results
+            True
+
+        Query the database for metrics assocated with this term, then feed it
+        to this function for a dictionary following this model:
+        {"name": name of term, "total": total number of poems in the term,
+        "iden": a shortened version of the name(to be used in Chart.js to call
+        specific graphs while avoiding namespace issues),"others": a list of
+        tuples of the model (other term name, number of poems in the main
+        term that are also in this other term)}.
+
+        This is called by the server to provide information to make a specific
+        term graph.
+        """
 
         name = self.term
 
-        iden = name.replace(".", "").replace("-", "").replace("/", "").replace(",", "").split(" ")
+        iden = name.replace(".", "").replace("-", "").replace("/", "")
+        iden = iden.replace(",", "").split(" ")
         if iden[0].lower() != "the":
             iden = iden[0]
         else:
             iden = iden[1]
 
-        total = len(metrics)
+        total = len(poems)
 
-        connected_data = Metrics.get_single_graph_data(metrics_list=metrics,
+        connected_data = Metrics.get_single_graph_data(poems_list=poems,
                                                        name_of_context="term",
                                                        name=name,
-                                                       metrics_backref="terms")
+                                                       poems_backref="terms")
 
         data = {"name": name,
                 "total": total,
@@ -655,19 +859,19 @@ class Term(db.Model):
 
 
 class PoemTerm(db.Model):
-    """ connects poem to poetic term"""
+    """ connects metric and poem to poetic term"""
 
     __tablename__ = "poem_terms"
 
     pt_id = db.Column(db.Integer, autoincrement=True, primary_key=True)
-    poem_id = db.Column(db.Integer,
-                        db.ForeignKey('metrics.poem_id'),
+    poem_id = db.Column(db.Integer, db.ForeignKey('poems.poem_id'),
                         nullable=False)
-    term_id = db.Column(db.Integer,
-                        db.ForeignKey('terms.term_id'),
+    term_id = db.Column(db.Integer, db.ForeignKey('terms.term_id'),
                         nullable=False)
+    metric_id = db.Column(db.Integer, db.ForeignKey('metrics.poem_id'))
 
-    poem = db.relationship("Metrics", backref="poem_terms")
+    poem = db.relationship("Poem", backref="poem_terms")
+    metrics = db.relationship("Metrics", backref="poem_terms")
     term = db.relationship("Term", backref="poem_terms")
 
 
@@ -682,9 +886,93 @@ class Subject(db.Model):
     metrics = db.relationship("Metrics",
                               secondary='poem_subjects',
                               backref="subjects")
+    poems = db.relationship("Poem",
+                            secondary='poem_subjects',
+                            backref="subjects")
 
     @staticmethod
     def get_subject_data(start_at, stop_before):
+        """returns list of dicts w/info on subjects(start_at <= id < stop_before)
+
+            >>> subject_data = Subject.get_subject_data(3,4)
+            >>> len(subject_data)
+            1
+            >>> x = {'iden': u'Body', 'total': 715, 'name': u'The Body',\
+                     'others': [(u'Relationships', 268), (u'Living', 498),\
+                                (u'Winter', 16), (u'Marriage & Companionship', 21),\
+                                (u'Unrequited Love', 4), (u'Religion', 74),\
+                                (u'Pets', 13), (u'Prose Poem', 2),\
+                                (u'Humor & Satire', 15), (u'Cities & Urban Life', 19),\
+                                (u'Heroes & Patriotism', 13),\
+                                (u'Seas, Rivers, & Streams', 27),\
+                                (u'Philosophy', 20), (u'Parenthood', 15),\
+                                (u'The Mind', 155), (u'War & Conflict', 27),\
+                                (u'Judaism', 2), (u'Nursery Rhymes', 1),\
+                                (u'Stars, Planets, Heavens', 9), (u'The Spiritual', 19),\
+                                (u'Youth', 27), (u'Sonnet', 3), (u'Sestina', 2),\
+                                (u'Health & Illness', 101), (u'Free Verse', 78),\
+                                (u'Summer', 7), (u'Faith & Doubt', 16),\
+                                (u'Poetic Terms', 122), (u'Only The Body', 1),\
+                                (u'Infancy', 1), (u'Class', 15),\
+                                (u'Family & Ancestors', 64), (u'Couplet', 4),\
+                                (u'Home Life', 17), (u'Eating & Drinking', 25),\
+                                (u'Language & Linguistics', 26), (u'Christianity', 20),\
+                                (u'Reading & Books', 18), (u'Epistle', 1),\
+                                (u'Syllabic', 2), (u'Ballad', 1), (u'Gender & Sexuality', 37),\
+                                (u'Poetry & Poets', 41), (u'Men & Women', 72),\
+                                (u'Horror', 7), (u'Town & Country Life', 4),\
+                                (u'Series/Sequence', 1), (u'School & Learning', 10),\
+                                (u'Social Commentaries', 173), (u'Imagery', 6),\
+                                (u'Ghosts & the Supernatural', 7), (u'Mixed', 2),\
+                                (u'Terza Rima', 1), (u'Landscapes & Pastorals', 28),\
+                                (u'Allusion', 4), (u'Indoor Activities', 4),\
+                                (u'Death', 113), (u'History & Politics', 40),\
+                                (u'Realistic & Complicated', 46), (u'Race & Ethnicity', 19),\
+                                (u'Sciences', 12), (u'Music', 12), (u'Life Choices', 61),\
+                                (u'Travels & Journeys', 23), (u'Nature', 448),\
+                                (u'Crime & Punishment', 9), (u'Refrain', 4),\
+                                (u'Epigraph', 1), (u'Ekphrasis', 1),\
+                                (u'Infatuation & Crushes', 18), (u'Animals', 62),\
+                                (u'Blank Verse', 2), (u'Sorrow & Grieving', 36),\
+                                (u'Ars Poetica', 1), (u'God & the Divine', 26),\
+                                (u'Friends & Enemies', 27), (u'Growing Old', 57),\
+                                (u'Love', 146), (u'Other Religions', 2),\
+                                (u'Romantic Love', 20), (u'Midlife', 14),\
+                                (u'Time & Brevity', 89), (u'Popular Culture', 20),\
+                                (u'Classic Love', 6), (u'Ode', 1), (u'Metaphor', 5),\
+                                (u'Arts & Sciences', 142), (u'Fairy-tales & Legends', 5),\
+                                (u'Greek & Roman Mythology', 8), (u'Activities', 95),\
+                                (u'Trees & Flowers', 30), (u'Rhymed Stanza', 22),\
+                                (u'Disappointment & Failure', 36), (u'Fall', 7),\
+                                (u'Architecture & Design', 2), (u'Mythology & Folklore', 31),\
+                                (u'Desire', 69), (u'Photography & Film', 3),\
+                                (u'Coming of Age', 26), (u'Sports & Outdoor Activities', 18),\
+                                (u'Persona', 2), (u'Heartache & Loss', 18),\
+                                (u'Alliteration', 3), (u'Dramatic Monologue', 2),\
+                                (u'Jobs & Working', 27), (u'Break-ups & Vexed Love', 4),\
+                                (u'Spring', 8), (u'Money & Economics', 7),\
+                                (u'Painting & Sculpture', 15), (u'Weather', 11),\
+                                (u'Elegy', 2), (u'Concrete or Pattern Poetry', 1),\
+                                (u'Theater & Dance', 6), (u'Separation & Divorce', 3),\
+                                (u'Birth & Birthdays', 6), (u'Islam', 3)]}
+            >>> subject_data[0] == x
+            True
+
+
+        Queries the database for subjects with the id between start_at(inclusive)
+        and stop_before(exclusive), and passes the list of subject objects to
+        Metrics.get_context_graph_data, which returns a list of dictinaries,
+        with each dictionary coorresponding to a subject, and following this model:
+        {"name": name of subject, "total": total number of poems in the subjects,
+        "iden": a shortened version of the name(to be used in Chart.js to call
+        specific graphs while avoiding namespace issues),"others": a list of
+        tuples of the model (other subject name, number of poems in the main
+        subject that are also in this other subject)}.
+
+        This is called by the server to provide information to make our Subjects
+        graph pages.
+        """
+
         subjects = (db.session.query(Subject)
                               .filter(Subject.subject_id >= start_at,
                                       Subject.subject_id < stop_before)
@@ -695,22 +983,115 @@ class Subject(db.Model):
                                               name_of_context="subject",
                                               metrics_backref="subjects")
 
-    def get_graph_data(self, metrics):
+    def get_graph_data(self, poems):
+        """takes list of metrics(objects) associated w/self, returns dict w/info.
+
+            >>> x = Subject.query.get(4)
+            >>> poems = x.poems
+            >>> results = x.get_graph_data(poems)
+            >>> expect = {'iden': u'Social',\
+                          'total': 3009,\
+                          'name': u'Social Commentaries',\
+                          'others': [(u'Relationships', 825), (u'Living', 1042),\
+                                     (u'Consonance', 5), (u'Winter', 42),\
+                                     (u'Marriage & Companionship', 59),\
+                                     (u'Free Verse', 245), (u'Poetic Terms', 421),\
+                                     (u'Pets', 36), (u'Prose Poem', 10),\
+                                     (u'Town & Country Life', 51),\
+                                     (u'Cities & Urban Life', 459),\
+                                     (u'Heroes & Patriotism', 193),\
+                                     (u'Seas, Rivers, & Streams', 82),\
+                                     (u'Philosophy', 76), (u'Parenthood', 62),\
+                                     (u'The Mind', 95), (u'War & Conflict', 616),\
+                                     (u'Judaism', 17), (u'Nursery Rhymes', 2),\
+                                     (u'Fall', 10), (u'The Spiritual', 32),\
+                                     (u'Youth', 147), (u'Growing Old', 71),\
+                                     (u'Sestina', 4), (u'Health & Illness', 64),\
+                                     (u'Love', 197), (u'Unrequited Love', 10),\
+                                     (u'Quatrain', 2), (u'Summer', 23),\
+                                     (u'Faith & Doubt', 73), (u'Religion', 276),\
+                                     (u'Infancy', 6), (u'Class', 275),\
+                                     (u'Family & Ancestors', 316), (u'Couplet', 32),\
+                                     (u'Home Life', 106), (u'Eating & Drinking', 75),\
+                                     (u'Language & Linguistics', 93), (u'Christianity', 88),\
+                                     (u'Imagery', 12), (u'Common Measure', 3),\
+                                     (u'Epistle', 1), (u'Assonance', 3),\
+                                     (u'Syllabic', 5), (u'Ballad', 7),\
+                                     (u'Gender & Sexuality', 251), (u'Villanelle', 3),\
+                                     (u'Poetry & Poets', 241), (u'Men & Women', 161),\
+                                     (u'Horror', 12), (u'Humor & Satire', 174),\
+                                     (u'Series/Sequence', 3), (u'School & Learning', 63),\
+                                     (u'Reading & Books', 139),\
+                                     (u'Ghosts & the Supernatural', 13), (u'Haiku', 1),\
+                                     (u'Mixed', 7), (u'Landscapes & Pastorals', 173),\
+                                     (u'Allusion', 9), (u'Indoor Activities', 22),\
+                                     (u'Death', 277), (u'History & Politics', 989),\
+                                     (u'Realistic & Complicated', 76),\
+                                     (u'Race & Ethnicity', 358), (u'Sciences', 35),\
+                                     (u'Buddhism', 2), (u'Music', 98), (u'Pastoral', 2),\
+                                     (u'Life Choices', 244), (u'Alliteration', 6),\
+                                     (u'Simile', 4), (u'Travels & Journeys', 197),\
+                                     (u'Nature', 583), (u'Crime & Punishment', 157),\
+                                     (u'Refrain', 10), (u'Ghazal', 1), (u'Epigraph', 1),\
+                                     (u'Ekphrasis', 2), (u'Infatuation & Crushes', 25),\
+                                     (u'Animals', 112), (u'Blank Verse', 15),\
+                                     (u'Sorrow & Grieving', 107), (u'Visual Poetry', 1),\
+                                     (u'Ars Poetica', 1), (u'God & the Divine', 82),\
+                                     (u'Aphorism', 3), (u'Friends & Enemies', 127),\
+                                     (u'Sonnet', 18), (u'Gardening', 9),\
+                                     (u'Other Religions', 16), (u'Romantic Love', 19),\
+                                     (u'Midlife', 29), (u'Time & Brevity', 227),\
+                                     (u'Popular Culture', 264), (u'Classic Love', 11),\
+                                     (u'The Body', 173), (u'Ode', 3), (u'Metaphor', 15),\
+                                     (u'Tercet', 2), (u'Arts & Sciences', 798),\
+                                     (u'Fairy-tales & Legends', 22),\
+                                     (u'Greek & Roman Mythology', 34), (u'Activities', 541),\
+                                     (u'Trees & Flowers', 66), (u'Rhymed Stanza', 61),\
+                                     (u'Disappointment & Failure', 143),\
+                                     (u'Stars, Planets, Heavens', 38),\
+                                     (u'Architecture & Design', 30),\
+                                     (u'Mythology & Folklore', 134), (u'Desire', 67),\
+                                     (u'Photography & Film', 24), (u'Coming of Age', 79),\
+                                     (u'Sports & Outdoor Activities', 35),\
+                                     (u'Persona', 9), (u'Heartache & Loss', 35),\
+                                     (u'Only Social Commentaries', 40),\
+                                     (u'Dramatic Monologue', 14), (u'Jobs & Working', 195),\
+                                     (u'Break-ups & Vexed Love', 18), (u'Spring', 14),\
+                                     (u'Money & Economics', 248), (u'Painting & Sculpture', 53),\
+                                     (u'Weather', 37), (u'Elegy', 15),\
+                                     (u'Concrete or Pattern Poetry', 1),\
+                                     (u'Theater & Dance', 17), (u'Separation & Divorce', 12),\
+                                     (u'Birth & Birthdays', 8), (u'Islam', 4)]}
+            >>> expect == results
+            True
+
+        Query the database for metrics assocated with this subject, then feed it
+        to this function for a dictionary following this model:
+        {"name": name of subject, "total": total number of poems in the subject,
+        "iden": a shortened version of the name(to be used in Chart.js to call
+        specific graphs while avoiding namespace issues),"others": a list of
+        tuples of the model (other subject name, number of poems in the main
+        subject that are also in this other subject)}.
+
+        This is called by the server to provide information to make a specific
+        subject graph.
+        """
 
         name = self.subject
 
-        iden = name.replace(".", "").replace("-", "").replace("/", "").replace(",", "").split(" ")
+        iden = name.replace(".", "").replace("-", "").replace("/", "")
+        iden = iden.replace(",", "").split(" ")
         if iden[0].lower() != "the":
             iden = iden[0]
         else:
             iden = iden[1]
 
-        total = len(metrics)
+        total = len(poems)
 
-        connected_data = Metrics.get_single_graph_data(metrics_list=metrics,
+        connected_data = Metrics.get_single_graph_data(poems_list=poems,
                                                        name_of_context="subject",
                                                        name=name,
-                                                       metrics_backref="subjects")
+                                                       poems_backref="subjects")
 
         data = {"name": name,
                 "total": total,
@@ -720,19 +1101,21 @@ class Subject(db.Model):
 
 
 class PoemSubject(db.Model):
-    """ connects poem to subject as noted by the Poetry Foundation """
+    """ connects metric & poem to subject as noted by the Poetry Foundation """
 
     __tablename__ = "poem_subjects"
 
     ps_id = db.Column(db.Integer, autoincrement=True, primary_key=True)
     poem_id = db.Column(db.Integer,
-                        db.ForeignKey('metrics.poem_id'),
+                        db.ForeignKey('poems.poem_id'),
                         nullable=False)
     subject_id = db.Column(db.Integer,
                            db.ForeignKey('subjects.subject_id'),
                            nullable=False)
+    metric_id = db.Column(db.Integer, db.ForeignKey('metrics.poem_id'))
 
     metrics = db.relationship("Metrics", backref="poem_subjects")
+    poem = db.relationship("Poem", backref="poem_subjects")
     subject = db.relationship("Subject", backref="poem_subjects")
 
 
@@ -857,6 +1240,203 @@ class Metrics(db.Model):
 
         return ranges
 
+    @classmethod
+    def get_metrics_dist(cls):
+        """prints the percentile distributions for each metric catagory,
+
+        Used for manual analysis of the data, returns nothing.
+        """
+
+        metrics = cls.query.all()
+        met_dict = {"wl_mean": sorted([m.wl_mean for m in metrics]),
+                    "wl_median": sorted([m.wl_median for m in metrics]),
+                    "wl_mode": sorted([m.wl_mode for m in metrics]),
+                    "wl_range": sorted([m.wl_range for m in metrics]),
+                    "ll_mean": sorted([m.ll_mean for m in metrics]),
+                    "ll_median": sorted([m.ll_median for m in metrics]),
+                    "ll_mode": sorted([m.ll_mode for m in metrics]),
+                    "ll_range": sorted([m.ll_range for m in metrics]),
+                    "pl_char": sorted([m.pl_char for m in metrics]),
+                    "pl_lines": sorted([m.pl_lines for m in metrics]),
+                    "pl_words": sorted([m.pl_words for m in metrics]),
+                    "lex_div": sorted([m.lex_div for m in metrics]),
+                    "the_freq": sorted([m.the_freq for m in metrics]),
+                    "i_freq": sorted([m.i_freq for m in metrics]),
+                    "you_freq": sorted([m.you_freq for m in metrics]),
+                    "is_freq": sorted([m.is_freq for m in metrics]),
+                    "a_freq": sorted([m.a_freq for m in metrics]),
+                    "common_percent": sorted([m.common_percent for m in metrics]),
+                    "poem_percent": sorted([m.poem_percent for m in metrics]),
+                    "object_percent": sorted([m.object_percent for m in metrics]),
+                    "abs_percent": sorted([m.abs_percent for m in metrics]),
+                    "male_percent": sorted([m.male_percent for m in metrics]),
+                    "female_percent": sorted([m.female_percent for m in metrics]),
+                    "alliteration": sorted([m.alliteration for m in metrics]),
+                    "positive": sorted([m.positive for m in metrics]),
+                    "negative": sorted([m.negative for m in metrics]),
+                    "active_percent": sorted([m.active_percent for m in metrics]),
+                    "passive_percent": sorted([m.passive_percent for m in metrics]),
+                    "end_repeat": sorted([m.end_repeat for m in metrics]),
+                    "rhyme": sorted([m.rhyme for m in metrics]),
+                    "stanzas": sorted([m.stanzas for m in metrics]),
+                    "sl_mean": sorted([m.sl_mean for m in metrics]),
+                    "sl_median": sorted([m.sl_median for m in metrics]),
+                    "sl_mode": sorted([m.sl_mode for m in metrics]),
+                    "sl_range": sorted([m.sl_range for m in metrics])}
+
+        for key in met_dict.keys():
+
+            data = met_dict[key]
+
+            print "\n{}:".format(key.upper())
+            dev = stdev(data)
+            print "Standard Deviation: {}".format(dev)
+            #Getting the indexes to find the percentiles for Unit
+            unitmax = len(data)
+            btmten_stop = unitmax/10
+            btmtwen_stop = unitmax/5
+            lowtwen_stop = 2 * btmtwen_stop
+            midtwen_stop = 3 * btmtwen_stop
+            hightwen_stop = 4 * btmtwen_stop
+            topten_start = unitmax - btmten_stop
+
+            #Getting the Values to find the percentiles for Value
+            valuemax = max(data)
+            valuemin = min(data)
+            valuerange = (valuemax - valuemin)
+            btmten_max = valuemin + (valuerange/10)
+            btmtwen_max = valuemin + (valuerange/5)
+            lowtwen_max = valuemin + 2 * (valuerange/5)
+            midtwen_max = valuemin + 3 * (valuerange/5)
+            hightwen_max = valuemin + 4 * (valuerange/5)
+            topten_min = valuemax - (valuerange/10)
+
+            unit_bottom_ten = data[:btmten_stop]
+            minimum = min(unit_bottom_ten)
+            maximum = max(unit_bottom_ten)
+            average = mean(unit_bottom_ten)
+            print "Bottom 10th Percentile By Unit:"
+            print "          {} to {}. Mean: {}".format(minimum, maximum, average)
+
+            val_bottom_ten = [n for n in data if n < btmten_max]
+            try:
+                minimum = min(val_bottom_ten)
+                maximum = max(val_bottom_ten)
+            except ValueError:
+                minimum = 0
+                maximum = btmten_max
+            number = len(val_bottom_ten)
+            print "Bottom 10th Percentile By Value:"
+            print "          {} to {}. Units: {}".format(minimum, maximum, number)
+
+            unit_bottom_twent = data[:btmtwen_stop]
+            minimum = min(unit_bottom_twent)
+            maximum = max(unit_bottom_twent)
+            average = mean(unit_bottom_twent)
+            print "\nBottom 20th Percentile By Unit:"
+            print "          {} to {}. Mean: {}".format(minimum, maximum, average)
+
+            val_btm_twent = [n for n in data if n >= btmten_max and n < btmtwen_max]
+            try:
+                minimum = min(val_btm_twent)
+                maximum = max(val_btm_twent)
+            except ValueError:
+                minimum = btmten_max
+                maximum = btmtwen_max
+            number = len(val_btm_twent)
+            print "Bottom 20th Percentile By Value:"
+            print "          {} to {}. Units: {}".format(minimum, maximum, number)
+
+            unit_low_twent = data[btmtwen_stop:lowtwen_stop]
+            minimum = min(unit_low_twent)
+            maximum = max(unit_low_twent)
+            average = mean(unit_low_twent)
+            print "\nLow Twentieth Percentile By Unit:"
+            print "          {} to {}. Mean: {}".format(minimum, maximum, average)
+
+            val_low_twen = [n for n in data if n >= btmtwen_max and n < lowtwen_max]
+            try:
+                minimum = min(val_low_twen)
+                maximum = max(val_low_twen)
+            except ValueError:
+                minimum = btmtwen_max
+                maximum = lowtwen_max
+            number = len(val_low_twen)
+            print "Low 20th Percentile By Value:"
+            print "          {} to {}. Units: {}".format(minimum, maximum, number)
+
+            unit_mid_twent = data[lowtwen_stop:midtwen_stop]
+            minimum = min(unit_mid_twent)
+            maximum = max(unit_mid_twent)
+            average = mean(unit_mid_twent)
+            print "\nMid Twentieth Percentile By Unit:"
+            print "          {} to {}. Mean: {}".format(minimum, maximum, average)
+
+            val_mid_twen = [n for n in data if n >= lowtwen_max and n < midtwen_max]
+            try:
+                minimum = min(val_mid_twen)
+                maximum = max(val_mid_twen)
+            except ValueError:
+                minimum = lowtwen_max
+                maximum = midtwen_max
+            number = len(val_mid_twen)
+            print "Mid 20th Percentile By Value:"
+            print "          {} to {}. Units: {}".format(minimum, maximum, number)
+
+            unit_high_twent = data[midtwen_stop:hightwen_stop]
+            minimum = min(unit_high_twent)
+            maximum = max(unit_high_twent)
+            average = mean(unit_high_twent)
+            print "\nHigh Twentieth Percentile By Unit:"
+            print "          {} to {}. Mean: {}".format(minimum, maximum, average)
+
+            val_high_twen = [n for n in data if n >= midtwen_max and n < hightwen_max]
+            try:
+                minimum = min(val_high_twen)
+                maximum = max(val_high_twen)
+            except ValueError:
+                minimum = midtwen_max
+                maximum = hightwen_max
+            number = len(val_high_twen)
+            print "High 20th Percentile By Value:"
+            print "          {} to {}. Units: {}".format(minimum, maximum, number)
+
+            unit_top_twent = data[hightwen_stop:]
+            minimum = min(unit_top_twent)
+            maximum = max(unit_top_twent)
+            average = mean(unit_top_twent)
+            print "\nTop Twentieth Percentile By Unit:"
+            print "          {} to {}. Mean: {}".format(minimum, maximum, average)
+
+            val_top_twen = [n for n in data if n >= hightwen_max]
+            try:
+                minimum = min(val_top_twen)
+                maximum = max(val_top_twen)
+            except ValueError:
+                minimum = hightwen_max
+                maximum = valuemax
+            number = len(val_top_twen)
+            print "High 20th Percentile By Value:"
+            print "          {} to {}. Units: {}".format(minimum, maximum, number)
+
+            unit_top_ten = data[topten_start:]
+            minimum = min(unit_top_ten)
+            maximum = max(unit_top_ten)
+            average = mean(unit_top_ten)
+            print "\nTop 10th Percentile By Unit:"
+            print "          {} to {}. Mean: {}".format(minimum, maximum, average)
+
+            val_top_ten = [n for n in data if n >= topten_min]
+            try:
+                minimum = min(val_top_ten)
+                maximum = max(val_top_ten)
+            except ValueError:
+                minimum = topten_min
+                maximum = valuemax
+            number = len(val_top_ten)
+            print "Top 10th Percentile By Value:"
+            print "          {} to {}. Units: {}".format(minimum, maximum, number)
+
     def _get_within_range(self, ranges):
         """returns a list of metrics objects fitting the parameters in ranges
 
@@ -903,6 +1483,14 @@ class Metrics(db.Model):
 
         given the ranges dictionary, modifies the 'min' and 'max' values for
         each attribute to provide a narrower range of accepted values.
+
+            >>> ranges = {"one":{"val":10, "max":15, "min":5, "down_adj":2},\
+                          "two":{"val":20, "max":30, "min":10, "down_adj":5}}
+            >>> Metrics._increment_down(range_dict=ranges)
+            >>> ranges_two = {'one': {'max': 13, 'down_adj': 2, 'val': 10, 'min': 7},\
+                              'two': {'max': 25, 'down_adj': 5, 'val': 20, 'min': 15}}
+            >>> ranges == ranges_two
+            True
 
         This method is called by Metrics.find_matches and won't need to be used
         directly.
@@ -956,14 +1544,23 @@ class Metrics(db.Model):
 
     @staticmethod
     def _increment_up(range_dict):
-        """increases ranges to provide higher number of results
+        """increases ranges to provide higher number of results, returns nothing
 
         given the ranges dictionary, modifies the 'min' and 'max' values for
         each attribute to provide a larger range of accepted values.
 
+            >>> ranges = {"one":{"max":15, "min":5, "up_adj":2},\
+                          "two":{"max":30, "min":10, "up_adj":5}}
+            >>> Metrics._increment_up(range_dict=ranges)
+            >>> ranges_two = {'one': {'max': 17, 'up_adj': 2, 'min': 3},\
+                              'two': {'max': 35, 'up_adj': 5, 'min': 5}}
+            >>> ranges == ranges_two
+            True
+
         This method is called by Metrics._get_other_metrics as part of
         Metrics.find_matches and won't need to be used directly.
         """
+
         for r in range_dict.values():
             r['max'] += r['up_adj']
             r['min'] -= r['up_adj']
@@ -979,6 +1576,14 @@ class Metrics(db.Model):
         criteria. This is useful for poems with outlier values where you need
         to greatly increase the range of accepted values in order to have a
         sufficient number of poems to test.
+
+            >>> ranges = {"one":{"max":15, "min":5, "up_adj":2},\
+                          "two":{"max":30, "min":10, "up_adj":5}}
+            >>> Metrics._far_increment_up(range_dict=ranges, mult=2)
+            >>> ranges_two = {'one': {'max': 19, 'up_adj': 2, 'min': 1},\
+                              'two': {'max': 40, 'up_adj': 5, 'min': 0}}
+            >>> ranges == ranges_two
+            True
 
         This method is called by Metrics._get_other_metrics as part of
         Metrics.find_matches and won't need to be used directly.
@@ -1085,10 +1690,18 @@ class Metrics(db.Model):
         else:
             return sorted_matches
 
-    def _remove_dupl_auths(self, sorted_matches):
-        """if unique_auth is True, returns list w/best match for each poet_id
+    @staticmethod
+    def _remove_dupl_auths(sorted_matches):
+        """takes list of (poem_id, poet_id, match), returns list w/best match
+        for each poet_id.
 
-        if unique_auth is False, just returns sorted_matches as given.
+            >>> sorted_matches = [(1532,122,0.1234), (1455,122,0.1333),\
+                                  (111,102,0.200)]
+            >>> Metrics._remove_dupl_auths(sorted_matches)
+            [(1532,122,0.1234), (111,102,0.200)]
+
+        This is only called if unique_auth is True, and will not need to be
+        called directly.
         """
 
         final_matches = []
@@ -1103,7 +1716,16 @@ class Metrics(db.Model):
 
     @staticmethod
     def _recalculate_match(matches, sentwgt, micwgt, macwgt, conwgt):
-        """reruns euc distance algorithm with altered weightings"""
+        """reruns euc distance algorithm with altered weightings
+
+            >>> euc_raw = {"context":3, "sentiment":2, "micro":1, "macro":2}
+            >>> matches = [(144014, 203, 0.5543, euc_raw)]
+            >>> Metrics._recalculate_match(matches=matches, sentwgt=2, micwgt=1,\
+                                           macwgt=1, conwgt=2)
+            [(144014, 203, 3.605551275463989)]
+
+        called by Metrics.vary_methods() and does not need to be called directly.
+        """
 
         new_matches = []
         for poem_id, poet_id, euc_dist, euc_raw in matches:
@@ -1122,9 +1744,63 @@ class Metrics(db.Model):
 
     @staticmethod
     def select_five(results, matches_list, match_code):
-        """"""
+        """adds the best match from matches_list that is not already in results
+
+        We call this method four times, feeding it a different matches_list and
+        ad different match_code each time. The matches_list is a list with
+        tuples of the model (int:poem_id, int:poet_id, float:euclidean distance)
+        -- this list should already be sorted by smallest euclidean distance.
+        The match_code is a string which cooresponds to the method_code that is
+        the primary id of Methods (max 10 characters). Results is a dictionary,
+        which stores the best poem_id as a key, and information about it in
+        another dictionary as the value. This method grabs index zero from
+        matches_list, which is the best match -- if it's already in the results
+        dictionary (i.e. the poem is also the best match using a different
+        method), then we add the information about this method to the existing
+        entry in results, and then select the next best match to add instead.
+        This way, we make sure we present 5 distinct results in the end.
+
+            >>> matches_list = [(1442, 302, 0.221)]
+            >>> match_code = "test"
+            >>> results = {}
+            >>> Metrics.select_five(results=results,\
+                                    matches_list=matches_list,\
+                                    match_code=match_code)
+            >>> results_two =  {1442: {'poet_id': 302,\
+                                       'list_index': [0],\
+                                       'euc_distance': [0.221],\
+                                       'methods': ['test']}}
+            >>> results == results_two
+            True
+
+        Alternatively:
+
+            >>> results = {1442: {'poet_id': 302,\
+                                  'list_index': [0],\
+                                  'euc_distance': [0.221],\
+                                  'methods': ['test']}}
+            >>> matches_list = [(1442, 302, 0.1113), (1224, 111, 0.223)]
+            >>> match_code = "testtwo"
+            >>> Metrics.select_five(results=results,\
+                                    matches_list=matches_list,\
+                                    match_code=match_code)
+            >>> results_two = {1224: {'poet_id': 111,\
+                                      'list_index': [1],\
+                                      'euc_distance': [0.223],\
+                                      'methods': ['testtwo']},\
+                               1442: {'poet_id': 302,\
+                                      'list_index': [0, 0],\
+                                      'euc_distance': [0.221, 0.1113],\
+                                      'methods': ['test', 'testtwo']}}
+            >>> results == results_two
+            True
+
+        this is called by vary_methods and will not need to be called directly.
+        """
+
         for i in range(5):
             poem_id, poet_id, euc_distance = matches_list[i]
+
             if poem_id in results:
                 results[poem_id]["methods"].append(match_code)
                 results[poem_id]["euc_distance"].append(euc_distance)
@@ -1137,7 +1813,18 @@ class Metrics(db.Model):
                 return
 
     def vary_methods(self, unique_auth=True, new_auth=True):
-        """retuns matches with different weights applied"""
+        """retuns matches with different weights applied
+
+        For initial runs of the program, we want to provide one match with no
+        special weighting, and four matches with twice the weighting applied
+        to one of our four catagories. After we gather sufficient data on
+        preferences with these weightings, we would create more experiemental
+        weightings to improve the algorithm further.
+
+        This method is what we call directly to receive the match information
+        for a poem, in the form of a nested dictionary, with the poem_ids as the
+        keys, and their information as another dictionary in the values.
+        """
 
         matches = self.find_matches(micwgt=1, sentwgt=1, conwgt=1, macwgt=1,
                                     limit=75, unique_auth=unique_auth,
@@ -1191,6 +1878,9 @@ class Metrics(db.Model):
         poet (only one per poet if True), and new_auth sets whether to exclude
         the author of the chosen poem from the results (no matches by the author
         of our matching poem if True).
+
+        We call this method in vary_methods to find the unweighted matches,
+        but you can call it directly if desired for a list of matches.
         """
 
         other_metrics = self._get_other_metrics()
@@ -1221,7 +1911,19 @@ class Metrics(db.Model):
         # return final_matches
 
     def _get_criteria(self, other_metric_obj, micro_lex, sentiment, word_list, context):
-        """"""
+        """returns dictionary with comparison criteria (lists of floats)
+
+        We call this method on the main metrics object to find the criteria
+        to compare it to the other_metric_obj -- we also provide micro_lex, which
+        is a list of floats provided by self._get_micro_lex_data(), as well
+        as sentiment_data and context, which are also lists(of floats and strings
+        repectively) provided by self._get_sentiment_data and self._get_sentiment_data.
+        finaly word_list is a list of all the words in the text associated with
+        the main metrics object.
+
+        This method is called by find_matches, and will not need to be called
+        directly.
+        """
 
         o_micro_lex = other_metric_obj._get_micro_lex_data()
 
@@ -1258,7 +1960,8 @@ class Metrics(db.Model):
                 "macro": macro, "o_macro": o_macro}
 
     def _get_euc_distance(self, comparison_dict, conwgt, micwgt, sentwgt, macwgt):
-        """"""
+        """
+        """
         euc_squared = 0
 
         context = comparison_dict["context"]
@@ -2614,13 +3317,13 @@ class Metrics(db.Model):
         return Metrics._get_range_data(list_of_numbers=stanzas, set_max=76)
 
     @staticmethod
-    def get_single_graph_data(metrics_list, name_of_context, name, metrics_backref):
+    def get_single_graph_data(poems_list, name_of_context, name, poems_backref):
         """"""
 
         connected_items = {}
 
-        for met in metrics_list:
-            others = getattr(met, metrics_backref)
+        for poem in poems_list:
+            others = getattr(poem, poems_backref)
             if len(others) > 1:
                 for o in others:
                     context_name = getattr(o, name_of_context)
