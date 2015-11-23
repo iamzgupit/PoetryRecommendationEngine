@@ -9,11 +9,11 @@ ReadMe: About {{ region.region }}
     <div class="col-md-10 col-md-offset-1">
         <div class="col-md-8 poems">
             <div class="row algorithm-header">
-                <h4>{{ region.region }}</h4>
+                <h2>{{ region.region }}</h2>
                 <br>
             </div>  <!-- end of algorithm-header row -->
             <div class="row associated poems">
-                <h4> Associated Poems:</h4>
+                <h4 style="font-weight:bold;"> Associated Poems:</h4>
                 <ul class="list-unstyled">
                 {% for poem in poems %}
                     <li><a href="/{{poem.poem_id}}">{{ poem.title }}</a> by {{ poem.poet.name }}</li>
@@ -39,85 +39,30 @@ ReadMe: About {{ region.region }}
 </div> <!-- end of container -->
 <script>
 
-var colorDic = {"U.S.": "#EE7942",
-                "Midwestern": "#FFEFDB",
-                "Southern": "#8B8378",
-                "New England": "#7FFFD4",
-                "Ireland": "#98F5FF",
-                "Western": "#D2691E",
-                "Mid-Atlantic": "#8B8878",
-                "Poland": "#FFB90F",
-                "Canada": "#00008B",
-                "Northwestern": "#B8860B",
-                "Southwestern": "black",
-                "England": "#A9A9A9",
-                "Scotland": "#6CA6CD",
-                "Wales": "#C1FFC1",
-                "Germany": "#483D8B",
-                "Asia": "#528B8B",
-                "South": "#E9967A",
-                "Russia": "#CD5C5C",
-                "China": "#F0E68C",
-                "Latin America": "#FF6347",
-                "Australia and Pacific": "#CD8C95",
-                "Caribbean": "#90EE90",
-                "Spain": "#8470FF",
-                "Italy": "#CAE1FF",
-                "Middle East": "#EECFA1",
-                "Israel": "#EE4000",
-                "Greece": "#96CDCD",
-                "France": "#9AFF9A",
-                "Mexico": "#DB7093",
-                "Africa": "#B0E0E6",
-                "East": "#4169E1",
-                "Eastern Europe": "#2E8B57",
-                "Scandinavia": "#555555",
-                "Japan": "#7D9EC0",
-                "Only U.S.": "#EE7942",
-                "Only Midwestern": "#FFEFDB",
-                "Only Southern": "#8B8378",
-                "Only New England": "#7FFFD4",
-                "Only Ireland": "#98F5FF",
-                "Only Western": "#D2691E",
-                "Only Mid-Atlantic": "#8B8878",
-                "Only Poland": "#FFB90F",
-                "Only Canada": "#00008B",
-                "Only Northwestern": "#B8860B",
-                "Only Southwestern": "black",
-                "Only England": "#A9A9A9",
-                "Only Scotland": "#6CA6CD",
-                "Only Wales": "#C1FFC1",
-                "Only Germany": "#483D8B",
-                "Only Asia": "#528B8B",
-                "Only South": "#E9967A",
-                "Only Russia": "#CD5C5C",
-                "Only China": "#F0E68C",
-                "Only Latin America": "#FF6347",
-                "Only Australia and Pacific": "#CD8C95",
-                "Only Caribbean": "#90EE90",
-                "Only Spain": "#8470FF",
-                "Only Italy": "#CAE1FF",
-                "Only Middle East": "#EECFA1",
-                "Only Israel": "#EE4000",
-                "Only Greece": "#96CDCD",
-                "Only France": "#9AFF9A",
-                "Only Mexico": "#DB7093",
-                "Only Africa": "#B0E0E6",
-                "Only East": "#4169E1",
-                "Only Eastern Europe": "#2E8B57",
-                "Only Scandinavia": "#555555",
-                "Only Japan": "#7D9EC0"};
-    
-var {{ region_data['iden'] }}data = [
+var colorList = ["#0C090A", "#666362", "#000000", "#B6B6B4", "#736F6E",
+                 "#3B3131", "#566D7E", "#2B1B17", "#BCC6CC"];
+var i = -1;
+var more;
+var {{ region_data['iden'] }}data = [];
+
 {% for t, number in region_data['others'] %}
-    {
-        value: {{ number }},
-        color: colorDic["{{ t }}".replace("&amp;", "&")],
-        highlight: "#696969",
-        label: "{{ t }}".replace("&amp;", "&")
-    },
+
+    if (i > 8) {
+        i = 0;
+    } else {
+        i += 1;
+    };
+
+    more = {
+            value: {{ number }},
+            color: colorList[i],
+            highlight: "#696969",
+            label: "{{ t }}".replace("&amp;", "&")
+        };
+
+    {{ region_data['iden'] }}data.push(more);
+
 {% endfor %}
-]
 
 var {{ region_data['iden'] }}ctx = $("#{{ region_data['iden'] }}").get(0).getContext("2d");
 var {{ region_data['iden'] }}Chart = new Chart({{ region_data['iden'] }}ctx).Doughnut({{ region_data['iden'] }}data);

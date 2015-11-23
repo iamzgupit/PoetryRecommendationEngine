@@ -10,20 +10,26 @@
     <link href="../static/stylesheet.css" rel="stylesheet">
 </head>
 
-<body>
+<body style="font-size:180%;">
 <nav class="navbar navbar-default">
   <div class="container-fluid">
     <!-- Brand and toggle get grouped for better mobile display -->
     <div class="navbar-header">
-      <a class="navbar-brand" href="/">ReadMe</a>
+        <a class="navbar-brand" href="/">
+            <img src="../static/quill.png" style="height:30px;display:inline-block;">
+        </a>
+        <a class="navbar-brand" href="/" style="padding-top:20px;">
+            <span style="color:black">Read</span>Me
+        </a>
     </div>
       <ul class="nav navbar-nav">
-        <li><a href="/about">About</a></li>
-        <li><a href="/writer-mode">Writer Mode</a></li>
-        <li><a href="/algorithm">The Algorithm</a></li>
+        <li><a href="/about" style="padding-top:20px;">About</a></li>
+        <li><a href="/writer-mode" style="padding-top:20px;">Writer Mode</a></li>
+        <li><a href="/algorithm" style="padding-top:20px;">The Algorithm</a></li>
       </ul>
   </div><!-- /.container-fluid -->
 </nav>
+ <!--- end of nav bar container -->
     {% block content%}CONTENT GOES HERE{% endblock%}
 </body>
 </html>

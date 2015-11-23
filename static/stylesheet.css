@@ -14,6 +14,7 @@
 
         .slight-indent {
             padding-left: 30px;
+            font-size: medium;
         }
 
         .metric-title {
@@ -43,10 +44,10 @@
         }
 
         .best-button {
-            width:30px;
-            position:absolute;
-            padding-bottom:15px;
-            padding-left:15px;
+            width:45px;
+            float:left;
+            padding-top:10px;
+            display:block;
         }
 
         .checkbox-img {
@@ -54,7 +55,7 @@
             padding-bottom:3px;
         }
         .main-search {
-            margin-top: 220px;
+            margin-top: 180px;
         }
 
         .main-content {
@@ -112,8 +113,16 @@
             margin: 0 auto;
         }
 
+        .results {
+            font-size: 180%;
+        }
+
         .poem-content {
             padding-bottom: 50px;
+        }
+
+        .disclaimer, .poem-body {
+            padding-right: 80px;
         }
 
         .user-form {
@@ -217,4 +226,24 @@
             visibility: visible;
             -webkit-transform: scaleX(1);
             transform: scaleX(1);
+        }
+
+
+        .wikipedia a:hover:before {
+            visibility: hidden;
+        }
+
+        a:visited, a:active {
+            text-decoration: none;
+        }
+
+        .suggestion-poem {
+            padding-left:60px;
+        }
+
+        .dotted-spaced {
+            background-image: linear-gradient(to right, #333 10%, rgba(255, 255, 255, 0) 0%);
+            background-position: top;
+            background-size: 10px 1px;
+            background-repeat: repeat-x;
         }

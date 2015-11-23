@@ -8,7 +8,7 @@ ReadMe: Terms
 <div class="row large-content">
     <div class="col-md-10 col-md-offset-1">
         <div class="row algorithm-header">
-            <h4>Term</h4>
+            <h3>Poetic Terms</h3>
             <br>
             <p>term information will to here!</p>
         </div>  <!-- end of algorithm-header row -->
@@ -34,117 +34,34 @@ ReadMe: Terms
 </div> <!-- end of main-content row -->
 </div> <!-- end of container -->
 <script>
-var colorDic = {"Rhymed Stanza": "#EE7942",
-                "Free Verse": "#FFEFDB",
-                "Sonnet": "#8B8378",
-                "Syllabic": "#7FFFD4",
-                "Refrain": "#98F5FF",
-                "Blank Verse": "#D2691E",
-                "Ode": "#8B8878",
-                "Couplet": "#FFB90F",
-                "Ekphrasis": "#00008B",
-                "Persona": "#B8860B",
-                "Imagery": "black",
-                "Epistle": "#A9A9A9",
-                "Metaphor": "#6CA6CD",
-                "Consonance": "#C1FFC1",
-                "Mixed": "#483D8B",
-                "Ballad": "#528B8B",
-                "Dramatic Monologue": "#E9967A",
-                "Simile": "#C63D0F",
-                "Elegy": "#7E8F7C",
-                "Allusion": "#D9853B",
-                "Epigram": "#74AFAD",
-                "Alliteration": "#558C89",
-                "Pastoral": "#67BCDB",
-                "Prose Poem": "#E44424",
-                "Aphorism": "#6DBDD6",
-                "Aubade": "#118C4E",
-                "Confessional": "#585858",
-                "Sestina": "#C1E1A6",
-                "Common Measure": "#FF9009",
-                "Nursery Rhymes": "#A8ADB4",
-                "Limerick": "#CAB388",
-                "Concrete or Pattern Poetry": "B7A6AD",
-                "Imagist": "#7D9EC0",
-                "Villanelle": "#555555",
-                "Epithalamion": "#2E8B57",
-                "Ghazal": "#4169E1",
-                "Ars Poetica": "#B0E0E6",
-                "Ottava Rima": "#DB7093",
-                "Epic": "#9AFF9A",
-                "Epigraph": "#96CDCD",
-                "Assonance": "#EE4000",
-                "Terza Rima": "#EECFA1",
-                "Quatrain": "#CAE1FF",
-                "Series/Sequence": "#8470FF",
-                "Haiku": "#90EE90",
-                "Symbolist": "#CD8C95",
-                "Visual Poetry": "#FF6347",
-                "Pantoum": "#F0E68C",
-                "Tercet": "#CD5C5C",
-                "Only Rhymed Stanza": "#EE7942",
-                "Only Free Verse": "#FFEFDB",
-                "Only Sonnet": "#8B8378",
-                "Only Syllabic": "#7FFFD4",
-                "Only Refrain": "#98F5FF",
-                "Only Blank Verse": "#D2691E",
-                "Only Ode": "#8B8878",
-                "Only Couplet": "#FFB90F",
-                "Only Ekphrasis": "#00008B",
-                "Only Persona": "#B8860B",
-                "Only Imagery": "black",
-                "Only Epistle": "#A9A9A9",
-                "Only Metaphor": "#6CA6CD",
-                "Only Consonance": "#C1FFC1",
-                "Only Mixed": "#483D8B",
-                "Only Ballad": "#528B8B",
-                "Only Dramatic Monologue": "#E9967A",
-                "Only Simile": "#C63D0F",
-                "Only Elegy": "#7E8F7C",
-                "Only Allusion": "#D9853B",
-                "Only Epigram": "#74AFAD",
-                "Only Alliteration": "#558C89",
-                "Only Pastoral": "#67BCDB",
-                "Only Prose Poem": "#E44424",
-                "Only Aphorism": "#6DBDD6",
-                "Only Aubade": "#118C4E",
-                "Only Confessional": "#585858",
-                "Only Sestina": "#C1E1A6",
-                "Only Common Measure": "#FF9009",
-                "Only Nursery Rhymes": "#A8ADB4",
-                "Only Limerick": "#CAB388",
-                "Only Concrete or Pattern Poetry": "B7A6AD",
-                "Only Imagist": "#7D9EC0",
-                "Only Villanelle": "#555555",
-                "Only Epithalamion": "#2E8B57",
-                "Only Ghazal": "#4169E1",
-                "Only Ars Poetica": "#B0E0E6",
-                "Only Ottava Rima": "#DB7093",
-                "Only Epic": "#9AFF9A",
-                "Only Epigraph": "#96CDCD",
-                "Only Assonance": "#EE4000",
-                "Only Terza Rima": "#EECFA1",
-                "Only Quatrain": "#CAE1FF",
-                "Only Series/Sequence": "#8470FF",
-                "Only Haiku": "#90EE90",
-                "Only Symbolist": "#CD8C95",
-                "Only Visual Poetry": "#FF6347",
-                "Only Pantoum": "#F0E68C",
-                "Only Tercet": "#CD5C5C"}
+var colorList = ["#0C090A", "#666362", "#000000", "#B6B6B4", "#736F6E",
+                 "#3B3131", "#566D7E", "#2B1B17", "#BCC6CC"];
+var more;
+var i;
 
 {% for term in term_data %}
     
-    var {{ term['iden'] }}data = [
+    var {{ term['iden'] }}data = [];
+    i = -1;
+
     {% for t, number in term['others'] %}
-        {
+
+        if (i > 8) {
+            i = 0;
+        } else {
+            i += 1;
+        };
+
+        more = {
             value: {{ number }},
-            color: colorDic["{{ t }}"],
+            color: colorList[i],
             highlight: "#696969",
             label: "{{ t }}"
-        },
+        };
+
+        {{ term['iden'] }}data.push(more);
+
     {% endfor %}
-    ];
 
     var {{ term['iden'] }}ctx = $("#{{ term['iden'] }}").get(0).getContext("2d");
     var {{ term['iden'] }}Chart = new Chart({{ term['iden'] }}ctx).Doughnut({{ term['iden'] }}data);

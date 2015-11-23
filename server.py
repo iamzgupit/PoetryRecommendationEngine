@@ -332,7 +332,7 @@ def display_context_page():
 
 @app.route('/algorithm/subjects')
 def display_subject_graph():
-    show_number = 12
+    show_number = 9
     last_subj_id = 138
     start_at = randint(1, last_subj_id - show_number)
     stop_before = start_at + show_number
@@ -363,7 +363,7 @@ def display_subject_about(subject_id):
 
 @app.route('/algorithm/terms')
 def display_term_graph():
-    show_number = 12
+    show_number = 9
     last_term_id = 49
 
     start_at = randint(1, last_term_id - show_number)
@@ -394,7 +394,7 @@ def display_term_about(term_id):
 
 @app.route('/algorithm/regions')
 def display_region_graph():
-    show_number = 12
+    show_number = 9
     last_region_id = 34
 
     start_at = randint(1, last_region_id - show_number)
