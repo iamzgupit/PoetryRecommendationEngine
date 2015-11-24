@@ -6,7 +6,8 @@ ReadMe: About
 <div class="container">
 
 <div class="row main-content">
-    <div class="col-md-6 col-md-offset-1 reading">
+    <div class="col-md-6 col-md-offset-1 col-sm-10 col-sm-offset-1 reading">
+
         <div class="row disclaimer">
             <h2>About Your Poem</h2>
             <h4>This area will just be a content block explaining how to read 
@@ -18,18 +19,21 @@ ReadMe: About
                 Content content content content.Content Content Content
                 Content content content content.</h4>
         </div>
+
         <div class="row poem-body">
             <h3 class="title main"> {{ poem.title }}</h3>
             <h4 class="author main"> by {{ poem.poet.name }}</h4>
-            <p style="font-size:medium;"><a href="{{ poem.url }}">Read on The Poetry Foundation</a></p>
-            <p style="font-size:medium;"><a href="/{{ poem.poem_id }}">Show Similar</a></p>
+            <p class="medium"><a href="{{ poem.url }}">Read on The Poetry Foundation</a></p>
+            <p class="medium"><a href="/{{ poem.poem_id }}">Show Similar</a></p>
             <br>
             <div class="poem-content">
                 {{ poem.formatted_text|safe }}
             </div> <!-- end of poem content div -->
         </div> <!-- end of poem body row -->
+
     </div> <!-- end of first column -->
-    <div class="col-md-4 reading">  <!-- about column -->
+
+    <div class="col-md-4 col-sm-10 col-sm-offset-1 reading">  <!-- about column -->
 
         {% if wikipedia_url %}
         <div class="row wikipedia">

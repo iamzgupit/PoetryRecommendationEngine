@@ -336,11 +336,11 @@ class Poem(db.Model):
         """ returns copyright information as string, given soup object
 
             >>> fake_html_string = "\"\"<p>This Should Not Be Included</p>\
-                                    <div class='credit'><p>Copyright 2015\
-                                    Reprinted with permission...</p></div>\"\""
+                                    <div class='credit'><p>Copyright 2015 Reprinted \
+                                    with permission...</p></div>\"\""
             >>> soup_object = BeautifulSoup(fake_html_string, "html5lib")
             >>> Poem._get_copyright(soup_object)
-            Copyright 2015
+            u'Copyright 2015'
 
         This is unique to the html documents we're parsing, grabs the copyright
         information if it exists and returns it as a string. This is called by
@@ -353,6 +353,8 @@ class Poem(db.Model):
             credits = credits.get_text()
             credits = credits.strip()
             cwlist = credits.split(" ")
+            cwlist = [i.strip() for i in cwlist]
+
             start, stop = Poem._find_content(cwlist, "Copyright", "Reprinted")
             copyright = " ".join(cwlist[start:stop])
 
@@ -576,6 +578,9 @@ class Region(db.Model):
     def get_region_data(start_at, stop_before):
         """returns list of dicts w/info on regions(start_at <= id < stop_before)
 
+            >>> from server import app
+            >>> connect_to_db(app)
+            >>>
             >>> region_data = Region.get_region_data(1,3)
             >>> len(region_data)
             2
@@ -626,6 +631,9 @@ class Region(db.Model):
     def get_graph_data(self, poems):
         """takes list of metrics(objects) associated w/self, returns dict w/info.
 
+            >>> from server import app
+            >>> connect_to_db(app)
+            >>>
             >>> region = Region.query.get(2)
             >>> poems = region.poems
             >>> region_data = region.get_graph_data(poems)
@@ -711,57 +719,60 @@ class Term(db.Model):
     def get_term_data(start_at, stop_before):
         """returns list of dicts w/info on terms(start_at <= id < stop_before)
 
-            >>> term_data = Region.get_term_data(1,3)
+            >>> from server import app
+            >>> connect_to_db(app)
+            >>>
+            >>> term_data = Term.get_term_data(1,3)
             >>> len(term_data)
             2
             >>> zero = {'iden': u'Rhymed', 'total': 1429,\
                         'name': u'Rhymed Stanza',\
                         'others': [(u'Consonance', 10), (u'Pastoral', 17),\
-                                    (u'Ars Poetica', 2), (u'Free Verse', 9),\
-                                    (u'Epigraph', 3), (u'Common Measure', 53),\
-                                    (u'Epistle', 5), (u'Metaphor', 58),\
-                                    (u'Epic', 4), (u'Assonance', 6),\
-                                    (u'Syllabic', 10), (u'Ballad', 41),\
-                                    (u'Pantoum', 2), (u'Simile', 25),\
-                                    (u'Villanelle', 2), (u'Persona', 19),\
-                                    (u'Refrain', 55), (u'Series/Sequence', 36),\
-                                    (u'Aubade', 2), (u'Tercet', 5),\
-                                    (u'Imagist', 1), (u'Ekphrasis', 9),\
-                                    (u'Imagery', 72), (u'Blank Verse', 3),\
-                                    (u'Symbolist', 3), (u'Nursery Rhymes', 3),\
-                                    (u'Haiku', 1), (u'Only Rhymed Stanza', 859),\
-                                    (u'Aphorism', 2), (u'Sestina', 1),\
-                                    (u'Mixed', 23), (u'Alliteration', 24),\
-                                    (u'Concrete or Pattern Poetry', 3),\
-                                    (u'Dramatic Monologue', 14),\
-                                    (u'Quatrain', 32), (u'Sonnet', 10),\
-                                    (u'Allusion', 47), (u'Confessional', 10),\
-                                    (u'Epigram', 12), (u'Elegy', 41),\
-                                    (u'Couplet', 85), (u'Ode', 25)]}
+                                   (u'Ars Poetica', 2), (u'Free Verse', 9),\
+                                   (u'Epigraph', 3), (u'Common Measure', 53),\
+                                   (u'Epistle', 5), (u'Metaphor', 58),\
+                                   (u'Epic', 4), (u'Assonance', 6),\
+                                   (u'Syllabic', 10), (u'Ballad', 41),\
+                                   (u'Pantoum', 2), (u'Simile', 25),\
+                                   (u'Villanelle', 2), (u'Persona', 19),\
+                                   (u'Refrain', 55), (u'Series/Sequence', 36),\
+                                   (u'Aubade', 2), (u'Tercet', 5),\
+                                   (u'Imagist', 1), (u'Ekphrasis', 9),\
+                                   (u'Imagery', 72), (u'Blank Verse', 3),\
+                                   (u'Symbolist', 3), (u'Nursery Rhymes', 3),\
+                                   (u'Haiku', 1), (u'Only Rhymed Stanza', 859),\
+                                   (u'Aphorism', 2), (u'Sestina', 1),\
+                                   (u'Mixed', 23), (u'Alliteration', 24),\
+                                   (u'Concrete or Pattern Poetry', 3),\
+                                   (u'Dramatic Monologue', 14),\
+                                   (u'Quatrain', 32), (u'Sonnet', 10),\
+                                   (u'Allusion', 47), (u'Confessional', 10),\
+                                   (u'Epigram', 12), (u'Elegy', 41),\
+                                   (u'Couplet', 85), (u'Ode', 25)]}
             >>> one = {'iden': u'Free', 'total': 3284, 'name': u'Free Verse',\
-                       'others': [(u'Epithalamion', 2), (u'Consonance', 5),\
-                                  (u'Metaphor', 122), (u'Tercet', 23),\
+                       'others': [(u'Consonance', 5), (u'Metaphor', 122),\
+                                  (u'Tercet', 23), (u'Epistle', 12),\
                                   (u'Concrete or Pattern Poetry', 1),\
                                   (u'Epigraph', 3), (u'Pastoral', 13),\
-                                  (u'Epistle', 12), (u'Prose Poem', 8),\
+                                  (u'Epithalamion', 2), (u'Prose Poem', 8),\
                                   (u'Only Free Verse', 2669), (u'Epic', 6),\
                                   (u'Assonance', 3), (u'Ballad', 1),\
-                                  (u'Simile', 18), (u'Persona', 33),\
+                                  (u'Simile', 18), (u'Rhymed Stanza', 9),\
                                   (u'Refrain', 17), (u'Ghazal', 1),\
                                   (u'Series/Sequence', 29), (u'Aubade', 2),\
                                   (u'Imagist', 21), (u'Ekphrasis', 17),\
                                   (u'Imagery', 136), (u'Blank Verse', 2),\
                                   (u'Symbolist', 1), (u'Haiku', 2),\
-                                  (u'Rhymed Stanza', 9), (u'Ars Poetica', 7),\
+                                  (u'Persona', 33), (u'Ars Poetica', 7),\
                                   (u'Mixed', 12), (u'Alliteration', 10),\
                                   (u'Aphorism', 5), (u'Dramatic Monologue', 23),\
                                   (u'Quatrain', 19), (u'Sonnet', 10),\
                                   (u'Allusion', 31), (u'Confessional', 11),\
                                   (u'Epigram', 9), (u'Elegy', 65),\
                                   (u'Couplet', 74), (u'Ode', 20)]}
-            >>> region_data[0] == zero
+            >>> term_data[0] == zero
             True
-            >>> region_data[1] == one
+            >>> term_data[1] == one
             True
 
 
@@ -792,34 +803,36 @@ class Term(db.Model):
     def get_graph_data(self, poems):
         """takes list of metrics(objects) associated w/self, returns dict w/info.
 
+            >>> from server import app
+            >>> connect_to_db(app)
+            >>>
             >>> x = Term.query.get(2)
             >>> metrics = x.metrics
             >>> results = x.get_graph_data(metrics)
             >>> expected = {'iden': u'Free',\
                             'total': 3284,\
                             'name': u'Free Verse',\
-                            'others': [(u'Epithalamion', 2), (u'Consonance', 5),\
-                                       (u'Metaphor', 122), (u'Tercet', 23),\
+                            'others': [(u'Consonance', 5), (u'Metaphor', 122),\
+                                       (u'Tercet', 23), (u'Epistle', 12),\
                                        (u'Concrete or Pattern Poetry', 1),\
                                        (u'Epigraph', 3), (u'Pastoral', 13),\
-                                       (u'Epistle', 12), (u'Prose Poem', 8),\
+                                       (u'Epithalamion', 2), (u'Prose Poem', 8),\
                                        (u'Only Free Verse', 2669), (u'Epic', 6),\
                                        (u'Assonance', 3), (u'Ballad', 1),\
-                                       (u'Simile', 18), (u'Persona', 33),\
+                                       (u'Simile', 18), (u'Rhymed Stanza', 9),\
                                        (u'Refrain', 17), (u'Ghazal', 1),\
                                        (u'Series/Sequence', 29), (u'Aubade', 2),\
                                        (u'Imagist', 21), (u'Ekphrasis', 17),\
                                        (u'Imagery', 136), (u'Blank Verse', 2),\
                                        (u'Symbolist', 1), (u'Haiku', 2),\
-                                       (u'Rhymed Stanza', 9),\
-                                       (u'Ars Poetica', 7), (u'Mixed', 12),\
-                                       (u'Alliteration', 10), (u'Aphorism', 5),\
-                                       (u'Dramatic Monologue', 23),\
+                                       (u'Persona', 33), (u'Ars Poetica', 7),\
+                                       (u'Mixed', 12), (u'Alliteration', 10),\
+                                       (u'Aphorism', 5), (u'Dramatic Monologue', 23),\
                                        (u'Quatrain', 19), (u'Sonnet', 10),\
                                        (u'Allusion', 31), (u'Confessional', 11),\
                                        (u'Epigram', 9), (u'Elegy', 65),\
                                        (u'Couplet', 74), (u'Ode', 20)]}
-            >>> expected == results
+            >>> results == expected
             True
 
         Query the database for metrics assocated with this term, then feed it
@@ -894,6 +907,9 @@ class Subject(db.Model):
     def get_subject_data(start_at, stop_before):
         """returns list of dicts w/info on subjects(start_at <= id < stop_before)
 
+            >>> from server import app
+            >>> connect_to_db(app)
+            >>>
             >>> subject_data = Subject.get_subject_data(3,4)
             >>> len(subject_data)
             1
@@ -986,6 +1002,9 @@ class Subject(db.Model):
     def get_graph_data(self, poems):
         """takes list of metrics(objects) associated w/self, returns dict w/info.
 
+            >>> from server import app
+            >>> connect_to_db(app)
+            >>>
             >>> x = Subject.query.get(4)
             >>> poems = x.poems
             >>> results = x.get_graph_data(poems)
@@ -1177,6 +1196,9 @@ class Metrics(db.Model):
         on over 10,000 poems each time -- this method get's the inital acceptable
         ranges which we will use to grab a subset of our poems.
 
+            >>> from server import app
+            >>> connect_to_db(app)
+            >>>
             >>> x = Metrics(wl_range=6, ll_mean=50,ll_range=10, pl_lines=50)
             >>> ranges_dict = x._get_ranges_dict()
             >>> expected = {'llrange': {'max': 30,\
@@ -1199,7 +1221,7 @@ class Metrics(db.Model):
                                         'down_adj': 1,\
                                         'val': 6,\
                                         'min': 2}}
-            >>> expected == range_dict
+            >>> expected == ranges_dict
             True
 
         This method is called by Metrics.find_matches and won't need to be used
@@ -1518,8 +1540,8 @@ class Metrics(db.Model):
                           "mean_ll": {"min": 5, "max": 10},\
                           "llrange": {"min": 5, "max": 10},\
                           "wlrange": {"min": 5, "max": 10}}
-            >>> met1 = Metric(pl_length=6, ll_mean=6, ll_range=6, wl_range=6)
-            >>> met2 = Metrics(pl_length=12, ll_mean=6, ll_range=6, wl_range=6)
+            >>> met1 = Metrics(pl_lines=6, ll_mean=6, ll_range=6, wl_range=6)
+            >>> met2 = Metrics(pl_lines=12, ll_mean=6, ll_range=6, wl_range=6)
             >>> new_list = Metrics._slim_metrics(ranges, [met1, met2])
             >>> new_list == [met1]
             True
@@ -1698,7 +1720,7 @@ class Metrics(db.Model):
             >>> sorted_matches = [(1532,122,0.1234), (1455,122,0.1333),\
                                   (111,102,0.200)]
             >>> Metrics._remove_dupl_auths(sorted_matches)
-            [(1532,122,0.1234), (111,102,0.200)]
+            [(1532, 122, 0.1234), (111, 102, 0.2)]
 
         This is only called if unique_auth is True, and will not need to be
         called directly.
@@ -1960,8 +1982,24 @@ class Metrics(db.Model):
                 "macro": macro, "o_macro": o_macro}
 
     def _get_euc_distance(self, comparison_dict, conwgt, micwgt, sentwgt, macwgt):
+        """returns tuple (euclidean distance(float), dict w/ euc distance^2 data)
+
+        given the comparison dictionary created in self._get_criteria and the
+        weight(float or int) we want to give to context(conwgt), micro lexical
+        data (micwgt), macro lexical(macwgt), and sentiment data (sentwgt),
+        calculates the euclidean distance between the two Metrics objects. Since
+        the euclidean distance is calculated as the squareroot of the euclidean
+        distance between the two points just for context squared + the euclidean
+        distance between the two points just for micro data squared + the same
+        for macro lexical data and sentiment data, we also return those raw
+        distances squared in a dictionary -- this way Methods.vary_methods can
+        recalculate the euclidean distance altering the weights on these four
+        catagories without difficulty.
+
+        This method is called by Poem.find_matches and will not need to be called
+        directly.
         """
-        """
+
         euc_squared = 0
 
         context = comparison_dict["context"]
@@ -2077,6 +2115,7 @@ class Metrics(db.Model):
         This function is called within Metrics.find_matches and will not need
         to be used directly.
         """
+
         temp_total = 0.0
         for i in range(len(list_one)):
             temp_total += ((list_one[i] - list_two[i]) ** 2)
@@ -2216,9 +2255,8 @@ class Metrics(db.Model):
                 >>> fake = Metrics(poem_id=0,\
                                    wl_mean=1,\
                                    wl_mode=2,\
-                                   wl_median=3,
+                                   wl_median=3,\
                                    wl_range=4,\
-                                   wl_mode=3,\
                                    ll_mean=5,\
                                    ll_median=9,\
                                    ll_mode=6,\
@@ -2226,7 +2264,7 @@ class Metrics(db.Model):
                                    pl_lines=10)
                 >>>
                 >>> fake._get_macro_lex_data()
-                [1, 2, 3, 4, 3, 5, 9, 6, 8, 10]
+                [1, 2, 3, 4, 5, 9, 6, 8, 10]
 
         This function is called in Metrics.find_matches and will not need to be
         used directly."""
@@ -2248,7 +2286,7 @@ class Metrics(db.Model):
                                    a_freq=5,\
                                    alliteration=6,\
                                    rhyme=7,\
-                                   lex_div=8,
+                                   lex_div=8,\
                                    end_repeat=9)
                 >>>
                 >>> fake._get_micro_lex_data()
