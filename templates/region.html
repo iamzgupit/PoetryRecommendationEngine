@@ -19,7 +19,7 @@ ReadMe: Regions
         {% for region in region_data %}
             <div class="col-md-4 graph">
                 <div class="graph-box">
-                    <canvas class="donut-chart" id="{{region['iden']}}" width="250" height="250" style="clear:both;"></canvas>
+                    <canvas class="donut-chart" id="{{region['iden']}}" width="250" height="250"></canvas>
                     <div class="region-title">
                         <h3><a href="/regions/{{ all_regions[region['name']] }}">{{ region['name'] }}</a></h3>
                         <h5>{{ region['total'] }} Poems Total</h5>
@@ -28,7 +28,7 @@ ReadMe: Regions
             </div>
         {% endfor %}
         </div>  <!-- end of algorithm-graph row -->
-        <div class="row all-regions" style="border-top:1px solid black;border-bottom:1px solid black;margin-bottom:30px;">
+        <div class="row all-context">
             <p>All Regions: 
 &nbsp;&nbsp;&nbsp;<a href="/regions/1"> U.S.</a>
 &nbsp;&nbsp;&nbsp;<a href="/regions/2"> Midwestern</a>

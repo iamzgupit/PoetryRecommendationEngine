@@ -12,7 +12,7 @@ ReadMe: Sentiment
             <p>This area will contain some text explaining what this data catagory is on a macro level</p>
         </div>  <!-- end of algorithm-header row -->
         <div class="row algorithm-catagory">
-            <h4 style="font-weight:bold;">Positive/Negative Emotions</h4>
+            <h4 class="bold">Positive/Negative Emotions</h4>
             <p>Here is some information about what this category is. Blah Blah Blah.</p>
         </div>  <!-- end of algorithm-catagory row -->
         <div class="row algorithm-graph">
@@ -22,7 +22,7 @@ ReadMe: Sentiment
             <div class="axis x-axis" id="pos-neg-x-axis">Score</div>
         </div>  <!-- end of algorithm-graph row -->
         <div class="row algorithm-catagory">
-            <h4 style="font-weight:bold;">Objects/Abstract Language</h4>
+            <h4 class="bold">Objects/Abstract Language</h4>
             <p>Here is some information about what this category is. Blah Blah Blah.</p>
         </div>  <!-- end of algorithm-catagory row -->
         <div class="row algorithm-graph">
@@ -32,7 +32,7 @@ ReadMe: Sentiment
             <div class="axis x-axis" id="obj-abs-x-axis">Score</div>
         </div>  <!-- end of algorithm-graph row -->
         <div class="row algorithm-catagory">
-            <h4 style="font-weight:bold;">Uncommon Language: Our Corpus and Common English</h4>
+            <h4 class="bold">Uncommon Language: Our Corpus and Common English</h4>
             <p>Here is some information about what this category is. Blah Blah Blah.</p>
         </div>  <!-- end of algorithm-catagory row -->
         <div class="row algorithm-graph">
@@ -42,7 +42,7 @@ ReadMe: Sentiment
             <div class="axis x-axis" id="common-x-axis">Score</div>
         </div>  <!-- end of algorithm-graph row -->
         <div class="row algorithm-catagory">
-            <h4 style="font-weight:bold;">Human Presence: Male and Female</h4>
+            <h4 class="bold">Human Presence: Male and Female</h4>
             <p>Here is some information about what this category is. Blah Blah Blah.</p>
         </div>  <!-- end of algorithm-catagory row -->
         <div class="row algorithm-graph">
@@ -52,7 +52,7 @@ ReadMe: Sentiment
             <div class="axis x-axis" id="gender-x-axis">Score</div>
         </div>  <!-- end of algorithm-graph row -->
         <div class="row algorithm-catagory">
-            <h4 style="font-weight:bold;">Active/Passive Language</h4>
+            <h4 class="bold">Active/Passive Language</h4>
             <p>Here is some information about what this category is. Blah Blah Blah.</p>
         </div>  <!-- end of algorithm-catagory row -->
         <div class="row algorithm-graph">
@@ -104,7 +104,8 @@ ReadMe: Sentiment
                           +'<br>'
                         +'<% } %>',
         bezierCurve: false,
-        pointHitDetectionRadius : 2
+        pointHitDetectionRadius : 2,
+        responsive: true
     };
 
     var pnctx = $("#PNChart").get(0).getContext("2d");

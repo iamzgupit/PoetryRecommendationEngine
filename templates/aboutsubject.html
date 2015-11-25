@@ -13,7 +13,7 @@ ReadMe: About {{ subject.subject }}
                 <br>
             </div>  <!-- end of algorithm-header row -->
             <div class="row associated poems">
-                <h4 style="font-weight:bold;"> Associated Poems:</h4>
+                <h4 class="bold"> Associated Poems:</h4>
                 <ul class="list-unstyled">
                 {% for poem in poems %}
                     <li><a href="/{{poem.poem_id}}">{{ poem.title }}</a> by {{ poem.poet.name }}</li>

@@ -9,10 +9,10 @@ ReadMe: Recommendations
     <div class="col-md-8 col-md-offset-1 reading">
         <h2 class="title main"> {{ match_poem.title }}</h2>
         <h4 class="author main"> by {{ match_poem.poet.name }}</h4>
-        <p style="font-size:medium;"><a href="{{match_poem.url}}">Read on The Poetry Foundation</a></p>
-        <p style="font-size:medium;"><a href="/{{match_poem.poem_id}}/about">See Stats</a></p>
+        <p class="medium"><a href="{{match_poem.url}}">Read on The Poetry Foundation</a></p>
+        <p class="medium"><a href="/{{match_poem.poem_id}}/about">See Stats</a></p>
         {% if match_poem.title != main_poem.title %}
-        <p style="font-size:medium;"><a href="/{{match_poem.poem_id}}">More Like This</a></p>
+        <p class="medium"><a href="/{{match_poem.poem_id}}">More Like This</a></p>
         {% endif %}
         <br>
         <div class="poem-content">
@@ -31,27 +31,27 @@ ReadMe: Recommendations
             {% endif %}
 
         <div class="row results">
-            <h5 class="title" style="font-size:60%;">
+            <h5 class="title sixty">
                 <a href='/{{main_poem.poem_id}}/0'>{{ main_poem.title }}</a>
             </h5>
-            <h6 class="author" style="font-size:45%;">By {{ main_poem.poet.name }}</h6>
-            <p class="main-poem" style="font-size:medium;">Matched Poem</p>
+            <h6 class="author fortyfive">By {{ main_poem.poet.name }}</h6>
+            <p class="main-poem medium">Matched Poem</p>
         </div>
 
-        <div class="row results" style="font-size:70%;border-top:1px solid black;border-bottom:1px solid black;">
-            <h5 style="font-size:medium;font-weight:bold;">Best Recommendations:</h5>
-            <p style="font-size:medium;font-style:italic;">Select which recommendation you think is the best by selecting the heart next to its title.</p>
+        <div class="row results best-rec">
+            <h5 class="medium bold">Best Recommendations:</h5>
+            <p class="medium italic">Select which recommendation you think is the best by selecting the heart next to its title.</p>
         </div>
         {% for poem, i in match_poems %}
         <div class="row results">
             <img class="best-button {{ poem.poet.name }}" id="{{ poem.poem_id }}/{{i}}" src="../static/greyheart.png">
             <div class="suggestion-poem">
-                <h5 class="title" style="font-size:60%">
+                <h5 class="title sixty">
                     <a href='/{{main_poem.poem_id}}/{{poem.poem_id}}'>
                         {{ poem.title }}
                     </a>
                 </h5>
-                <h6 class="author" style="font-size:45%">{{ poem.poet.name }}</h6>
+                <h6 class="author fortyfive">{{ poem.poet.name }}</h6>
             </div>
         </div>
         {% endfor %}

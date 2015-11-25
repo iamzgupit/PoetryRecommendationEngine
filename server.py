@@ -1,49 +1,19 @@
 from flask import (Flask, render_template, redirect, jsonify,
                    request, session)
-from flask_debugtoolbar import DebugToolbarExtension
+# from flask_debugtoolbar import DebugToolbarExtension
 from random import choice, randint
 from model import Poem, Metrics, Region, Term, Subject, BestMatch, UserMetrics, connect_to_db, db
-from requests import get
-from bs4 import BeautifulSoup
 from random import shuffle
 from sqlalchemy.orm import joinedload
-# from os import environ
+from os import environ
 
 app = Flask(__name__)
 
-# app.secret_key = environ['SESSION_KEY']
-app.secret_key = "Temporary secret key"
+app.secret_key = environ.get('SESSION_KEY', "Temporary secret key")
 
-
-def get_wiki_info(poem):
-    """returns wikipedia url and link to main picture if applicable"""
-
-    name = poem.poet.name.replace(" ", "_")
-    wikipedia_url = "https://en.wikipedia.org/wiki/" + name
-    try:
-        page = get(wikipedia_url).text
-    except:
-        print "ERROR WITH WIKIPEDIA PAGE"
-        return (None, None)
-
-    if "does not have an article with this exact name" in page:
-        wikipedia_url = None
-        source = None
-    else:
-        soup = BeautifulSoup(page, "html5lib")
-        info_box = soup.find("table", class_="infobox vcard")
-        if info_box:
-            image = info_box.find("img")
-            if image:
-                attrib = image.attrs
-                source = attrib['src']
-                source = "https:" + source
-            else:
-                source = '/static/parchment.jpg'
-        else:
-            wikipedia_url = None
-            source = None
-    return (wikipedia_url, source)
+# this is the number of donut graphs we want to show on the general page
+# for subjects, terms, and regions.
+SHOW_NUMBER = 9
 
 
 @app.route('/')
@@ -56,6 +26,7 @@ def homepage():
 @app.route('/search.json')
 def get_search_criteria():
     """returns a list of dictionaries w/title, author, poem_id """
+
     search_critera = Poem.create_search_params()
 
     return jsonify(search_critera)
@@ -63,7 +34,8 @@ def get_search_criteria():
 
 @app.route('/random')
 def get_random_poem():
-    """redirects to the search page for a random poem"""
+    """redirects to the results page for a random poem"""
+
     poem_ids = db.session.query(Poem.poem_id).all()
     chosen_id = choice(poem_ids)
     poem = str(chosen_id[0])
@@ -74,6 +46,8 @@ def get_random_poem():
 
 @app.route('/settings', methods=['POST'])
 def set_params():
+    """sets the search parameters for recommendations in the session"""
+
     new_auth = request.form.get("new")
     print new_auth
     print type(new_auth)
@@ -90,6 +64,7 @@ def set_params():
 
 @app.route('/<int:poem_id>')
 def display_search_results(poem_id):
+    """displays recommendation page for poem with poem_id in url"""
 
     main_poem = Poem.query.get(poem_id)
     main_metrics = Metrics.query.get(main_poem.poem_id)
@@ -119,7 +94,7 @@ def display_search_results(poem_id):
         poem = Poem.query.get(poem_ids[i - 1])
         match_poems.append((poem, i))
 
-    wikipedia_url, source = get_wiki_info(main_poem)
+    wikipedia_url, source = main_poem.get_wiki_info()
 
     best_selected = session.get(str(poem_id))
     print best_selected
@@ -132,6 +107,8 @@ def display_search_results(poem_id):
 
 @app.route('/<int:poem_id>/about')
 def diplay_poem_about_page(poem_id):
+    """displays information about poem with poem_id in url"""
+
     metric = (db.session.query(Metrics)
                         .filter(Metrics.poem_id == poem_id)
                         .options(joinedload('subjects'))
@@ -144,7 +121,7 @@ def diplay_poem_about_page(poem_id):
     terms = metric.terms
     regions = metric.regions
     poem = metric.poem
-    wikipedia_url, source = get_wiki_info(poem)
+    wikipedia_url, source = poem.get_wiki_info()
 
     return render_template("aboutpoem.html", poem=poem, subjects=subjects,
                            wikipedia_url=wikipedia_url, source=source,
@@ -152,7 +129,8 @@ def diplay_poem_about_page(poem_id):
 
 
 @app.route('/<int:poem_id>/<int:match_id>')
-def display_search_poems(poem_id, match_id):
+def display_match_poems(poem_id, match_id):
+    """displays the match poem with poem_id = match_id"""
 
     main_poem = Poem.query.get(poem_id)
 
@@ -174,10 +152,9 @@ def display_search_poems(poem_id, match_id):
     else:
         match_poem = main_poem
 
-    wikipedia_url, source = get_wiki_info(match_poem)
+    wikipedia_url, source = match_poem.get_wiki_info()
 
     best_selected = session.get(str(poem_id))
-    print best_selected
 
     return render_template("displaymatches.html", main_poem=main_poem,
                            match_poem=match_poem, wikipedia_url=wikipedia_url,
@@ -187,6 +164,8 @@ def display_search_poems(poem_id, match_id):
 
 @app.route('/feedback', methods=['POST'])
 def log_feedback():
+    """creates instance of BestMatch in db based on feedback"""
+
     main_id = request.form.get("main_poem")
     match_data = request.form.get("match_poem")
     match_list = match_data.split("/")
@@ -219,6 +198,7 @@ def log_feedback():
 
 @app.route('/writerfeedback', methods=['POST'])
 def log_writer_feedback():
+    """creates instance of BestMatch in db with feedback from writer-mode matches"""
 
     main_id = None
     match_data = request.form.get("match_poem")
@@ -260,18 +240,22 @@ def log_writer_feedback():
 
 @app.route('/about')
 def display_about():
+    """displays about page"""
 
     return render_template("about.html")
 
 
 @app.route('/algorithm')
 def display_algorithm_page():
+    """displays about algorithm page"""
 
     return render_template("algorithm.html")
 
 
 @app.route('/algorithm/macro')
 def display_macro_page():
+    """displays macro lexical information page"""
+
     metrics_list = Metrics.query.all()
 
     wl_avg_data = Metrics.get_wl_average_data(metrics_list)
@@ -298,6 +282,8 @@ def display_macro_page():
 
 @app.route('/algorithm/micro')
 def display_micro_page():
+    """displays micro lexical information page"""
+
     metrics_list = Metrics.query.all()
 
     rhyme_rep = Metrics.get_rhyme_rep_data(metrics_list)
@@ -313,6 +299,8 @@ def display_micro_page():
 
 @app.route('/algorithm/sentiment')
 def display_sentiment_page():
+    """displays sentiment information page"""
+
     metrics_list = Metrics.query.all()
     pos_neg = Metrics.get_pos_neg_data(metrics_list)
     obj_abs = Metrics.get_obj_abs_data(metrics_list)
@@ -326,30 +314,36 @@ def display_sentiment_page():
 
 @app.route('/algorithm/context')
 def display_context_page():
+    """displays context information page"""
 
     return render_template("context.html")
 
 
 @app.route('/algorithm/subjects')
 def display_subject_graph():
-    show_number = 9
+    """displays subject information page"""
+
     last_subj_id = 138
-    start_at = randint(1, last_subj_id - show_number)
-    stop_before = start_at + show_number
+    start_at = randint(1, last_subj_id - SHOW_NUMBER)
+    stop_before = start_at + SHOW_NUMBER
 
     subject_data = Subject.get_subject_data(start_at=start_at,
                                             stop_before=stop_before)
 
     rough_subjects = db.session.query(Subject.subject, Subject.subject_id).all()
+
     all_subjects = {}
     for subject, subject_id in rough_subjects:
         all_subjects[subject] = subject_id
 
-    return render_template("subjects.html", subject_data=subject_data, all_subjects=all_subjects)
+    return render_template("subjects.html", subject_data=subject_data,
+                           all_subjects=all_subjects)
 
 
 @app.route('/subjects/<int:subject_id>')
 def display_subject_about(subject_id):
+    """displays information about subject with subject_id=subject_id"""
+
     subject = (db.session.query(Subject)
                          .options(joinedload('poems').joinedload('subjects'))
                          .options(joinedload('poems').joinedload('poet'))
@@ -363,11 +357,12 @@ def display_subject_about(subject_id):
 
 @app.route('/algorithm/terms')
 def display_term_graph():
-    show_number = 9
+    """displays poetric terms information page"""
+
     last_term_id = 49
 
-    start_at = randint(1, last_term_id - show_number)
-    stop_before = start_at + show_number
+    start_at = randint(1, last_term_id - SHOW_NUMBER)
+    stop_before = start_at + SHOW_NUMBER
 
     term_data = Term.get_term_data(start_at=start_at, stop_before=stop_before)
 
@@ -381,6 +376,8 @@ def display_term_graph():
 
 @app.route('/terms/<int:term_id>')
 def display_term_about(term_id):
+    """displays information page for specific poetric term, term_id=term_id"""
+
     term = (db.session.query(Term)
                       .options(joinedload('poems').joinedload('terms'))
                       .options(joinedload('poems').joinedload('poet'))
@@ -394,11 +391,12 @@ def display_term_about(term_id):
 
 @app.route('/algorithm/regions')
 def display_region_graph():
-    show_number = 9
+    """displays region information page"""
+
     last_region_id = 34
 
-    start_at = randint(1, last_region_id - show_number)
-    stop_before = start_at + show_number
+    start_at = randint(1, last_region_id - SHOW_NUMBER)
+    stop_before = start_at + SHOW_NUMBER
 
     region_data = Region.get_region_data(start_at=start_at,
                                          stop_before=stop_before)
@@ -408,11 +406,14 @@ def display_region_graph():
     for region, region_id in rough_regions:
         all_regions[region] = region_id
 
-    return render_template("region.html", region_data=region_data, all_regions=all_regions)
+    return render_template("region.html", region_data=region_data,
+                           all_regions=all_regions)
 
 
 @app.route('/regions/<int:region_id>')
 def display_region_about(region_id):
+    """displays information page for specific region, region_id = region_id"""
+
     region = (db.session.query(Region)
                         .options(joinedload('poems').joinedload('regions'))
                         .options(joinedload('poems').joinedload('poet'))
@@ -427,12 +428,14 @@ def display_region_about(region_id):
 
 @app.route('/writer-mode')
 def display_writer_input():
+    """displays writer input page"""
 
     return render_template("writermode.html")
 
 
 @app.route('/writer-mode/interim', methods=["POST"])
 def save_info():
+    """stores information from the writer-mode submission to the session"""
 
     title = request.form.get("title")
     text = request.form.get("text")
@@ -456,6 +459,8 @@ def save_info():
 
 @app.route('/writer-mode/results')
 def display_results():
+    """displays recommendation page for user-submitted poetry"""
+
     title = session.get("title")
     text = session.get("text")
 
@@ -496,6 +501,7 @@ def about_your_poem():
 
 @app.route('/writer-mode/<int:match_id>')
 def display_result_poem(match_id):
+    """displays poem recommendation for user-submitted poetry"""
 
     title = session.get("title")
     best_selected = session.get(title)
@@ -520,7 +526,7 @@ def display_result_poem(match_id):
         main_id = match_poem.poem_id
         poet = match_poem.poet.name
         url = match_poem.url
-        wikipedia_url, source = get_wiki_info(match_poem)
+        wikipedia_url, source = match_poem.get_wiki_info()
 
     else:
         main_title = title
@@ -537,8 +543,7 @@ def display_result_poem(match_id):
 
 
 if __name__ == "__main__":
-    # We have to set debug=True here, since it has to be True at the point
-    # that we invoke the DebugToolbarExtension
+
     app.debug = True
 
     connect_to_db(app)

@@ -47,11 +47,11 @@ ReadMe: About
         <div class="row stats">
             <h3 class="title"> Poem Stats </h3>
             <div class="dotted-spaced">
-                <h4 style="padding-top:15px;">Context Characteristics</h4>
+                <h4 class="top-pad">Context Characteristics</h4>
             </div>
             <div class="dotted-spaced">
-                <h5 class="metric-title" style="font-size:medium;padding-top:15px;"> Regions Associated: </h5>
-                <p class="slight-indent" style="font-size:medium;">
+                <h5 class="top-pad metric-title"> Regions Associated: </h5>
+                <p class="slight-indent medium">
                     {% if regions|length > 0 %}
                         {% for region in regions %}
                         <a href="/regions/{{region.region_id }}"> {{ region.region }}</a> 
@@ -61,8 +61,8 @@ ReadMe: About
                         None
                     {% endif %}
                 </p>
-                <h5 class="metric-title" style="font-size:medium;"> Subjects Associated: </h5>
-                <p class="slight-indent" style="font-size:medium;">
+                <h5 class="metric-title"> Subjects Associated: </h5>
+                <p class="slight-indent medium">
                     {% if subjects|length > 0 %}
                         {% for subject in subjects %}
                         <a href="/subjects/{{subject.subject_id }}"> {{ subject.subject }} </a>
@@ -72,8 +72,8 @@ ReadMe: About
                         None
                     {% endif %}
                 </p>
-                <h5 class="metric-title" style="font-size:medium;"> Poetic Terms Associated: </h5>
-                <p class="slight-indent" style="font-size:medium;">
+                <h5 class="metric-title"> Poetic Terms Associated: </h5>
+                <p class="slight-indent medium">
                     {% if terms|length > 0 %}
                         {% for term in terms %}
                         <a href="/terms/{{term.term_id }}"> {{ term.term }} </a>
@@ -85,31 +85,31 @@ ReadMe: About
                 </p>
             </div>
             <div class="dotted-spaced">
-                <h4 style="padding-top:15px;">Macro Lexical Characteristics</h4>
+                <h4 class="top-pad">Macro Lexical Characteristics</h4>
             </div>
             <div class="dotted-spaced">
-                <h5 style="padding-top:15px;font-size:medium;"> Word Length (by Character) </h5>
-                <p class="slight-indent" style="font-size:medium;">
+                <h5 class="top-pad medium"> Word Length (by Character) </h5>
+                <p class="slight-indent medium">
                     <span class="metric-title">Mean:</span> {{ metric.wl_mean }}<br>
                     <span class="metric-title">Median:</span> {{ metric.wl_median }}<br>
                     <span class="metric-title">Mode:</span> {{ metric.wl_mode }}<br>
                     <span class="metric-title">Range: </span> {{ metric.wl_range }}
                 </p>
-                <h5 style="font-size:medium;"> Line Length (by Character)</h5>
-                <p class="slight-indent" style="font-size:medium;">
+                <h5 class="medium"> Line Length (by Character)</h5>
+                <p class="slight-indent medium">
                     <span class="metric-title">Mean:</span> {{ metric.ll_mean }}<br>
                     <span class="metric-title">Median:</span> {{ metric.ll_median }}<br>
                     <span class="metric-title">Mode:</span> {{ metric.ll_mode }}<br>
                     <span class="metric-title">Range:</span> {{ metric.ll_range }}<br>
                 </p>
-                <h5 style="font-size:medium;"> Poem Length</h5>
-                <p class="slight-indent" style="font-size:medium;">
+                <h5 class="medium"> Poem Length</h5>
+                <p class="slight-indent medium">
                     <span class="metric-title">By Line:</span> {{ metric.pl_lines }}<br>
                     <span class="metric-title">By Word:</span> {{ metric.pl_words }}<br>
                     <span class="metric-title">By Character:</span> {{ metric.pl_char }}
                 </p>
-                <h5 style="font-size:medium;"> Poem Structure</h5>
-                <p class="slight-indent" style="font-size:medium;">
+                <h5 class="medium"> Poem Structure</h5>
+                <p class="slight-indent medium">
                     <span class="metric-title">Number of Stanzas:</span> {{ metric.stanzas }}<br>
                     <span class="metric-title">Mean Stanza Length (by Line):</span> {{ metric.sl_mean }}<br>
                     <span class="metric-title">Median Stanza Length (by Line):</span> {{ metric.sl_median }}<br>
@@ -118,25 +118,25 @@ ReadMe: About
                 </p>
             </div>
             <div class="dotted-spaced">
-                <h4 style="padding-top:15px;">Micro Lexical Characteristics</h4>
+                <h4 class="top-pad">Micro Lexical Characteristics</h4>
             </div>
             <div class="dotted-spaced">
-                <h5 style="padding-top:15px;font-size:medium;">Diversity of Word Choice</h5>
+                <h5 class="top-pad medium">Diversity of Word Choice</h5>
                 <p class="slight-indent">
                     <span class="metric-title">Lexical Divisity:</span> {{ metric.lex_div }}
                 </p>
-                <h5 style="font-size:medium;">Frequency of Filler Words</h5>
+                <h5 class="medium">Frequency of Filler Words</h5>
                 <p class="slight-indent">
                     <span class="metric-title">Frequency of "The":</span> {{ metric.the_freq }}<br>
                     <span class="metric-title">Frequenc of "is":</span> {{ metric.is_freq }}<br>
                     <span class="metric-title">Frequenc of "a":</span> {{ metric.a_freq }}
                 </p>
-                <h5 style="font-size:medium;">Narrator Presence</h5>
+                <h5 class="medium">Narrator Presence</h5>
                 <p class="slight-indent">
                     <span class="metric-title">Frequency of First Person: ("I"):</span> {{ metric.i_freq }}<br>
                     <span class="metric-title">Frequenc of Second Person ("you"):</span> {{ metric.you_freq }}<br>
                 </p>
-                <h5 style="font-size:medium;">Poetic Form</h5>
+                <h5 class="medium">Poetic Form</h5>
                 <p class="slight-indent">
                     <span class="metric-title">Degree of Traditional Rhyme Scheme:</span> {{ metric.rhyme }}<br>
                     <span class="metric-title">Frequency of Alliteration:</span> {{ metric.alliteration }}<br>
@@ -144,22 +144,22 @@ ReadMe: About
                 </p>
             </div>
             <div class="dotted-spaced">
-                <h4 style="padding-top:15px;">Sentiment Data</h4>
+                <h4 class="top-pad">Sentiment Data</h4>
             </div>
             <div class="dotted-spaced">
-                <h5 style="padding-top:15px;font-size:medium;"> Unique vs. Common Language </h5>
+                <h5 class="top-pad medium"> Unique vs. Common Language </h5>
                 <p class="slight-indent">
                     <span class="metric-title">Percent Uncommon (in General Corpus):</span>
                      {{ metric.common_percent }}<br>
                     <span class="metric-title">Percent Uncommon (in our Corpus):</span>
                      {{ metric.poem_percent }}
                 </p>
-                <h5 style="font-size:medium;">Objects vs. Abstraction </h5>
+                <h5 class="medium">Objects vs. Abstraction </h5>
                 <p class="slight-indent">
                     <span class="metric-title">Percent Associated with Objects:</span> {{ metric.object_percent }}<br>
                     <span class="metric-title">Percent Associated with Abstractions:</span> {{ metric.abs_percent }}
                 </p>
-                <h5 style="font-size:medium;"> Male vs. Female Presence </h5>
+                <h5 class="medium"> Male vs. Female Presence </h5>
                 <p class="slight-indent">
                     <span class="metric-title">Presence of Women (as Percentage of Overall Words):</span>
                      {{ metric.female_percent }}
@@ -167,7 +167,7 @@ ReadMe: About
                     <span class="metric-title">Presence of Men (as Percentage of Overall Words):</span>
                      {{ metric.male_percent }}
                 </p>
-                <h5 style="font-size:medium;"> Positive vs. Negative Language </h5>
+                <h5 class="medium"> Positive vs. Negative Language </h5>
                 <p class="slight-indent">
                     <span class="metric-title">Positive Words (as Percentage of All Words):</span> 
                     {{ metric.positive }}
@@ -175,7 +175,7 @@ ReadMe: About
                     <span class="metric-title">Negative Words (as Percentage of All Words):</span> 
                     {{ metric.negative }}
                 </p>
-                <h5 style="font-size:medium;"> Active vs. Passive Language </h5>
+                <h5 class="medium"> Active vs. Passive Language </h5>
                 <p class="slight-indent">
                     <span class="metric-title">Active Words (as Percentage of All Words):</span> 
                     {{ metric.active_percent }}

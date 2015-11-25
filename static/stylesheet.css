@@ -19,6 +19,7 @@
 
         .metric-title {
             font-weight: bold;
+            font-size: medium;
         }
 
         .navbar {
@@ -27,10 +28,12 @@
 
         .graph-chart {
             margin-left:15px;
+            padding-right:20px;
         }
 
         .donut-chart {
             padding-left: 20px;
+            clear: both;
         }
 
         .stats {
@@ -157,6 +160,7 @@
         a {
             color: gray;
             position: relative;
+            text-decoration: none !important;
         }
 
         a:hover {
@@ -234,8 +238,9 @@
             visibility: hidden;
         }
 
-        a:visited, a:active {
+        a:active {
             text-decoration: none;
+            color: gray;
         }
 
         .suggestion-poem {
@@ -255,4 +260,41 @@
 
         .top-pad {
             padding-top: 15px;
+        }
+
+        .bold {
+            font-weight: bold;
+        }
+
+        .small-top-pad {
+            padding-top: 10px;
+        }
+
+        .nav-icon {
+            height:30px;
+            display:inline-block;
+        }
+
+        .sixty {
+            font-size:60%;
+        }
+
+        .fortyfive {
+            font-size:45%;
+        }
+
+        .italic {
+            font-style:italic;
+        }
+
+        .best-rec {
+            font-size:70%;
+            border-top:1px solid black;
+            border-bottom:1px solid black;
+        }
+
+        .all-context {
+            border-top:1px solid black;
+            border-bottom:1px solid black;
+            margin-bottom:30px;
         }

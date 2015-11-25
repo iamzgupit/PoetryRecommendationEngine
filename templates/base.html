@@ -2,10 +2,12 @@
 <html>
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="shortcut icon" href="../static/quill.png">
     <title>{% block title %}TITLE HERE{% endblock%}</title>
     <script src="../static/jquery-2.1.4.min.js"></script>
     <link href="../static/bootstrap.min.css" rel="stylesheet">
     <link href='https://fonts.googleapis.com/css?family=Josefin+Sans:400,700&subset=latin,latin-ext' rel='stylesheet' type='text/css'>
+    <script src="../static/typeahead.js"></script>
     <script src="../static/Chart.min.js"></script>
     <link href="../static/stylesheet.css" rel="stylesheet">
 </head>
@@ -16,16 +18,16 @@
     <!-- Brand and toggle get grouped for better mobile display -->
     <div class="navbar-header">
         <a class="navbar-brand" href="/">
-            <img src="../static/quill.png" style="height:30px;display:inline-block;">
+            <img src="../static/quill.png" class="nav-icon">
         </a>
-        <a class="navbar-brand" href="/" style="padding-top:20px;">
+        <a class="navbar-brand" style="padding-top:25px;" href="/">
             <span style="color:black">Read</span>Me
         </a>
     </div>
-      <ul class="nav navbar-nav">
-        <li><a href="/about" style="padding-top:20px;">About</a></li>
-        <li><a href="/writer-mode" style="padding-top:20px;">Writer Mode</a></li>
-        <li><a href="/algorithm" style="padding-top:20px;">The Algorithm</a></li>
+      <ul class="nav navbar-nav small-top-pad">
+        <li><a href="/about">About</a></li>
+        <li><a href="/writer-mode">Writer Mode</a></li>
+        <li><a href="/algorithm">The Algorithm</a></li>
       </ul>
   </div><!-- /.container-fluid -->
 </nav>

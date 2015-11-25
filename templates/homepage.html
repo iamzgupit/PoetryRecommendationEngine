@@ -1,85 +1,57 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>ReadMe</title>
-    <script src="../static/jquery-2.1.4.min.js"></script>
-    <link href="../static/bootstrap.min.css" rel="stylesheet">
-    <script src="../static/typeahead.js"></script>
-    <link href='https://fonts.googleapis.com/css?family=Josefin+Sans:400,700&subset=latin,latin-ext' rel='stylesheet' type='text/css'>
-    <link href="../static/stylesheet.css" rel="stylesheet">
-    <script>
+{% extends 'base.html' %}
+{% block title %}
+ReadMe
+{% endblock %}
+{% block content %}
+<script>
 
-        var searchCriteria = []
+    var searchCriteria = []
 
-        function unpack(data) {
-            searchCriteria = data.search
-            console.log(searchCriteria)
-            setSearch()
-        }
+    function unpack(data) {
+        searchCriteria = data.search
+        console.log(searchCriteria)
+        setSearch()
+    }
 
-        function setSearch() {
-            var poems = new Bloodhound({
+    function setSearch() {
+        var poems = new Bloodhound({
 
-                datumTokenizer: Bloodhound.tokenizers.obj.whitespace('title', 'author'),
-                queryTokenizer: Bloodhound.tokenizers.whitespace,
-                local: searchCriteria
-            });
+            datumTokenizer: Bloodhound.tokenizers.obj.whitespace('title', 'author'),
+            queryTokenizer: Bloodhound.tokenizers.whitespace,
+            local: searchCriteria
+        });
 
-            $('#custom-templates .typeahead').typeahead({
-                hint: true,
-                highlight: true,
-                minLength: 3
-            }, {
-                name: 'poems',
-                displayKey: 'title',
-                source: poems.ttAdapter(),
-                templates: {
-                    suggestion: function(data) {
-                        return '<p><strong>' + data.title + '</strong> – by ' + data.author + '</p>';
-                    }
+        $('#custom-templates .typeahead').typeahead({
+            hint: true,
+            highlight: true,
+            minLength: 3
+        }, {
+            name: 'poems',
+            displayKey: 'title',
+            source: poems.ttAdapter(),
+            templates: {
+                suggestion: function(data) {
+                    return '<p><strong>' + data.title + '</strong> – by ' + data.author + '</p>';
                 }
-            });
+            }
+        });
 
-            var style = $('span.twitter-typeahead').attr('style')
-            $('span.search-button').attr('style', style)
-        };
-        
-        $.get('/search.json', unpack)
-    </script>
-    <link href="/static/stylesheet.css" rel="stylesheet">
-</head>
-
-<body>
-<nav class="navbar navbar-default">
-  <div class="container-fluid">
-    <!-- Brand and toggle get grouped for better mobile display -->
-    <div class="navbar-header">
-        <a class="navbar-brand" href="/">
-            <img src="../static/quill.png" style="height:30px;display:inline-block;">
-        </a>
-        <a class="navbar-brand" href="/" style="padding-top:22px;">
-            <span style="color:black">Read</span>Me
-        </a>
-    </div>
-      <ul class="nav navbar-nav">
-        <li><a href="/about" style="padding-top:22px;">About</a></li>
-        <li><a href="/writer-mode" style="padding-top:22px;">Writer Mode</a></li>
-        <li><a href="/algorithm" style="padding-top:22px;">The Algorithm</a></li>
-      </ul>
-  </div><!-- /.container-fluid -->
-</nav>
- <!--- end of nav bar container -->
+        var style = $('span.twitter-typeahead').attr('style')
+        $('span.search-button').attr('style', style)
+    };
+    
+    $.get('/search.json', unpack)
+</script>
 
 <div class="container">
 <div class="row main-search">
     <div class="col-md-8 col-md-offset-2">
         <div class="row header">
-            <h1><span style="font-weight:bold">Read<span style="color:gray">Me</span></span>: Discover more poetry to love.</h1>
+            <h1><span class="bold">Read<span style="color:gray">Me</span></span>: Discover more poetry to love.</h1>
         </div>
         <div id="custom-templates">
         <input id="search" class="typeahead" type="text" placeholder="Search for Your Favorite Poem by Title or Author"> </div>   <!-- end of bloodhoud div -->
-        <span "search-button"><button id="search-button" disabled="disabled">Find Recommendations
+        <span "search-button" style="font-size:small;"><button id="search-button" disabled="disabled">Find Recommendations
         </button></span>
     </div> <!-- end of column  -->
 </div> <!-- end of main-search row -->
@@ -162,5 +134,4 @@ $('.checkbox-img').on('click', checkBox);
 
 
 </script>
-</body>
-</html>
+{% endblock %}

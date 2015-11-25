@@ -33,6 +33,37 @@ class Poem(db.Model):
     matched_to = db.relationship("Poem", secondary="best_matches",
                                  foreign_keys="BestMatch.match_poem_id")
 
+    def get_wiki_info(self):
+        """returns wikipedia url and link to main picture if applicable"""
+
+        name = self.poet.name.replace(" ", "_")
+        wikipedia_url = "https://en.wikipedia.org/wiki/" + name
+        try:
+            page = get(wikipedia_url).text
+        except:
+            print "ERROR WITH WIKIPEDIA PAGE"
+            return (None, None)
+
+        if "does not have an article with this exact name" in page:
+            wikipedia_url = None
+            source = None
+        else:
+            soup = BeautifulSoup(page, "html5lib")
+            info_box = soup.find("table", class_="infobox vcard")
+            if info_box:
+                image = info_box.find("img")
+                if image:
+                    attrib = image.attrs
+                    source = attrib['src']
+                    source = "https:" + source
+                else:
+                    source = '/static/parchment.jpg'
+            else:
+                wikipedia_url = None
+                source = None
+
+        return (wikipedia_url, source)
+
     @staticmethod
     def create_search_params():
         """returns dict w/list of dict w/ info for each poem to jsonify
@@ -722,9 +753,9 @@ class Term(db.Model):
             >>> from server import app
             >>> connect_to_db(app)
             >>>
-            >>> term_data = Term.get_term_data(1,3)
+            >>> term_data = Term.get_term_data(1,2)
             >>> len(term_data)
-            2
+            1
             >>> zero = {'iden': u'Rhymed', 'total': 1429,\
                         'name': u'Rhymed Stanza',\
                         'others': [(u'Consonance', 10), (u'Pastoral', 17),\
@@ -749,32 +780,8 @@ class Term(db.Model):
                                    (u'Allusion', 47), (u'Confessional', 10),\
                                    (u'Epigram', 12), (u'Elegy', 41),\
                                    (u'Couplet', 85), (u'Ode', 25)]}
-            >>> one = {'iden': u'Free', 'total': 3284, 'name': u'Free Verse',\
-                       'others': [(u'Consonance', 5), (u'Metaphor', 122),\
-                                  (u'Tercet', 23), (u'Epistle', 12),\
-                                  (u'Concrete or Pattern Poetry', 1),\
-                                  (u'Epigraph', 3), (u'Pastoral', 13),\
-                                  (u'Epithalamion', 2), (u'Prose Poem', 8),\
-                                  (u'Only Free Verse', 2669), (u'Epic', 6),\
-                                  (u'Assonance', 3), (u'Ballad', 1),\
-                                  (u'Simile', 18), (u'Rhymed Stanza', 9),\
-                                  (u'Refrain', 17), (u'Ghazal', 1),\
-                                  (u'Series/Sequence', 29), (u'Aubade', 2),\
-                                  (u'Imagist', 21), (u'Ekphrasis', 17),\
-                                  (u'Imagery', 136), (u'Blank Verse', 2),\
-                                  (u'Symbolist', 1), (u'Haiku', 2),\
-                                  (u'Persona', 33), (u'Ars Poetica', 7),\
-                                  (u'Mixed', 12), (u'Alliteration', 10),\
-                                  (u'Aphorism', 5), (u'Dramatic Monologue', 23),\
-                                  (u'Quatrain', 19), (u'Sonnet', 10),\
-                                  (u'Allusion', 31), (u'Confessional', 11),\
-                                  (u'Epigram', 9), (u'Elegy', 65),\
-                                  (u'Couplet', 74), (u'Ode', 20)]}
             >>> term_data[0] == zero
             True
-            >>> term_data[1] == one
-            True
-
 
         Queries the database for terms with the id between start_at(inclusive)
         and stop_before(exclusive), and passes the list of term objects to
@@ -2795,13 +2802,15 @@ class Metrics(db.Model):
         return allit_count / float(total)
 
     @staticmethod
-    def _backup_rhyme_list(word):
+    def _backup_rhyme_list(word, key):
         """uses the Words API to get rhyming words
 
         this is a backup for Writer Mode, to be used if the rhymer server goes
         down or blocks scraping.
 
-            >>> rhymes = Metrics._backup_rhyme_list("apple")
+            >>> key = environ['WORDS_TESTING_KEY']
+            >>> rhymes = Metrics._backup_rhyme_list(word="apple", key=key)
+            GONE TO WORDS API
             >>> expected = set([u'funeral chapel', u'side chapel', u'mayapple',\
                                 u'grapple', u'pineapple', u'dapple',\
                                 u'scrapple', u'chapel'])
@@ -2814,11 +2823,8 @@ class Metrics(db.Model):
         """
         print "GONE TO WORDS API"
 
-        key = environ['WORDS_PRODUCTION_KEY']
         url = 'https://wordsapiv1.p.mashape.com/words/' + word + '/rhymes?mashape-key=' + key
         rhyme_data = get(url)
-
-        print "Using Words API"  # Prints to the server for debugging purposes
 
         if rhyme_data.status_code == 200:
             results = rhyme_data.json()
@@ -2865,7 +2871,8 @@ class Metrics(db.Model):
         try:
             html_text = get(url).text
         except:
-            return Metrics._backup_rhyme_list(word)
+            key = environ['WORDS_PRODUCTION_KEY']
+            return Metrics._backup_rhyme_list(word=word, key=key)
 
         soup = BeautifulSoup(html_text, "html.parser")
         words = soup.find_all("td")
@@ -3527,7 +3534,11 @@ def connect_to_db(app):
 
 
 if __name__ == "__main__":
+
     from server import app
 
     connect_to_db(app)
     print "Connected to DB."
+
+    import doctest
+    doctest.testmod()
