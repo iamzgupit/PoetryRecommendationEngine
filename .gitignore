@@ -6,3 +6,7 @@ env
 archive/
 .coverage
 secrets.sh
+typeahead.js
+jquery-2.1.4.min.js
+bootstrap.min.css
+Chart.min.js
