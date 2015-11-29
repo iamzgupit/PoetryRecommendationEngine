@@ -9,12 +9,13 @@ ReadMe: Macro
         <div class="row algorithm-header">
             <h3>Macro Lexical Data</h3>
             <br>
-            <p>This area will contain some text explaining what this data catagory is on a macro level</p>
+            <p>Macro Lexical Data describes the structure and flow of a poem -- how many lines is it? Is it split into stanzas, and if so how many and are they uniform length? What's the average word length and what's the variation in the length of each line? Macro Lexical Data pertains to those aspects of the poem that are immediately apparent.</p>
         </div>  <!-- end of algorithm-header row -->
 
         <div class="row algorithm-catagory">
-            <h4 class="bold">World Length: Mean, Median, Mode, and Range</h4>
-            <p>Here is some information about what this category is. Blah Blah Blah.</p>
+            <h4 class="bold">Word Length: Mean, Median, Mode, and Range</h4>
+            <p>Word Length givs us a sense of the complexity of the language being used, as well as a sense of the general cadence of the poem -- does it have lots of short syllables, does it prefer longer words? We take the Mean (average value), Median (the midpoint value), and Mode (most frequent value), as well as the range in word length.</p>
+            <p>Below, you can see these values across our corpus -- the x-axis is the value obtained, while the y-axis is the number of times we see this value in our set of over 10,000 poems.</p>
         </div>  <!-- end of algorithm-catagory row -->
 
         <div class="row algorithm-graph">
@@ -33,26 +34,28 @@ ReadMe: Macro
 
         <div class="row algorithm-catagory">
             <h4 class="bold">Line Length: Mean, Median, Mode and Range</h4>
-            <p>Here is some information about what this category is. Blah Blah Blah.</p>
+            <p>We measure the length of a single line by characters, and this measurement can give us a sense of the flow of a poem. Again, we take four measurements to make sure that we're getting the whole picture. </p>
+            <p>Again, below you can see these values across our corpus -- the x-axis is the value obtained, while the y-axis is the number of times we see this value in our set of poems.</p>
         </div>  <!-- end of algorithm-catagory row -->
 
         <div class="row algorithm-graph">
             <div class="legend" id="ll-avg-graph"></div>
-            <div class="axis y-axis" id="wl-range-y-axis">Freq.</div>
+            <div class="axis y-axis" id="ll-range-y-axis">Freq.</div>
             <canvas class="graph-chart" id="LLChart" width="940" height="500"></canvas>
-            <div class="axis x-axis" id="wl-range-x-axis">Number of Characters</div>
+            <div class="axis x-axis" id="ll-range-x-axis">Number of Characters</div>
         </div>  <!-- end of algorithm-graph row -->
 
         <div class="row algorithm-graph">
             <div class="legend" id="ll-range-graph"></div>
-            <div class="axis y-axis" id="wl-range-y-axis">Freq.</div>
+            <div class="axis y-axis" id="ll-range-y-axis">Freq.</div>
             <canvas class="graph-chart" id="LLRChart" width="940" height="300"></canvas>
-            <div class="axis x-axis" id="wl-range-x-axis">Number of Characters</div>
+            <div class="axis x-axis" id="ll-range-x-axis">Number of Characters</div>
         </div>  <!-- end of algorithm-graph row -->
 
         <div class="row algorithm-catagory">
             <h4 class="bold">Poem Length: Lines, Words, Characters</h4>
-            <p>Here is some information about what this category is. Blah Blah Blah.</p>
+            <p>We measure the overall length of a poem by line, by word, and by character in order to get a clear sense of the length of the poem.</p>
+            <p>Below, you can see how the poem length for each poem in our corpus, as well as it's frequency, divided into one graph for each measure.</p>
         </div>  <!-- end of algorithm-catagory row -->
 
         <div class="row algorithm-graph">
@@ -78,7 +81,8 @@ ReadMe: Macro
 
         <div class="row algorithm-catagory">
             <h4 class="bold">Stanza Number and Length: Mean, Median, Mode, and Range</h4>
-            <p>Here is some information about what this category is. Blah Blah Blah.</p>
+            <p>To measure structure further, we look at whether the poem is split into stanzas and how uniform those stanzas are by measuring the number fo stanzas, me mean, median, and mode length of each stanza (by lines, not by characters), as well the the range in stanza lengths.</p>
+            <p>Again, below you can see these values across our corpus -- the x-axis is the value obtained, while the y-axis is the number of times we see this value in our set of poems.</p>
         </div>  <!-- end of algorithm-catagory row -->
 
         <div class="row algorithm-graph">

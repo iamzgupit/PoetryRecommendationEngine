@@ -283,6 +283,14 @@
             font-size:45%;
         }
 
+        .ninety {
+            font-size: 90%;
+        }
+
+        .oneten {
+            font-size: 110%;
+        }
+
         .italic {
             font-style:italic;
         }

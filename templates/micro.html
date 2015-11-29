@@ -9,12 +9,16 @@ ReadMe: Micro
         <div class="row algorithm-header">
             <h3>Micro Lexical Data</h3>
             <br>
-            <p>This area will contain some text explaining what this data catagory is on a macro level</p>
+            <p>Micro Lexical Data describes the rhythm and style of the poem -- Does it employ a rhyme scheme? To what extent does it use alliteration? Is there an explicit narrator present? Does it use common on unique language? Micro Lexical Data pertains to those characteristics that require a closer reading of the poem and tell us about the way language is employed.</p>
+            <p>When we compare micro lexical data for two poems, we also measure the degree to which they share the same language (the number of words they share as a percentage of the overall words in a poem).</p>
+            <p>All micro lexical data is on a scale from zero to one -- often, this data is in the form of a percentage.
+            </p>
         </div>  <!-- end of algorithm-header row -->
 
         <div class="row algorithm-catagory">
             <h4 class="bold">Rhyme and Repetition</h4>
-            <p>Here is some information about what this category is. Blah Blah Blah.</p>
+            <p>We measure rhyme and repetition by looking at the end of each line -- a higher rhyme score indicates that the poem ends more of its lines on words that rhyme with one another, while a higher repetition score indicates that a poem ends its lines on the same word more frequently.</p>
+            <p>Below, you can see these values across our corpus -- the x-axis is the value obtained, while the y-axis is the number of times we see this value in our set of over 10,000 poems.</p>
         </div>  <!-- end of algorithm-catagory row -->
         <div class="row algorithm-graph">
             <div class="legend" id="rhyme-rep-graph"></div>
@@ -25,7 +29,8 @@ ReadMe: Micro
 
         <div class="row algorithm-catagory">
             <h4 class="bold">Lexical Diversity</h4>
-            <p>Here is some information about what this category is. Blah Blah Blah.</p>
+            <p>Lexical Diversity is a common measurement of the diversity of language employed. We obtain the lexical diversity of a poem by calculating the number of unique words as a percentage of the number of overall words in the poem.</p>
+            <p>Again, below you can see these values across our corpus -- the x-axis is the value obtained, while the y-axis is the number of times we see this value in our set of poems.</p>
         </div>  <!-- end of algorithm-catagory row -->
         <div class="row algorithm-graph">
             <div class="legend" id="lex-div-graph"></div>
@@ -36,7 +41,8 @@ ReadMe: Micro
 
         <div class="row algorithm-catagory">
             <h4 class="bold">Filler Word Frequency: the, is, a</h4>
-            <p>Here is some information about what this category is. Blah Blah Blah.</p>
+            <p>We measure what percentage of the poem is taken up by filler words by looking at the use of "the", "is", and "a". Of course, debate can be had about looking at even more words as filler words ("this", "that", etc.) but for our purposes we measured the three most common.</p>
+            <p>Below you can see the number of times we see each word as a percentage of total words in the poem on the x-axis, and frequency of this score on the y-axis.</p>
         </div>  <!-- end of algorithm-catagory row -->
         <div class="row algorithm-graph">
             <div class="legend" id="filler-freq-graph"></div>
@@ -46,8 +52,10 @@ ReadMe: Micro
         </div>  <!-- end of algorithm-graph row -->
 
         <div class="row algorithm-catagory">
-            <h4 class="bold">Narrator Word Frequency: i, you</h4>
-            <p>Here is some information about what this category is. Blah Blah Blah.</p>
+            <h4 class="bold">Narrator Word Frequency: I, you</h4>
+            <p>We measure whether the poem includes a first person and/or a second person narrative voice by looking at whether we see "I" or "you" in the poem. Of course, we also want to look at the degree to which the narrative presence appears inthe poem, so we frame frequency of I and you as a percentae of overall words in the poem, rather than as a True/False value for whether the narrator is present. Many poems will, of course, receive zero on this, but for those poems that do feature a first person or second person narrative voice, we can scale how large a part of the poem this is.
+            </p>
+            <p>The graph below follows the same model as the others -- you can see the number of times we see each word as a percentage of total words in the poem on the x-axis, and frequency of this score on the y-axis.</p>
         </div>  <!-- end of algorithm-catagory row -->
         <div class="row algorithm-graph">
             <div class="legend" id="narrator-freq-graph"></div>
@@ -58,7 +66,8 @@ ReadMe: Micro
 
         <div class="row algorithm-catagory">
             <h4 class="bold">Alliteration</h4>
-            <p>Here is some information about what this category is. Blah Blah Blah.</p>
+            <p>Alliteration is the occurrence of the same letter or sound at the beginning of adjacent or closely connected words. We measure alliteration in a poem by looking at each line and measuring the number of words that start with the same letter (or letters in the case of "th", "wh", etc.) as another word on the same line, and then looking at those words that are alliterative as a percentage of all words in the poem.</p>
+            <p>The graph below follows the same model as the others -- you can see the number of times we see alliterative word as a percentage of total words in the poem on the x-axis, and frequency of this score on the y-axis.</p>
         </div>  <!-- end of algorithm-catagory row -->
         <div class="row algorithm-graph">
             <div class="legend" id="alliteration-graph"></div>

@@ -9,11 +9,17 @@ ReadMe: Sentiment
         <div class="row algorithm-header">
             <h3>Sentiment Data</h3>
             <br>
-            <p>This area will contain some text explaining what this data catagory is on a macro level</p>
+            <p>Where metrics in the Micro Lexical Data catagory look at how the poem uses language, the metrics we collect in the Sentiment Data category look at what sorts of language the poem uses -- what percentage of the words in the poem are considered positive or negative? Active or passive? Is the poem using familiar language or exotic language?</p>
+            <p>With the exception of the metrics for uncommon language, all of our sentiment metrics draw on the Harvard General Inquirer Catagories, a large database of words that have been tagged as related to specific catagories (active, passive, positive, negative, etc.), in order to catagorize the words in our poems appropriately.</p>
+            <p>All sentiment data is on a scale from zero to one, with one indicating that 100% of the word in the poem fit into the catagory in question.
+            </p>
         </div>  <!-- end of algorithm-header row -->
         <div class="row algorithm-catagory">
             <h4 class="bold">Positive/Negative Emotions</h4>
-            <p>Here is some information about what this category is. Blah Blah Blah.</p>
+            <p>For Positive and Negative content in the poems, we look at what percentage of words in the poem are featured in 'Positiv' and 'Negativ' in the Harvard General Inquirer Catagories. At the time of writing, the 'Positiv' catagory contains 1,915 words indicating a positive outlook and 'Negativ' contains 2,291 words indicating a negative outlook.</p>
+            <p>Example 'Positiv' Words: accept, abundance, affection</p>
+            <p>Example 'Negativ' Words: abject, abrasive, ache</p>
+            <p>Below, you can see these values across our corpus -- the x-axis is the value obtained, while the y-axis is the number of times we see this value in our set of over 10,000 poems.</p>
         </div>  <!-- end of algorithm-catagory row -->
         <div class="row algorithm-graph">
             <div class="legend" id="pos-neg-graph"></div>
@@ -22,8 +28,11 @@ ReadMe: Sentiment
             <div class="axis x-axis" id="pos-neg-x-axis">Score</div>
         </div>  <!-- end of algorithm-graph row -->
         <div class="row algorithm-catagory">
-            <h4 class="bold">Objects/Abstract Language</h4>
-            <p>Here is some information about what this category is. Blah Blah Blah.</p>
+            <h4 class="bold">Concrete/Abstract Language</h4>
+            <p>For Abstract and Concrete language content in the poems, we look at what percentage of words in the poem are featured in 'ABS' and 'Object' in the Harvard General Inquirer Catagories.At the time of writing, the 'ABS' catagory contains 218 words reflecting the tendency to use abstract vocabulary, and the 'Object' catagory contains 661 words referencing objects.</p>
+            <p>Example 'ABS' Words: awareness, belief, capitalism</p>
+            <p>Example 'Object' Words: apartment, auto, belt</p>
+            <p>Again, below you can see these values across our corpus -- the x-axis is the value obtained, while the y-axis is the number of times we see this value in our set of over 10,000 poems.</p>
         </div>  <!-- end of algorithm-catagory row -->
         <div class="row algorithm-graph">
             <div class="legend" id="obj-abs-graph"></div>
@@ -33,7 +42,8 @@ ReadMe: Sentiment
         </div>  <!-- end of algorithm-graph row -->
         <div class="row algorithm-catagory">
             <h4 class="bold">Uncommon Language: Our Corpus and Common English</h4>
-            <p>Here is some information about what this category is. Blah Blah Blah.</p>
+            <p>In order to measure how unusual the language in the poem is, we compare it to the 2500 most common english words as compiled by the <a href="http://corpus.byu.edu/coca/">Corpus of American English</a> to get the percentage of words that are uncommon relative to general english language. We also compare the language in the poem to the 1000 most common words that we see in our corpus of poems to see to get the percentage of words that are uncommon relative to our set of poems.</p>
+            <p>Again, below you can see these values across our corpus -- the x-axis is the value obtained, while the y-axis is the number of times we see this value in our set of over 10,000 poems.</p>
         </div>  <!-- end of algorithm-catagory row -->
         <div class="row algorithm-graph">
             <div class="legend" id="common-graph"></div>
@@ -43,7 +53,11 @@ ReadMe: Sentiment
         </div>  <!-- end of algorithm-graph row -->
         <div class="row algorithm-catagory">
             <h4 class="bold">Human Presence: Male and Female</h4>
-            <p>Here is some information about what this category is. Blah Blah Blah.</p>
+            <p>For Male and Female presence in the poems, we look at what percentage of words in the poem are featured in 'Female' and 'MALE' in the Harvard General Inquirer Catagories.At the time of writing, the 'Female' catagory contains 43 words referring to women and social roles associated with women, and the 'MALE' catagory contains 56 words referring to men and social roles associated with men.
+            </p>
+            <p>Example 'Female' Words: aunt, bride, girl</p>
+            <p>Example 'MALE' Words: boy, brother, businessman</p>
+            <p>Again, below you can see these values across our corpus -- the x-axis is the value obtained, while the y-axis is the number of times we see this value in our set of over 10,000 poems.</p>
         </div>  <!-- end of algorithm-catagory row -->
         <div class="row algorithm-graph">
             <div class="legend" id="gender-graph"></div>
@@ -53,7 +67,10 @@ ReadMe: Sentiment
         </div>  <!-- end of algorithm-graph row -->
         <div class="row algorithm-catagory">
             <h4 class="bold">Active/Passive Language</h4>
-            <p>Here is some information about what this category is. Blah Blah Blah.</p>
+            <p>For Active and Passive language in the poems, we look at what percentage of words in the poem are featured in 'Active' and 'Passive' in the Harvard General Inquirer Catagories. At the time of writing, the 'Active' catagory contains 2045 words implying an active orientation, and the 'Passive' catagory contains 911 words indicating a passive orientation.</p>
+            <p>Example 'Active' Words: achieve, act, adore/p>
+            <p>Example 'Passive' Words: accept, admire, admit</p>
+            <p>Again, below you can see these values across our corpus -- the x-axis is the value obtained, while the y-axis is the number of times we see this value in our set of over 10,000 poems.</p>
         </div>  <!-- end of algorithm-catagory row -->
         <div class="row algorithm-graph">
             <div class="legend" id="active-graph"></div>
