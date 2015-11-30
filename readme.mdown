@@ -1,6 +1,8 @@
 ReadMe: Poetry Recommendations
 ==================================================
 
+![screenshot of the homepage](/static/mainpage_screenshot.png)
+
 #####  Welcome to the ReadMe for ReadMe: Poetry Recommendations!
 
 There is an almost unfathomably large amount of poetry out in the world, and finding a poem that hits the right notes for an individual reader can be daunting at best. ReadMe is designed to help make this task easier by providing poetry recommendations based on the poems you know that you enjoy, or, in the case of our Writer's Mode, help you grow your own writing by exposing you to great poems that are similar in style to your own.
@@ -40,8 +42,14 @@ Features
 
 Examples
 ---------------------------------
+
+Here you can see the results page for a search on Meditation at 50 Yards, Moving Target by Rita Dove. Rita does have a wikipedia page in her honor, so we show the picture of her with a link to read more about the author. Below that, there are five poetry recommendations, all of which are of course active links to read the new poem. Selecting the heart by one of these links will log that this is your favorite poem, and so long as you are in the browser session, it will remember that you chose that poem as your favorite. If you change your mind and select a new poem, it will log that as the best match and remember your most recent choice. Selecting 'See Stats' on any of these poems will allow you to view the metrics for that poem.
 ![screenshot of the results page for a poem](/static/Results_Screenshot.png)
+
+For every poetic term, region, and subject, we have an about page where you can view a complete list of associated poems, as well as a graph showing how that term, region, or subject interacts with others -- i.e. how many poems that are associated with the chosen item, are also associated with others in its class.
 ![screenshot of a term page](/static/Term_Screenshot.png)
+
+For our sentiment, micro lexical, and macro lexical characteristics, you can view the layout of scores across our corpus on their respective pages.
 ![screenshot of a macro graph](/static/Macro_Screenshot.png)
 
 
