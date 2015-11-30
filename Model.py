@@ -3959,5 +3959,4 @@ if __name__ == "__main__":
     print "Connected to DB."
 
     import doctest
-    doctest.NORMALIZE_WHITESPACE = True
     doctest.testmod()
