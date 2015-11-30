@@ -2,6 +2,9 @@
             font-family: 'Josefin Sans', sans-serif;
         }
 
+        p {
+            padding-bottom: 10px;
+        }
 
         .container-fluid {
             background-color: white;
