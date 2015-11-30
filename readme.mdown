@@ -7,7 +7,7 @@ ReadMe: Poetry Recommendations
 
 There is an almost unfathomably large amount of poetry out in the world, and finding a poem that hits the right notes for an individual reader can be daunting at best. ReadMe is designed to help make this task easier by providing poetry recommendations based on the poems you know that you enjoy, or, in the case of our Writer's Mode, help you grow your own writing by exposing you to great poems that are similar in style to your own.
 
-Our database contains over ten thousand poems which we look at to find the best match. Each time you search for recommendations, ReadMe will provide five distinct poems for you to read -- each based on a slightly different variation of our matching algorithm. In this way, when you indicate which recommendation you like best, we can improve the algorithm to provide even better and more reliable recommendations.
+Our database contains over ten thousand poems. Each time you search for recommendations, ReadMe will provide five distinct poems for you to read, each based on a slightly different variation of our matching algorithm. In this way, when you indicate which recommendation you like best, we can improve the algorithm to provide even better and more reliable recommendations.
 
 The data we gather on each poem is divided into four catagories:
 
@@ -20,7 +20,7 @@ Those interested in lexical analysis can view the data collected on individual p
 
 The Algorithm
 ----------------------------------
-ReadMe utilizes a handwritten clustering algorithm which allows for direct control of different data point and prioritization.
+ReadMe utilizes a handwritten clustering algorithm which allows for direct control and prioritization of different data points.
 
 ReadMe collects information on every poem in order make the best recommendations -- we split the types of information into four catagories as noted above. During the recommendation process, we compare all the collected data in order to find the most stylistically similar poems.
 
@@ -36,10 +36,10 @@ Features
 
 - Typeahead recommends poem titles from the database as you type your search.
 - Search for any poem in the database and receive recommended poems.
-- Alter search algorithm to allow display of multiple poems by the same author, and/or other poems by the author of the poem that a user is searching with.
-- We recommend 5 poems for every search, and each of these employs a different weighting strategy for different sorts of data allowing for feedback to the system about which match readers like best, allowing us to hone in on meaningful data catagories.
+- Alter search algorithm to allow display of multiple poems by the same author, and/or poems by the author of the main poem (the poem which we're using to find recommendations).
+- We recommend 5 poems for every search, and each of these employs a different weighting strategy, allowing for feedback to the system about which metrics users value. This is turn allows us to hone in on meaningful data catagories and adjust the algorithm accordingly.
 - Submit your own poetry for analysis by the same model.
-- View metrics for each poem, and relationships for all context data.
+- View metrics for each poem, and relationships for all context (poetic term, region, and subject) data.
 - Chart.js graphs explain data layout across corpus.
 - Where applicable, links to Wikipedia page to learn more about a poet.
 - 48% test coverage
@@ -105,7 +105,7 @@ $ source env/bin/activate
 $ sqlite3 poetry.db < poetry.sql
 ```
 - if you want to use the Words API as a backup method for rhyming words, you'll need
-to make an account with [Mashape](https://www.mashape.com/) and get a production key, which you'll save to your environment s WORDS_PRODUCTION_KEY, but the app will run without that (understand if you do this route, you won't have access to rhyme scores for new poems if Rhymer shuts down )
+to make an account with [Mashape](https://www.mashape.com/) and get a production key, which you'll save to your environment as WORDS_PRODUCTION_KEY. The app will run without using the Words API, but you should understand that, if you take this route, you won't have access to rhyme scores for new poems if Rhymer shuts down.
 
 ```python
 $ echo "export WORDS_PRODUCTION_KEY='your production key here'" > secrets.sh
@@ -115,6 +115,7 @@ $ source secrets.sh
 ```python
 $ python server.py
 ```
+- enjoy!
 
 
 The Author
