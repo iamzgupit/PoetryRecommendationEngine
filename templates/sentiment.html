@@ -9,69 +9,69 @@ ReadMe: Sentiment
         <div class="row algorithm-header">
             <h3>Sentiment Data</h3>
             <br>
-            <p>Where metrics in the Micro Lexical Data catagory look at how the poem uses language, the metrics we collect in the Sentiment Data category look at what sorts of language the poem uses -- what percentage of the words in the poem are considered positive or negative? Active or passive? Is the poem using familiar language or exotic language?</p>
-            <p>With the exception of the metrics for uncommon language, all of our sentiment metrics draw on the Harvard General Inquirer Catagories, a large database of words that have been tagged as related to specific catagories (active, passive, positive, negative, etc.), in order to catagorize the words in our poems appropriately.</p>
-            <p>All sentiment data is on a scale from zero to one, with one indicating that 100% of the word in the poem fit into the catagory in question.
+            <p>Where metrics in the Micro Lexical Data category look at how the poem uses language, the metrics we collect in the Sentiment Data category look at what sorts of language the poem uses -- what percentage of the words in the poem are considered positive or negative? Active or passive? Is the poem using familiar language or exotic language?</p>
+            <p>With the exception of the metrics for uncommon language, all of our sentiment metrics draw on the <a href="http://www.wjh.harvard.edu/~inquirer/homecat.htm">Harvard General Inquirer Categories</a>, a large database of words that have been tagged as related to specific Categories (active, passive, positive, negative, etc.), in order to catagorize the words in our poems appropriately. The Harvard General Inquirer Catagories classifications are often used in text analysis for academic research.</p>
+            <p>All sentiment data is on a scale from zero to one, with one indicating that 100% of the words in the poem fit into the category in question.
             </p>
         </div>  <!-- end of algorithm-header row -->
-        <div class="row algorithm-catagory">
+        <div class="row algorithm-category">
             <h4 class="bold">Positive/Negative Emotions</h4>
-            <p>For Positive and Negative content in the poems, we look at what percentage of words in the poem are featured in 'Positiv' and 'Negativ' in the Harvard General Inquirer Catagories. At the time of writing, the 'Positiv' catagory contains 1,915 words indicating a positive outlook and 'Negativ' contains 2,291 words indicating a negative outlook.</p>
+            <p>For Positive and Negative content in the poems, we look at what percentage of words in the poem are featured in 'Positiv' and 'Negativ' in the Harvard General Inquirer Categories. At the time of writing, the 'Positiv' category contains 1,915 words indicating a positive outlook and 'Negativ' contains 2,291 words indicating a negative outlook.</p>
             <p class="slight-indent italic ninety"><span class="bold">Example 'Positiv' Words:</span> accept, abundance, affection</p>
             <p class="slight-indent italic ninety"><span class="bold">Example 'Negativ' Words:</span> abject, abrasive, ache</p>
             <p>Below, you can see these values across our corpus -- the x-axis is the value obtained, while the y-axis is the number of times we see this value in our set of over 10,000 poems.</p>
-        </div>  <!-- end of algorithm-catagory row -->
+        </div>  <!-- end of algorithm-category row -->
         <div class="row algorithm-graph">
             <div class="legend" id="pos-neg-graph"></div>
             <div class="axis y-axis" id="pos-neg-y-axis">Freq.</div>
             <canvas class="graph-chart" id="PNChart" width="950" height="500"></canvas>
             <div class="axis x-axis" id="pos-neg-x-axis">Score</div>
         </div>  <!-- end of algorithm-graph row -->
-        <div class="row algorithm-catagory">
+        <div class="row algorithm-category">
             <h4 class="bold">Concrete/Abstract Language</h4>
-            <p>For Abstract and Concrete language content in the poems, we look at what percentage of words in the poem are featured in 'ABS' and 'Object' in the Harvard General Inquirer Catagories.At the time of writing, the 'ABS' catagory contains 218 words reflecting the tendency to use abstract vocabulary, and the 'Object' catagory contains 661 words referencing objects.</p>
+            <p>For Abstract and Concrete language content in the poems, we look at what percentage of words in the poem are featured in 'ABS' and 'Object' in the Harvard General Inquirer Categories.At the time of writing, the 'ABS' category contains 218 words reflecting the tendency to use abstract vocabulary, and the 'Object' category contains 661 words referencing objects.</p>
             <p class="slight-indent italic ninety"><span class="bold">Example 'ABS' Words:</span> awareness, belief, capitalism</p>
             <p class="slight-indent italic ninety"><span class="bold">Example 'Object' Words:</span> apartment, auto, belt</p>
             <p>Again, below you can see these values across our corpus -- the x-axis is the value obtained, while the y-axis is the number of times we see this value in our set of over 10,000 poems.</p>
-        </div>  <!-- end of algorithm-catagory row -->
+        </div>  <!-- end of algorithm-category row -->
         <div class="row algorithm-graph">
             <div class="legend" id="obj-abs-graph"></div>
             <div class="axis y-axis" id="obj-abs-y-axis">Freq.</div>
             <canvas class="graph-chart" id="OAChart" width="950" height="500"></canvas>
             <div class="axis x-axis" id="obj-abs-x-axis">Score</div>
         </div>  <!-- end of algorithm-graph row -->
-        <div class="row algorithm-catagory">
+        <div class="row algorithm-category">
             <h4 class="bold">Uncommon Language: Our Corpus and Common English</h4>
-            <p>In order to measure how unusual the language in the poem is, we compare it to the 2500 most common english words as compiled by the <a href="http://corpus.byu.edu/coca/">Corpus of American English</a> to get the percentage of words that are uncommon relative to general english language. We also compare the language in the poem to the 1000 most common words that we see in our corpus of poems to see to get the percentage of words that are uncommon relative to our set of poems.</p>
+            <p>In order to measure how unusual the language in the poem is, we compare it to the 2500 most common english words as compiled by the <a href="http://corpus.byu.edu/coca/">Corpus of Contemporary American English</a> to get the percentage of words that are uncommon relative to general english language. The Corpus of American English is a large and balanced corpus of contemporary english run by BYU. We also compare the language in the poem to the 1000 most common words that we see in our own corpus of poems to see to get the percentage of words that are uncommon relative to our data set.</p>
             <p>Again, below you can see these values across our corpus -- the x-axis is the value obtained, while the y-axis is the number of times we see this value in our set of over 10,000 poems.</p>
-        </div>  <!-- end of algorithm-catagory row -->
+        </div>  <!-- end of algorithm-category row -->
         <div class="row algorithm-graph">
             <div class="legend" id="common-graph"></div>
             <div class="axis y-axis" id="common-y-axis">Freq.</div>
             <canvas class="graph-chart" id="CWChart" width="950" height="500"></canvas>
             <div class="axis x-axis" id="common-x-axis">Score</div>
         </div>  <!-- end of algorithm-graph row -->
-        <div class="row algorithm-catagory">
+        <div class="row algorithm-category">
             <h4 class="bold">Human Presence: Male and Female</h4>
-            <p>For Male and Female presence in the poems, we look at what percentage of words in the poem are featured in 'Female' and 'MALE' in the Harvard General Inquirer Catagories.At the time of writing, the 'Female' catagory contains 43 words referring to women and social roles associated with women, and the 'MALE' catagory contains 56 words referring to men and social roles associated with men.
+            <p>For Male and Female presence in the poems, we look at what percentage of words in the poem are featured in 'Female' and 'MALE' in the Harvard General Inquirer Categories. At the time of writing, the 'Female' category contains 43 words referring to women and social roles associated with women, and the 'MALE' category contains 56 words referring to men and social roles associated with men.
             </p>
             <p class="slight-indent italic ninety"><span class="bold">Example 'Female' Words:</span> aunt, bride, girl</p>
             <p class="slight-indent italic ninety"><span class="bold">Example 'MALE' Words:</span> boy, brother, businessman</p>
             <p>Again, below you can see these values across our corpus -- the x-axis is the value obtained, while the y-axis is the number of times we see this value in our set of over 10,000 poems.</p>
-        </div>  <!-- end of algorithm-catagory row -->
+        </div>  <!-- end of algorithm-category row -->
         <div class="row algorithm-graph">
             <div class="legend" id="gender-graph"></div>
             <div class="axis y-axis" id="gender-y-axis">Freq.</div>
             <canvas class="graph-chart" id="GFChart" width="950" height="500"></canvas>
             <div class="axis x-axis" id="gender-x-axis">Score</div>
         </div>  <!-- end of algorithm-graph row -->
-        <div class="row algorithm-catagory">
+        <div class="row algorithm-category">
             <h4 class="bold">Active/Passive Language</h4>
-            <p>For Active and Passive language in the poems, we look at what percentage of words in the poem are featured in 'Active' and 'Passive' in the Harvard General Inquirer Catagories. At the time of writing, the 'Active' catagory contains 2045 words implying an active orientation, and the 'Passive' catagory contains 911 words indicating a passive orientation.</p>
+            <p>For Active and Passive language in the poems, we look at what percentage of words in the poem are featured in 'Active' and 'Passive' in the Harvard General Inquirer Categories. At the time of writing, the 'Active' category contains 2045 words implying an active orientation, and the 'Passive' category contains 911 words indicating a passive orientation.</p>
             <p class="slight-indent italic ninety"><span class="bold">Example 'Active' Words:</span> achieve, act, adore</p>
             <p class="slight-indent italic ninety"><span class="bold">Example 'Passive' Words:</span> accept, admire, admit</p>
             <p>Again, below you can see these values across our corpus -- the x-axis is the value obtained, while the y-axis is the number of times we see this value in our set of over 10,000 poems.</p>
-        </div>  <!-- end of algorithm-catagory row -->
+        </div>  <!-- end of algorithm-category row -->
         <div class="row algorithm-graph">
             <div class="legend" id="active-graph"></div>
             <div class="axis y-axis" id="active-y-axis">Freq.</div>
@@ -240,7 +240,7 @@ ReadMe: Sentiment
         labels: templabel,
         datasets: [
             {
-                label: "Male Words",
+                label: "Active Words",
                 fillColor: "rgba(220,220,220,0.2)",
                 strokeColor: "rgba(220,220,220,1)",
                 pointColor: "rgba(220,220,220,1)",
@@ -249,7 +249,7 @@ ReadMe: Sentiment
                 pointHighlightStroke: "rgba(220,220,220,1)",
                 data: {{ active["first"] }}
             },{
-                label: "Female Words",
+                label: "Passive Words",
                 fillColor: "rgba(151,187,205,0.2)",
                 strokeColor: "rgba(151,187,205,1)",
                 pointColor: "rgba(151,187,205,1)",

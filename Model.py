@@ -1,3 +1,6 @@
+"""contains the data model classes, as well methods to interact with the data"""
+
+
 from flask_sqlalchemy import SQLAlchemy
 from unidecode import unidecode
 from bs4 import BeautifulSoup
@@ -32,6 +35,19 @@ class Poem(db.Model):
 
     matched_to = db.relationship("Poem", secondary="best_matches",
                                  foreign_keys="BestMatch.match_poem_id")
+
+    def __repr__(self):
+        """sets what the display when we look at a poem object
+
+            >>> from server import app
+            >>> connect_to_db(app)
+            >>>
+            >>> example = Poem.query.get(177014)
+            >>> example
+            <Poem: Meditation at Lagunitas, ID: 177014>
+        """
+
+        return "<Poem: {}, ID: {}>".format(self.title, self.poem_id)
 
     def get_wiki_info(self):
         """returns wikipedia url and link to main picture if applicable"""
@@ -593,6 +609,19 @@ class Poet(db.Model):
     name = db.Column(db.Text, nullable=False)
     birth_year = db.Column(db.Integer)
 
+    def __repr__(self):
+        """sets what the display when we look at a poet object
+
+            >>> from server import app
+            >>> connect_to_db(app)
+            >>>
+            >>> example = Poet.query.get(1)
+            >>> example
+            <Poet: Averill Curdy, ID: 1>
+        """
+
+        return "<Poet: {}, ID: {}>".format(self.name, self.poet_id)
+
 
 class Region(db.Model):
     """ contains regions as assigned by the Poetry Foundation """
@@ -604,6 +633,19 @@ class Region(db.Model):
 
     metrics = db.relationship("Metrics", secondary='poem_region', backref='regions')
     poems = db.relationship("Poem", secondary='poem_region', backref="regions")
+
+    def __repr__(self):
+        """sets what the display when we look at a region object
+
+            >>> from server import app
+            >>> connect_to_db(app)
+            >>>
+            >>> example = Region.query.get(1)
+            >>> example
+            <Region: U.S., ID: 1>
+        """
+
+        return "<Region: {}, ID: {}>".format(self.region, self.region_id)
 
     @staticmethod
     def get_region_data(start_at, stop_before):
@@ -730,6 +772,19 @@ class PoemRegion(db.Model):
     metrics = db.relationship("Metrics", backref="poem_regions")
     region = db.relationship("Region", backref="poem_regions")
 
+    def __repr__(self):
+        """sets what the display when we look at a PoemRegion object
+
+            >>> from server import app
+            >>> connect_to_db(app)
+            >>>
+            >>> example = PoemRegion.query.get(1)
+            >>> example
+            <PoemRegion: Probation to U.S.>
+        """
+
+        return "<PoemRegion: {} to {}>".format(self.poem.title, self.region.region)
+
 
 class Term(db.Model):
     """ Contains Poetic Terms as assigned by the Poetry Foundation"""
@@ -745,6 +800,19 @@ class Term(db.Model):
     poems = db.relationship("Poem",
                             secondary='poem_terms',
                             backref="terms")
+
+    def __repr__(self):
+        """sets what the display when we look at a term object
+
+            >>> from server import app
+            >>> connect_to_db(app)
+            >>>
+            >>> example = Term.query.get(1)
+            >>> example
+            <Term: Rhymed Stanza, ID: 1>
+        """
+
+        return "<Term: {}, ID: {}>".format(self.term, self.term_id)
 
     @staticmethod
     def get_term_data(start_at, stop_before):
@@ -894,6 +962,19 @@ class PoemTerm(db.Model):
     metrics = db.relationship("Metrics", backref="poem_terms")
     term = db.relationship("Term", backref="poem_terms")
 
+    def __repr__(self):
+        """sets what the display when we look at a PoemTerm object
+
+            >>> from server import app
+            >>> connect_to_db(app)
+            >>>
+            >>> example = PoemTerm.query.get(1)
+            >>> example
+            <PoemTerm: Probation to Rhymed Stanza>
+        """
+
+        return "<PoemTerm: {} to {}>".format(self.poem.title, self.term.term)
+
 
 class Subject(db.Model):
     """ Contains poem subjects as assigned by The Poetry Foundation"""
@@ -909,6 +990,19 @@ class Subject(db.Model):
     poems = db.relationship("Poem",
                             secondary='poem_subjects',
                             backref="subjects")
+
+    def __repr__(self):
+        """sets what the display when we look at a Subject object
+
+            >>> from server import app
+            >>> connect_to_db(app)
+            >>>
+            >>> example = Subject.query.get(1)
+            >>> example
+            <Subject: Marriage & Companionship, ID: 1>
+        """
+
+        return "<Subject: {}, ID: {}>".format(self.subject, self.subject_id)
 
     @staticmethod
     def get_subject_data(start_at, stop_before):
@@ -1144,6 +1238,20 @@ class PoemSubject(db.Model):
     poem = db.relationship("Poem", backref="poem_subjects")
     subject = db.relationship("Subject", backref="poem_subjects")
 
+    def __repr__(self):
+        """sets what the display when we look at a PoemSubject object
+
+            >>> from server import app
+            >>> connect_to_db(app)
+            >>>
+            >>> example = PoemSubject.query.get(1)
+            >>> example
+            <PoemSubject: Probation to Marriage & Companionship>
+        """
+
+        return "<PoemSubject: {} to {}>".format(self.poem.title,
+                                                self.subject.subject)
+
 
 class Metrics(db.Model):
     """ contains the metrics (data as floats) for each poem """
@@ -1194,6 +1302,19 @@ class Metrics(db.Model):
     sl_range = db.Column(db.Float)         # larger integer ( > 1)
 
     poem = db.relationship('Poem', backref='metrics')
+
+    def __repr__(self):
+        """sets what the display when we look at a Metrics object
+
+            >>> from server import app
+            >>> connect_to_db(app)
+            >>>
+            >>> example = Metrics.query.get(177014)
+            >>> example
+            <Metrics: Meditation at Lagunitas, ID: 177014>
+        """
+
+        return "<Metrics: {}, ID: {}>".format(self.poem.title, self.poem_id)
 
     def _get_ranges_dict(self):
         """returns a dict w/ initial acceptable ranges for a given metrics obj
@@ -1274,1303 +1395,6 @@ class Metrics(db.Model):
         """prints the percentile distributions for each metric catagory,
 
         Used for manual analysis of the data, returns nothing.
-
-            >>> Metrics.get_metrics_dist()
-
-            END_REPEAT:
-            Standard Deviation: 0.0975587083222
-            Bottom 10th Percentile By Unit:
-                      0.0 to 0.0. Mean: 0.0
-            Bottom 10th Percentile By Value:
-                      0.0 to 0.0879120879121. Units: 7548
-
-            Bottom 20th Percentile By Unit:
-                      0.0 to 0.0. Mean: 0.0
-            Bottom 20th Percentile By Value:
-                      0.0882352941176 to 0.175609756098. Units: 1730
-
-            Low Twentieth Percentile By Unit:
-                      0.0 to 0.0. Mean: 0.0
-            Low 20th Percentile By Value:
-                      0.176470588235 to 0.351515151515. Units: 798
-
-            Mid Twentieth Percentile By Unit:
-                      0.0 to 0.0571428571429. Mean: 0.0347291466594
-            Mid 20th Percentile By Value:
-                      0.352941176471 to 0.523364485981. Units: 153
-
-            High Twentieth Percentile By Unit:
-                      0.0571428571429 to 0.112781954887. Mean: 0.0811552743966
-            High 20th Percentile By Value:
-                      0.530612244898 to 0.7. Units: 38
-
-            Top Twentieth Percentile By Unit:
-                      0.112903225806 to 0.882352941176. Mean: 0.21695372354
-            High 20th Percentile By Value:
-                      0.714285714286 to 0.882352941176. Units: 25
-
-            Top 10th Percentile By Unit:
-                      0.173913043478 to 0.882352941176. Mean: 0.293301490288
-            Top 10th Percentile By Value:
-                      0.794871794872 to 0.882352941176. Units: 9
-
-            ACTIVE_PERCENT:
-            Standard Deviation: 0.0270692741814
-            Bottom 10th Percentile By Unit:
-                      0.0 to 0.0365853658537. Mean: 0.0253116258057
-            Bottom 10th Percentile By Value:
-                      0.0 to 0.0393700787402. Units: 1278
-
-            Bottom 20th Percentile By Unit:
-                      0.0 to 0.046783625731. Mean: 0.0336480134418
-            Bottom 20th Percentile By Value:
-                      0.0393939393939 to 0.0787401574803. Units: 6046
-
-            Low Twentieth Percentile By Unit:
-                      0.046783625731 to 0.0594059405941. Mean: 0.0534127276115
-            Low 20th Percentile By Value:
-                      0.0787878787879 to 0.157534246575. Units: 2904
-
-            Mid Twentieth Percentile By Unit:
-                      0.0594059405941 to 0.0710227272727. Mean: 0.0652707576218
-            Mid 20th Percentile By Value:
-                      0.157894736842 to 0.235294117647. Units: 60
-
-            High Twentieth Percentile By Unit:
-                      0.0710382513661 to 0.0869565217391. Mean: 0.0781558206752
-            High 20th Percentile By Value:
-                      0.24 to 0.285714285714. Units: 3
-
-            Top Twentieth Percentile By Unit:
-                      0.0869565217391 to 0.393939393939. Mean: 0.107007415728
-            High 20th Percentile By Value:
-                      0.393939393939 to 0.393939393939. Units: 1
-
-            Top 10th Percentile By Unit:
-                      0.100775193798 to 0.393939393939. Mean: 0.120864129924
-            Top 10th Percentile By Value:
-                      0.393939393939 to 0.393939393939. Units: 1
-
-            LL_MEDIAN:
-            Standard Deviation: 149.592767523
-            Bottom 10th Percentile By Unit:
-                      4.0 to 22.0. Mean: 17.7536443149
-            Bottom 10th Percentile By Value:
-                      4.0 to 217.0. Units: 10123
-
-            Bottom 20th Percentile By Unit:
-                      4.0 to 27.0. Mean: 21.3807094266
-            Bottom 20th Percentile By Value:
-                      264.0 to 490.0. Units: 26
-
-            Low Twentieth Percentile By Unit:
-                      27.0 to 33.0. Mean: 30.3430515063
-            Low 20th Percentile By Value:
-                      498.0 to 964.0. Units: 66
-
-            Mid Twentieth Percentile By Unit:
-                      33.0 to 39.5. Mean: 36.3083090379
-            Mid 20th Percentile By Value:
-                      984.0 to 1453.0. Units: 33
-
-            High Twentieth Percentile By Unit:
-                      39.5 to 44.0. Mean: 41.7509718173
-            High 20th Percentile By Value:
-                      1489.0 to 1907.0. Units: 30
-
-            Top Twentieth Percentile By Unit:
-                      44.0 to 2454.0. Mean: 136.271359223
-            High 20th Percentile By Value:
-                      2025.0 to 2454.0. Units: 14
-
-            Top 10th Percentile By Unit:
-                      49.5 to 2454.0. Mean: 226.690962099
-            Top 10th Percentile By Value:
-                      2241.0 to 2454.0. Units: 9
-
-            RHYME:
-            Standard Deviation: 0.248502114816
-            Bottom 10th Percentile By Unit:
-                      0.0 to 0.0. Mean: 0.0
-            Bottom 10th Percentile By Value:
-                      0.0 to 0.0967741935484. Units: 1412
-
-            Bottom 20th Percentile By Unit:
-                      0.0 to 0.142857142857. Mean: 0.050298113053
-            Bottom 20th Percentile By Value:
-                      0.1 to 0.19696969697. Units: 1475
-
-            Low Twentieth Percentile By Unit:
-                      0.142857142857 to 0.264705882353. Mean: 0.206560620388
-            Low 20th Percentile By Value:
-                      0.2 to 0.398496240602. Units: 3459
-
-            Mid Twentieth Percentile By Unit:
-                      0.264705882353 to 0.384615384615. Mean: 0.323126123958
-            Mid 20th Percentile By Value:
-                      0.4 to 0.6. Units: 2026
-
-            High Twentieth Percentile By Unit:
-                      0.384615384615 to 0.583333333333. Mean: 0.469860394747
-            High 20th Percentile By Value:
-                      0.6015625 to 0.798611111111. Units: 1254
-
-            Top Twentieth Percentile By Unit:
-                      0.583333333333 to 1.0. Mean: 0.752732893682
-            High 20th Percentile By Value:
-                      0.8 to 1.0. Units: 666
-
-            Top 10th Percentile By Unit:
-                      0.733333333333 to 1.0. Mean: 0.844781376802
-            Top 10th Percentile By Value:
-                      0.9 to 1.0. Units: 248
-
-            MALE_PERCENT:
-            Standard Deviation: 0.0200664241844
-            Bottom 10th Percentile By Unit:
-                      0.0 to 0.0. Mean: 0.0
-            Bottom 10th Percentile By Value:
-                      0.0 to 0.018166804294. Units: 7660
-
-            Bottom 20th Percentile By Unit:
-                      0.0 to 0.0. Mean: 0.0
-            Bottom 20th Percentile By Value:
-                      0.0181818181818 to 0.0362694300518. Units: 1418
-
-            Low Twentieth Percentile By Unit:
-                      0.0 to 0.00133333333333. Mean: 1.30142575532e-05
-            Low 20th Percentile By Value:
-                      0.0364145658263 to 0.0726643598616. Units: 977
-
-            Mid Twentieth Percentile By Unit:
-                      0.00136425648022 to 0.0093896713615. Mean: 0.00571202622623
-            Mid 20th Percentile By Value:
-                      0.0727272727273 to 0.107843137255. Units: 196
-
-            High Twentieth Percentile By Unit:
-                      0.00940438871473 to 0.0233918128655. Mean: 0.0153914517338
-            High 20th Percentile By Value:
-                      0.109375 to 0.142857142857. Units: 34
-
-            Top Twentieth Percentile By Unit:
-                      0.0233918128655 to 0.181818181818. Mean: 0.0464465988723
-            High 20th Percentile By Value:
-                      0.147058823529 to 0.181818181818. Units: 7
-
-            Top 10th Percentile By Unit:
-                      0.04 to 0.181818181818. Mean: 0.062117661874
-            Top 10th Percentile By Value:
-                      0.175182481752 to 0.181818181818. Units: 2
-
-            A_FREQ:
-            Standard Deviation: 0.019690518642
-            Bottom 10th Percentile By Unit:
-                      0.0 to 0.0. Mean: 0.0
-            Bottom 10th Percentile By Value:
-                      0.0 to 0.0272614622057. Units: 6507
-
-            Bottom 20th Percentile By Unit:
-                      0.0 to 0.00884955752212. Mean: 0.00260812417349
-            Bottom 20th Percentile By Value:
-                      0.0272727272727 to 0.0544747081712. Units: 3119
-
-            Low Twentieth Percentile By Unit:
-                      0.00884955752212 to 0.0173913043478. Mean: 0.0132268941906
-            Low 20th Percentile By Value:
-                      0.0545454545455 to 0.108108108108. Units: 626
-
-            Mid Twentieth Percentile By Unit:
-                      0.0173913043478 to 0.0256916996047. Mean: 0.0214597808387
-            Mid 20th Percentile By Value:
-                      0.109090909091 to 0.157894736842. Units: 30
-
-            High Twentieth Percentile By Unit:
-                      0.0256916996047 to 0.037037037037. Mean: 0.0307768228999
-            High 20th Percentile By Value:
-                      0.166666666667 to 0.203703703704. Units: 7
-
-            Top Twentieth Percentile By Unit:
-                      0.037037037037 to 0.272727272727. Mean: 0.0538157089875
-            High 20th Percentile By Value:
-                      0.222222222222 to 0.272727272727. Units: 3
-
-            Top 10th Percentile By Unit:
-                      0.047619047619 to 0.272727272727. Mean: 0.065712972902
-            Top 10th Percentile By Value:
-                      0.272727272727 to 0.272727272727. Units: 1
-
-            NEGATIVE:
-            Standard Deviation: 0.0222262207945
-            Bottom 10th Percentile By Unit:
-                      0.0 to 0.0161290322581. Mean: 0.00805359350081
-            Bottom 10th Percentile By Value:
-                      0.0 to 0.0393928442356. Units: 5459
-
-            Bottom 20th Percentile By Unit:
-                      0.0 to 0.0235294117647. Mean: 0.0140405644487
-            Bottom 20th Percentile By Value:
-                      0.0393939393939 to 0.0787401574803. Units: 4293
-
-            Low Twentieth Percentile By Unit:
-                      0.0235294117647 to 0.0333333333333. Mean: 0.0285180127185
-            Low 20th Percentile By Value:
-                      0.0788177339901 to 0.154471544715. Units: 533
-
-            Mid Twentieth Percentile By Unit:
-                      0.0333333333333 to 0.0428571428571. Mean: 0.0379765664356
-            Mid 20th Percentile By Value:
-                      0.165048543689 to 0.181818181818. Units: 4
-
-            High Twentieth Percentile By Unit:
-                      0.0428571428571 to 0.0561797752809. Mean: 0.0488052704583
-            High 20th Percentile By Value:
-                      0.25 to 0.285714285714. Units: 2
-
-            Top Twentieth Percentile By Unit:
-                      0.0561797752809 to 0.393939393939. Mean: 0.0734766316622
-            High 20th Percentile By Value:
-                      0.393939393939 to 0.393939393939. Units: 1
-
-            Top 10th Percentile By Unit:
-                      0.0681818181818 to 0.393939393939. Mean: 0.0855569591818
-            Top 10th Percentile By Value:
-                      0.393939393939 to 0.393939393939. Units: 1
-
-            LL_MODE:
-            Standard Deviation: 154.541458336
-            Bottom 10th Percentile By Unit:
-                      1.0 to 21.0. Mean: 14.8658892128
-            Bottom 10th Percentile By Value:
-                      1.0 to 239.0. Units: 10111
-
-            Bottom 20th Percentile By Unit:
-                      1.0 to 27.0. Mean: 19.7662779397
-            Bottom 20th Percentile By Value:
-                      255.0 to 490.0. Units: 33
-
-            Low Twentieth Percentile By Unit:
-                      27.0 to 35.0. Mean: 31.3814382896
-            Low 20th Percentile By Value:
-                      498.0 to 964.0. Units: 64
-
-            Mid Twentieth Percentile By Unit:
-                      35.0 to 41.0. Mean: 38.2298347911
-            Mid 20th Percentile By Value:
-                      984.0 to 1453.0. Units: 37
-
-            High Twentieth Percentile By Unit:
-                      41.0 to 47.0. Mean: 43.8649173955
-            High 20th Percentile By Value:
-                      1489.0 to 1907.0. Units: 33
-
-            Top Twentieth Percentile By Unit:
-                      47.0 to 2454.0. Mean: 146.554854369
-            High 20th Percentile By Value:
-                      2025.0 to 2454.0. Units: 14
-
-            Top 10th Percentile By Unit:
-                      54.0 to 2454.0. Mean: 243.488824101
-            Top 10th Percentile By Value:
-                      2241.0 to 2454.0. Units: 9
-
-            SL_MEDIAN:
-            Standard Deviation: 13.7800499324
-            Bottom 10th Percentile By Unit:
-                      0.0 to 1.0. Mean: 0.931972789116
-            Bottom 10th Percentile By Value:
-                      0.0 to 38.0. Units: 10018
-
-            Bottom 20th Percentile By Unit:
-                      0.0 to 1.0. Mean: 0.965986394558
-            Bottom 20th Percentile By Value:
-                      39.0 to 76.0. Units: 213
-
-            Low Twentieth Percentile By Unit:
-                      1.0 to 4.0. Mean: 2.26724975705
-            Low 20th Percentile By Value:
-                      78.0 to 152.0. Units: 49
-
-            Mid Twentieth Percentile By Unit:
-                      4.0 to 6.0. Mean: 4.38289601555
-            Mid 20th Percentile By Value:
-                      155.0 to 210.0. Units: 9
-
-            High Twentieth Percentile By Unit:
-                      6.0 to 13.0. Mean: 8.38532555879
-            High 20th Percentile By Value:
-                      301.0 to 301.0. Units: 1
-
-            Top Twentieth Percentile By Unit:
-                      13.0 to 383.0. Mean: 26.2883495146
-            High 20th Percentile By Value:
-                      347.0 to 383.0. Units: 2
-
-            Top 10th Percentile By Unit:
-                      20.0 to 383.0. Mean: 37.2293488824
-            Top 10th Percentile By Value:
-                      347.0 to 383.0. Units: 2
-
-            PL_CHAR:
-            Standard Deviation: 1848.75588268
-            Bottom 10th Percentile By Unit:
-                      16.0 to 350.0. Mean: 229.740524781
-            Bottom 10th Percentile By Value:
-                      16.0 to 2484.0. Units: 9136
-
-            Bottom 20th Percentile By Unit:
-                      16.0 to 502.0. Mean: 329.897473275
-            Bottom 20th Percentile By Value:
-                      2487.0 to 4929.0. Units: 783
-
-            Low Twentieth Percentile By Unit:
-                      502.0 to 692.0. Mean: 596.00728863
-            Low 20th Percentile By Value:
-                      4954.0 to 9693.0. Units: 273
-
-            Mid Twentieth Percentile By Unit:
-                      692.0 to 1034.0. Mean: 851.796404276
-            Mid 20th Percentile By Value:
-                      10013.0 to 14823.0. Units: 59
-
-            High Twentieth Percentile By Unit:
-                      1034.0 to 1737.0. Mean: 1325.29300292
-            High 20th Percentile By Value:
-                      14947.0 to 19590.0. Units: 26
-
-            Top Twentieth Percentile By Unit:
-                      1739.0 to 24698.0. Mean: 3765.62621359
-            High 20th Percentile By Value:
-                      19999.0 to 24698.0. Units: 15
-
-            Top 10th Percentile By Unit:
-                      2669.0 to 24698.0. Mean: 5416.05344995
-            Top 10th Percentile By Value:
-                      22782.0 to 24698.0. Units: 5
-
-            POEM_PERCENT:
-            Standard Deviation: 0.083671325265
-            Bottom 10th Percentile By Unit:
-                      0.0 to 0.276923076923. Mean: 0.233006972592
-            Bottom 10th Percentile By Value:
-                      0.0 to 0.08. Units: 13
-
-            Bottom 20th Percentile By Unit:
-                      0.0 to 0.310954063604. Mean: 0.264119331734
-            Bottom 20th Percentile By Value:
-                      0.0922509225092 to 0.170212765957. Units: 72
-
-            Low Twentieth Percentile By Unit:
-                      0.310975609756 to 0.353846153846. Mean: 0.333599688987
-            Low 20th Percentile By Value:
-                      0.171171171171 to 0.340707964602. Units: 3350
-
-            Mid Twentieth Percentile By Unit:
-                      0.353846153846 to 0.390995260664. Mean: 0.372150832283
-            Mid 20th Percentile By Value:
-                      0.340740740741 to 0.51103843009. Units: 6326
-
-            High Twentieth Percentile By Unit:
-                      0.391025641026 to 0.44. Mean: 0.413986792106
-            High 20th Percentile By Value:
-                      0.511111111111 to 0.68. Units: 504
-
-            Top Twentieth Percentile By Unit:
-                      0.44 to 0.851851851852. Mean: 0.493989517749
-            High 20th Percentile By Value:
-                      0.68438538206 to 0.851851851852. Units: 27
-
-            Top 10th Percentile By Unit:
-                      0.479297365119 to 0.851851851852. Mean: 0.530518744383
-            Top 10th Percentile By Value:
-                      0.766666666667 to 0.851851851852. Units: 8
-
-            FEMALE_PERCENT:
-            Standard Deviation: 0.0177058808079
-            Bottom 10th Percentile By Unit:
-                      0.0 to 0.0. Mean: 0.0
-            Bottom 10th Percentile By Value:
-                      0.0 to 0.0169779286927. Units: 8519
-
-            Bottom 20th Percentile By Unit:
-                      0.0 to 0.0. Mean: 0.0
-            Bottom 20th Percentile By Value:
-                      0.0169851380042 to 0.0338983050847. Units: 915
-
-            Low Twentieth Percentile By Unit:
-                      0.0 to 0.0. Mean: 0.0
-            Low 20th Percentile By Value:
-                      0.034 to 0.0677966101695. Units: 629
-
-            Mid Twentieth Percentile By Unit:
-                      0.0 to 0.00403225806452. Mean: 0.000959778254919
-            Mid 20th Percentile By Value:
-                      0.0679245283019 to 0.101851851852. Units: 186
-
-            High Twentieth Percentile By Unit:
-                      0.00403225806452 to 0.0143540669856. Mean: 0.00820044098435
-            High 20th Percentile By Value:
-                      0.102272727273 to 0.134078212291. Units: 34
-
-            Top Twentieth Percentile By Unit:
-                      0.0143540669856 to 0.169811320755. Mean: 0.037097371747
-            High 20th Percentile By Value:
-                      0.137931034483 to 0.169811320755. Units: 9
-
-            Top 10th Percentile By Unit:
-                      0.0295081967213 to 0.169811320755. Mean: 0.0535517861976
-            Top 10th Percentile By Value:
-                      0.157894736842 to 0.169811320755. Units: 3
-
-            IS_FREQ:
-            Standard Deviation: 0.012729065839
-            Bottom 10th Percentile By Unit:
-                      0.0 to 0.0. Mean: 0.0
-            Bottom 10th Percentile By Value:
-                      0.0 to 0.0249221183801. Units: 9316
-
-            Bottom 20th Percentile By Unit:
-                      0.0 to 0.0. Mean: 0.0
-            Bottom 20th Percentile By Value:
-                      0.025 to 0.0495867768595. Units: 826
-
-            Low Twentieth Percentile By Unit:
-                      0.0 to 0.0028901734104. Mean: 0.00029514250379
-            Low 20th Percentile By Value:
-                      0.05 to 0.0958904109589. Units: 142
-
-            Mid Twentieth Percentile By Unit:
-                      0.00289855072464 to 0.00882352941176. Mean: 0.00605576100055
-            Mid 20th Percentile By Value:
-                      0.103773584906 to 0.146341463415. Units: 4
-
-            High Twentieth Percentile By Unit:
-                      0.00882352941176 to 0.0164835164835. Mean: 0.0120928204737
-            High 20th Percentile By Value:
-                      0.153846153846 to 0.181818181818. Units: 3
-
-            Top Twentieth Percentile By Unit:
-                      0.0164835164835 to 0.25. Mean: 0.0287799198888
-            High 20th Percentile By Value:
-                      0.25 to 0.25. Units: 1
-
-            Top 10th Percentile By Unit:
-                      0.0243902439024 to 0.25. Mean: 0.0378614580831
-            Top 10th Percentile By Value:
-                      0.25 to 0.25. Units: 1
-
-            LL_MEAN:
-            Standard Deviation: 149.508345267
-            Bottom 10th Percentile By Unit:
-                      4.27272727273 to 22.9047619048. Mean: 18.2657140306
-            Bottom 10th Percentile By Value:
-                      4.27272727273 to 218.0. Units: 10118
-
-            Bottom 20th Percentile By Unit:
-                      4.27272727273 to 27.375. Mean: 21.8257455275
-            Bottom 20th Percentile By Value:
-                      259.5 to 490.0. Units: 30
-
-            Low Twentieth Percentile By Unit:
-                      27.3846153846 to 33.2222222222. Mean: 30.3880083015
-            Low 20th Percentile By Value:
-                      498.0 to 984.0. Units: 69
-
-            Mid Twentieth Percentile By Unit:
-                      33.2222222222 to 39.1176470588. Mean: 36.0093329075
-            Mid 20th Percentile By Value:
-                      997.0 to 1453.0. Units: 31
-
-            High Twentieth Percentile By Unit:
-                      39.125 to 43.7058823529. Mean: 41.4769698913
-            High 20th Percentile By Value:
-                      1489.0 to 1907.0. Units: 30
-
-            Top Twentieth Percentile By Unit:
-                      43.7083333333 to 2454.0. Mean: 136.839941167
-            High 20th Percentile By Value:
-                      2025.0 to 2454.0. Units: 14
-
-            Top 10th Percentile By Unit:
-                      49.0833333333 to 2454.0. Mean: 228.087758626
-            Top 10th Percentile By Value:
-                      2241.0 to 2454.0. Units: 9
-
-            ABS_PERCENT:
-            Standard Deviation: 0.0155099644239
-            Bottom 10th Percentile By Unit:
-                      0.0 to 0.00436681222707. Mean: 0.000341349496159
-            Bottom 10th Percentile By Value:
-                      0.0 to 0.0249433106576. Units: 6927
-
-            Bottom 20th Percentile By Unit:
-                      0.0 to 0.00943396226415. Mean: 0.00385009453811
-            Bottom 20th Percentile By Value:
-                      0.025 to 0.0497512437811. Units: 2889
-
-            Low Twentieth Percentile By Unit:
-                      0.00943396226415 to 0.0161290322581. Mean: 0.0129915976817
-            Low 20th Percentile By Value:
-                      0.05 to 0.0967741935484. Units: 457
-
-            Mid Twentieth Percentile By Unit:
-                      0.0161290322581 to 0.0224719101124. Mean: 0.0192492193025
-            Mid 20th Percentile By Value:
-                      0.1 to 0.146341463415. Units: 12
-
-            High Twentieth Percentile By Unit:
-                      0.0224719101124 to 0.03125. Mean: 0.0263691316932
-            High 20th Percentile By Value:
-                      0.153846153846 to 0.176470588235. Units: 6
-
-            Top Twentieth Percentile By Unit:
-                      0.03125 to 0.25. Mean: 0.0443201523017
-            High 20th Percentile By Value:
-                      0.25 to 0.25. Units: 1
-
-            Top 10th Percentile By Unit:
-                      0.0397727272727 to 0.25. Mean: 0.0536001727395
-            Top 10th Percentile By Value:
-                      0.25 to 0.25. Units: 1
-
-            PL_LINES:
-            Standard Deviation: 47.3788067093
-            Bottom 10th Percentile By Unit:
-                      1.0 to 11.0. Mean: 6.34207968902
-            Bottom 10th Percentile By Value:
-                      1.0 to 62.0. Units: 8959
-
-            Bottom 20th Percentile By Unit:
-                      1.0 to 14.0. Mean: 9.62147716229
-            Bottom 20th Percentile By Value:
-                      63.0 to 124.0. Units: 908
-
-            Low Twentieth Percentile By Unit:
-                      14.0 to 20.0. Mean: 16.5340136054
-            Low 20th Percentile By Value:
-                      125.0 to 248.0. Units: 324
-
-            Mid Twentieth Percentile By Unit:
-                      20.0 to 28.0. Mean: 23.9387755102
-            Mid 20th Percentile By Value:
-                      249.0 to 371.0. Units: 55
-
-            High Twentieth Percentile By Unit:
-                      29.0 to 48.0. Mean: 36.5835762877
-            High 20th Percentile By Value:
-                      373.0 to 492.0. Units: 37
-
-            Top Twentieth Percentile By Unit:
-                      48.0 to 621.0. Mean: 100.812621359
-            High 20th Percentile By Value:
-                      510.0 to 621.0. Units: 9
-
-            Top 10th Percentile By Unit:
-                      74.0 to 621.0. Mean: 143.335276968
-            Top 10th Percentile By Value:
-                      567.0 to 621.0. Units: 4
-
-            WL_MODE:
-            Standard Deviation: 1.16073858408
-            Bottom 10th Percentile By Unit:
-                      1.0 to 1.0. Mean: 1.0
-            Bottom 10th Percentile By Value:
-                      1.0 to 1.0. Units: 2321
-
-            Bottom 20th Percentile By Unit:
-                      1.0 to 1.0. Mean: 1.0
-            Bottom 20th Percentile By Value:
-                      2.0 to 2.0. Units: 523
-
-            Low Twentieth Percentile By Unit:
-                      1.0 to 3.0. Mean: 2.49028182702
-            Low 20th Percentile By Value:
-                      3.0 to 4.0. Units: 7135
-
-            Mid Twentieth Percentile By Unit:
-                      3.0 to 3.0. Mean: 3.0
-            Mid 20th Percentile By Value:
-                      5.0 to 5.0. Units: 271
-
-            High Twentieth Percentile By Unit:
-                      3.0 to 4.0. Mean: 3.48882410107
-            High 20th Percentile By Value:
-                      6.0 to 7.0. Units: 39
-
-            Top Twentieth Percentile By Unit:
-                      4.0 to 9.0. Mean: 4.18058252427
-            High 20th Percentile By Value:
-                      8.0 to 9.0. Units: 3
-
-            Top 10th Percentile By Unit:
-                      4.0 to 9.0. Mean: 4.36151603499
-            Top 10th Percentile By Value:
-                      9.0 to 9.0. Units: 2
-
-            WL_RANGE:
-            Standard Deviation: 1.97272221831
-            Bottom 10th Percentile By Unit:
-                      3.0 to 8.0. Mean: 7.296404276
-            Bottom 10th Percentile By Value:
-                      3.0 to 6.0. Units: 150
-
-            Bottom 20th Percentile By Unit:
-                      3.0 to 9.0. Mean: 7.89261418853
-            Bottom 20th Percentile By Value:
-                      7.0 to 9.0. Units: 3401
-
-            Low Twentieth Percentile By Unit:
-                      9.0 to 10.0. Mean: 9.27453838678
-            Low 20th Percentile By Value:
-                      10.0 to 15.0. Units: 6623
-
-            Mid Twentieth Percentile By Unit:
-                      10.0 to 11.0. Mean: 10.2069970845
-            Mid 20th Percentile By Value:
-                      16.0 to 21.0. Units: 107
-
-            High Twentieth Percentile By Unit:
-                      11.0 to 12.0. Mean: 11.2502429543
-            High 20th Percentile By Value:
-                      22.0 to 27.0. Units: 10
-
-            Top Twentieth Percentile By Unit:
-                      12.0 to 34.0. Mean: 13.0718446602
-            High 20th Percentile By Value:
-                      34.0 to 34.0. Units: 1
-
-            Top 10th Percentile By Unit:
-                      13.0 to 34.0. Mean: 14.0233236152
-            Top 10th Percentile By Value:
-                      34.0 to 34.0. Units: 1
-
-            WL_MEDIAN:
-            Standard Deviation: 0.524905520773
-            Bottom 10th Percentile By Unit:
-                      1.0 to 3.0. Mean: 2.96209912536
-            Bottom 10th Percentile By Value:
-                      1.0 to 1.0. Units: 6
-
-            Bottom 20th Percentile By Unit:
-                      1.0 to 3.0. Mean: 2.98104956268
-            Bottom 20th Percentile By Value:
-                      2.0 to 2.0. Units: 27
-
-            Low Twentieth Percentile By Unit:
-                      3.0 to 3.0. Mean: 3.0
-            Low 20th Percentile By Value:
-                      3.0 to 3.0. Units: 4384
-
-            Mid Twentieth Percentile By Unit:
-                      3.0 to 4.0. Mean: 3.8537414966
-            Mid 20th Percentile By Value:
-                      4.0 to 4.0. Units: 5778
-
-            High Twentieth Percentile By Unit:
-                      4.0 to 4.0. Mean: 4.0
-            High 20th Percentile By Value:
-                      5.0 to 5.0. Units: 90
-
-            Top Twentieth Percentile By Unit:
-                      4.0 to 7.0. Mean: 4.05145631068
-            High 20th Percentile By Value:
-                      6.0 to 7.0. Units: 7
-
-            Top 10th Percentile By Unit:
-                      4.0 to 7.0. Mean: 4.10301263362
-            Top 10th Percentile By Value:
-                      7.0 to 7.0. Units: 2
-
-            POSITIVE:
-            Standard Deviation: 0.0247652584906
-            Bottom 10th Percentile By Unit:
-                      0.0 to 0.0190476190476. Mean: 0.010709822725
-            Bottom 10th Percentile By Value:
-                      0.0 to 0.0262172284644. Units: 2021
-
-            Bottom 20th Percentile By Unit:
-                      0.0 to 0.0263929618768. Mean: 0.0169076280785
-            Bottom 20th Percentile By Value:
-                      0.0262295081967 to 0.0524412296564. Units: 4906
-
-            Low Twentieth Percentile By Unit:
-                      0.026397515528 to 0.0373134328358. Mean: 0.0321322544665
-            Low 20th Percentile By Value:
-                      0.0524590163934 to 0.104895104895. Units: 3099
-
-            Mid Twentieth Percentile By Unit:
-                      0.0373134328358 to 0.047619047619. Mean: 0.0424441566881
-            Mid 20th Percentile By Value:
-                      0.104938271605 to 0.156626506024. Units: 245
-
-            High Twentieth Percentile By Unit:
-                      0.047619047619 to 0.0625. Mean: 0.0544704851857
-            High 20th Percentile By Value:
-                      0.157894736842 to 0.2. Units: 15
-
-            Top Twentieth Percentile By Unit:
-                      0.0625 to 0.262247838617. Mean: 0.083160433722
-            High 20th Percentile By Value:
-                      0.214285714286 to 0.262247838617. Units: 6
-
-            Top 10th Percentile By Unit:
-                      0.0764705882353 to 0.262247838617. Mean: 0.0977916944463
-            Top 10th Percentile By Value:
-                      0.236842105263 to 0.262247838617. Units: 3
-
-            PL_WORDS:
-            Standard Deviation: 398.971531194
-            Bottom 10th Percentile By Unit:
-                      4.0 to 78.0. Mean: 51.3333333333
-            Bottom 10th Percentile By Value:
-                      4.0 to 546.0. Units: 9174
-
-            Bottom 20th Percentile By Unit:
-                      4.0 to 109.0. Mean: 72.8036929057
-            Bottom 20th Percentile By Value:
-                      547.0 to 1088.0. Units: 758
-
-            Low Twentieth Percentile By Unit:
-                      109.0 to 151.0. Mean: 129.894557823
-            Low 20th Percentile By Value:
-                      1090.0 to 2166.0. Units: 264
-
-            Mid Twentieth Percentile By Unit:
-                      151.0 to 224.0. Mean: 184.609329446
-            Mid 20th Percentile By Value:
-                      2183.0 to 3224.0. Units: 59
-
-            High Twentieth Percentile By Unit:
-                      224.0 to 372.0. Mean: 286.860058309
-            High 20th Percentile By Value:
-                      3277.0 to 4295.0. Units: 23
-
-            Top Twentieth Percentile By Unit:
-                      373.0 to 5427.0. Mean: 811.741747573
-            High 20th Percentile By Value:
-                      4373.0 to 5427.0. Units: 14
-
-            Top 10th Percentile By Unit:
-                      574.0 to 5427.0. Mean: 1167.16326531
-            Top 10th Percentile By Value:
-                      4913.0 to 5427.0. Units: 6
-
-            OBJECT_PERCENT:
-            Standard Deviation: 0.019216697412
-            Bottom 10th Percentile By Unit:
-                      0.0 to 0.0106382978723. Mean: 0.00442138403961
-            Bottom 10th Percentile By Value:
-                      0.0 to 0.027266530334. Units: 4643
-
-            Bottom 20th Percentile By Unit:
-                      0.0 to 0.0166666666667. Mean: 0.00921063322851
-            Bottom 20th Percentile By Value:
-                      0.0272727272727 to 0.0544217687075. Units: 4559
-
-            Low Twentieth Percentile By Unit:
-                      0.0166666666667 to 0.0252324037185. Mean: 0.0212154358819
-            Low 20th Percentile By Value:
-                      0.0545454545455 to 0.108108108108. Units: 1044
-
-            Mid Twentieth Percentile By Unit:
-                      0.0252365930599 to 0.0332103321033. Mean: 0.0291529745537
-            Mid 20th Percentile By Value:
-                      0.109375 to 0.158536585366. Units: 42
-
-            High Twentieth Percentile By Unit:
-                      0.0332103321033 to 0.044776119403. Mean: 0.0384507453063
-            High 20th Percentile By Value:
-                      0.16393442623 to 0.183908045977. Units: 3
-
-            Top Twentieth Percentile By Unit:
-                      0.044776119403 to 0.272727272727. Mean: 0.0606189233002
-            High 20th Percentile By Value:
-                      0.272727272727 to 0.272727272727. Units: 1
-
-            Top 10th Percentile By Unit:
-                      0.0554156171285 to 0.272727272727. Mean: 0.0715847215262
-            Top 10th Percentile By Value:
-                      0.272727272727 to 0.272727272727. Units: 1
-
-            YOU_FREQ:
-            Standard Deviation: 0.0157788505127
-            Bottom 10th Percentile By Unit:
-                      0.0 to 0.0. Mean: 0.0
-            Bottom 10th Percentile By Value:
-                      0.0 to 0.0236842105263. Units: 9055
-
-            Bottom 20th Percentile By Unit:
-                      0.0 to 0.0. Mean: 0.0
-            Bottom 20th Percentile By Value:
-                      0.0238095238095 to 0.0474308300395. Units: 860
-
-            Low Twentieth Percentile By Unit:
-                      0.0 to 0.0. Mean: 0.0
-            Low 20th Percentile By Value:
-                      0.047619047619 to 0.0945945945946. Units: 345
-
-            Mid Twentieth Percentile By Unit:
-                      0.0 to 0.00245098039216. Mean: 0.000172886304139
-            Mid 20th Percentile By Value:
-                      0.0952380952381 to 0.141304347826. Units: 28
-
-            High Twentieth Percentile By Unit:
-                      0.00245098039216 to 0.01393728223. Mean: 0.00757968482715
-            High 20th Percentile By Value:
-                      0.142857142857 to 0.153846153846. Units: 3
-
-            Top Twentieth Percentile By Unit:
-                      0.0139616055846 to 0.238095238095. Mean: 0.0334020326074
-            High 20th Percentile By Value:
-                      0.238095238095 to 0.238095238095. Units: 1
-
-            Top 10th Percentile By Unit:
-                      0.0275862068966 to 0.238095238095. Mean: 0.0471262051692
-            Top 10th Percentile By Value:
-                      0.238095238095 to 0.238095238095. Units: 1
-
-            WL_MEAN:
-            Standard Deviation: 0.482655027125
-            Bottom 10th Percentile By Unit:
-                      2.0 to 3.0. Mean: 2.96695821186
-            Bottom 10th Percentile By Value:
-                      2.0 to 2.0. Units: 34
-
-            Bottom 20th Percentile By Unit:
-                      2.0 to 3.0. Mean: 2.98347910593
-            Bottom 20th Percentile By Value:
-                      2.5 to 3.0. Units: 0
-
-            Low Twentieth Percentile By Unit:
-                      3.0 to 3.0. Mean: 3.0
-            Low 20th Percentile By Value:
-                      3.0 to 3.0. Units: 7022
-
-            Mid Twentieth Percentile By Unit:
-                      3.0 to 3.0. Mean: 3.0
-            Mid 20th Percentile By Value:
-                      4.0 to 4.0. Units: 3194
-
-            High Twentieth Percentile By Unit:
-                      3.0 to 4.0. Mean: 3.57142857143
-            High 20th Percentile By Value:
-                      5.0 to 5.0. Units: 38
-
-            Top Twentieth Percentile By Unit:
-                      4.0 to 7.0. Mean: 4.02281553398
-            High 20th Percentile By Value:
-                      6.0 to 7.0. Units: 4
-
-            Top 10th Percentile By Unit:
-                      4.0 to 7.0. Mean: 4.04567541302
-            Top 10th Percentile By Value:
-                      7.0 to 7.0. Units: 1
-
-            PASSIVE_PERCENT:
-            Standard Deviation: 0.0234680766003
-            Bottom 10th Percentile By Unit:
-                      0.0 to 0.0229007633588. Mean: 0.0135158362545
-            Bottom 10th Percentile By Value:
-                      0.0 to 0.0393700787402. Units: 3670
-
-            Bottom 20th Percentile By Unit:
-                      0.0 to 0.0307692307692. Mean: 0.0203523294854
-            Bottom 20th Percentile By Value:
-                      0.0393939393939 to 0.0787401574803. Units: 5642
-
-            Low Twentieth Percentile By Unit:
-                      0.0308310991957 to 0.0414364640884. Mean: 0.0364213864891
-            Low 20th Percentile By Value:
-                      0.0787878787879 to 0.157142857143. Units: 967
-
-            Mid Twentieth Percentile By Unit:
-                      0.0414364640884 to 0.0513950073421. Mean: 0.0463312657691
-            Mid 20th Percentile By Value:
-                      0.16 to 0.222222222222. Units: 11
-
-            High Twentieth Percentile By Unit:
-                      0.0514018691589 to 0.0652173913043. Mean: 0.0575328496914
-            High 20th Percentile By Value:
-                      0.25 to 0.25. Units: 1
-
-            Top Twentieth Percentile By Unit:
-                      0.0652173913043 to 0.393939393939. Mean: 0.08359101965
-            High 20th Percentile By Value:
-                      0.393939393939 to 0.393939393939. Units: 1
-
-            Top 10th Percentile By Unit:
-                      0.0778443113772 to 0.393939393939. Mean: 0.0963627961341
-            Top 10th Percentile By Value:
-                      0.393939393939 to 0.393939393939. Units: 1
-
-            STANZAS:
-            Standard Deviation: 30.667452783
-            Bottom 10th Percentile By Unit:
-                      1.0 to 1.0. Mean: 1.0
-            Bottom 10th Percentile By Value:
-                      1.0 to 75.0. Units: 10001
-
-            Bottom 20th Percentile By Unit:
-                      1.0 to 1.0. Mean: 1.0
-            Bottom 20th Percentile By Value:
-                      76.0 to 150.0. Units: 202
-
-            Low Twentieth Percentile By Unit:
-                      1.0 to 4.0. Mean: 2.55344995141
-            Low 20th Percentile By Value:
-                      152.0 to 290.0. Units: 64
-
-            Mid Twentieth Percentile By Unit:
-                      4.0 to 7.0. Mean: 5.31584062196
-            Mid 20th Percentile By Value:
-                      310.0 to 436.0. Units: 22
-
-            High Twentieth Percentile By Unit:
-                      7.0 to 17.0. Mean: 11.1355685131
-            High 20th Percentile By Value:
-                      549.0 to 595.0. Units: 2
-
-            Top Twentieth Percentile By Unit:
-                      17.0 to 747.0. Mean: 49.4412621359
-            High 20th Percentile By Value:
-                      747.0 to 747.0. Units: 1
-
-            Top 10th Percentile By Unit:
-                      32.0 to 747.0. Mean: 75.8542274052
-            Top 10th Percentile By Value:
-                      747.0 to 747.0. Units: 1
-
-            SL_MODE:
-            Standard Deviation: 15.8555425416
-            Bottom 10th Percentile By Unit:
-                      0.0 to 1.0. Mean: 0.854227405248
-            Bottom 10th Percentile By Value:
-                      0.0 to 38.0. Units: 9923
-
-            Bottom 20th Percentile By Unit:
-                      0.0 to 1.0. Mean: 0.927113702624
-            Bottom 20th Percentile By Value:
-                      39.0 to 76.0. Units: 292
-
-            Low Twentieth Percentile By Unit:
-                      1.0 to 4.0. Mean: 2.19727891156
-            Low 20th Percentile By Value:
-                      78.0 to 152.0. Units: 57
-
-            Mid Twentieth Percentile By Unit:
-                      4.0 to 6.0. Mean: 4.52137998056
-            Mid 20th Percentile By Value:
-                      154.0 to 210.0. Units: 13
-
-            High Twentieth Percentile By Unit:
-                      6.0 to 14.0. Mean: 9.67541302235
-            High 20th Percentile By Value:
-                      238.0 to 301.0. Units: 5
-
-            Top Twentieth Percentile By Unit:
-                      14.0 to 383.0. Mean: 29.8723300971
-            High 20th Percentile By Value:
-                      347.0 to 383.0. Units: 2
-
-            Top 10th Percentile By Unit:
-                      23.0 to 383.0. Mean: 42.3770651118
-            Top 10th Percentile By Value:
-                      347.0 to 383.0. Units: 2
-
-            LEX_DIV:
-            Standard Deviation: 0.111328028182
-            Bottom 10th Percentile By Unit:
-                      0.1 to 0.463414634146. Mean: 0.402652161712
-            Bottom 10th Percentile By Value:
-                      0.1 to 0.179316888046. Units: 7
-
-            Bottom 20th Percentile By Unit:
-                      0.1 to 0.513513513514. Mean: 0.447278198924
-            Bottom 20th Percentile By Value:
-                      0.193396226415 to 0.279245283019. Units: 24
-
-            Low Twentieth Percentile By Unit:
-                      0.513513513514 to 0.580441640379. Mean: 0.549152140195
-            Low 20th Percentile By Value:
-                      0.280343007916 to 0.459770114943. Units: 956
-
-            Mid Twentieth Percentile By Unit:
-                      0.580459770115 to 0.632911392405. Mean: 0.606850892639
-            Mid 20th Percentile By Value:
-                      0.460035523979 to 0.63981042654. Units: 5452
-
-            High Twentieth Percentile By Unit:
-                      0.632911392405 to 0.690789473684. Mean: 0.66015066547
-            High 20th Percentile By Value:
-                      0.64 to 0.819672131148. Units: 3562
-
-            Top Twentieth Percentile By Unit:
-                      0.690789473684 to 1.0. Mean: 0.755390983609
-            High 20th Percentile By Value:
-                      0.82 to 1.0. Units: 291
-
-            Top 10th Percentile By Unit:
-                      0.734939759036 to 1.0. Mean: 0.800470739847
-            Top 10th Percentile By Value:
-                      0.910447761194 to 1.0. Units: 64
-
-            I_FREQ:
-            Standard Deviation: 0.0207888829652
-            Bottom 10th Percentile By Unit:
-                      0.0 to 0.0. Mean: 0.0
-            Bottom 10th Percentile By Value:
-                      0.0 to 0.0260586319218. Units: 7770
-
-            Bottom 20th Percentile By Unit:
-                      0.0 to 0.0. Mean: 0.0
-            Bottom 20th Percentile By Value:
-                      0.0260869565217 to 0.0520833333333. Units: 1861
-
-            Low Twentieth Percentile By Unit:
-                      0.0 to 0.00383141762452. Mean: 0.000395087538144
-            Low 20th Percentile By Value:
-                      0.0521739130435 to 0.103092783505. Units: 616
-
-            Mid Twentieth Percentile By Unit:
-                      0.00383141762452 to 0.0149253731343. Mean: 0.00927220250521
-            Mid 20th Percentile By Value:
-                      0.104761904762 to 0.151351351351. Units: 37
-
-            High Twentieth Percentile By Unit:
-                      0.0149253731343 to 0.030303030303. Mean: 0.0218857491222
-            High 20th Percentile By Value:
-                      0.161616161616 to 0.178571428571. Units: 6
-
-            Top Twentieth Percentile By Unit:
-                      0.030303030303 to 0.260869565217. Mean: 0.0497536909348
-            High 20th Percentile By Value:
-                      0.25 to 0.260869565217. Units: 2
-
-            Top 10th Percentile By Unit:
-                      0.0443037974684 to 0.260869565217. Mean: 0.0630729811741
-            Top 10th Percentile By Value:
-                      0.25 to 0.260869565217. Units: 2
-
-            ALLITERATION:
-            Standard Deviation: 0.137094703918
-            Bottom 10th Percentile By Unit:
-                      0.0 to 0.158192090395. Mean: 0.104998295052
-            Bottom 10th Percentile By Value:
-                      0.0 to 0.0995024875622. Units: 378
-
-            Bottom 20th Percentile By Unit:
-                      0.0 to 0.2. Mean: 0.142900807723
-            Bottom 20th Percentile By Value:
-                      0.1 to 0.199312714777. Units: 1634
-
-            Low Twentieth Percentile By Unit:
-                      0.2 to 0.256281407035. Mean: 0.229841186508
-            Low 20th Percentile By Value:
-                      0.2 to 0.399491094148. Units: 7005
-
-            Mid Twentieth Percentile By Unit:
-                      0.256281407035 to 0.303448275862. Mean: 0.279636512634
-            Mid 20th Percentile By Value:
-                      0.4 to 0.6. Units: 1008
-
-            High Twentieth Percentile By Unit:
-                      0.303571428571 to 0.361581920904. Mean: 0.330665394066
-            High 20th Percentile By Value:
-                      0.600554785021 to 0.79792746114. Units: 82
-
-            Top Twentieth Percentile By Unit:
-                      0.361581920904 to 1.0. Mean: 0.479425168562
-            High 20th Percentile By Value:
-                      0.8 to 1.0. Units: 185
-
-            Top 10th Percentile By Unit:
-                      0.416666666667 to 1.0. Mean: 0.573334938559
-            Top 10th Percentile By Value:
-                      0.901639344262 to 1.0. Units: 166
-
-            SL_RANGE:
-            Standard Deviation: 11.2866692246
-            Bottom 10th Percentile By Unit:
-                      0.0 to 0.0. Mean: 0.0
-            Bottom 10th Percentile By Value:
-                      0.0 to 26.0. Units: 9993
-
-            Bottom 20th Percentile By Unit:
-                      0.0 to 0.0. Mean: 0.0
-            Bottom 20th Percentile By Value:
-                      27.0 to 53.0. Units: 221
-
-            Low Twentieth Percentile By Unit:
-                      0.0 to 0.0. Mean: 0.0
-            Low 20th Percentile By Value:
-                      54.0 to 106.0. Units: 59
-
-            Mid Twentieth Percentile By Unit:
-                      0.0 to 1.0. Mean: 0.666180758017
-            Mid 20th Percentile By Value:
-                      109.0 to 159.0. Units: 10
-
-            High Twentieth Percentile By Unit:
-                      1.0 to 5.0. Mean: 2.72011661808
-            High 20th Percentile By Value:
-                      161.0 to 193.0. Units: 5
-
-            Top Twentieth Percentile By Unit:
-                      5.0 to 268.0. Mean: 17.4752427184
-            High 20th Percentile By Value:
-                      237.0 to 268.0. Units: 4
-
-            Top 10th Percentile By Unit:
-                      12.0 to 268.0. Mean: 26.9951409135
-            Top 10th Percentile By Value:
-                      242.0 to 268.0. Units: 3
-
-            SL_MEAN:
-            Standard Deviation: 13.8433158156
-            Bottom 10th Percentile By Unit:
-                      0.203883495146 to 0.914285714286. Mean: 0.804117915454
-            Bottom 10th Percentile By Value:
-                      0.203883495146 to 38.3333333333. Units: 10012
-
-            Bottom 20th Percentile By Unit:
-                      0.203883495146 to 1.1875. Mean: 0.89454810098
-            Bottom 20th Percentile By Value:
-                      39.0 to 76.0. Units: 217
-
-            Low Twentieth Percentile By Unit:
-                      1.2 to 3.83333333333. Mean: 2.61635606826
-            Low 20th Percentile By Value:
-                      79.0 to 152.0. Units: 51
-
-            Mid Twentieth Percentile By Unit:
-                      3.83333333333 to 6.0. Mean: 4.57069137883
-            Mid 20th Percentile By Value:
-                      155.0 to 210.0. Units: 9
-
-            High Twentieth Percentile By Unit:
-                      6.0 to 13.0. Mean: 8.68260768083
-            High 20th Percentile By Value:
-                      301.0 to 301.0. Units: 1
-
-            Top Twentieth Percentile By Unit:
-                      13.0 to 383.0. Mean: 26.5902815971
-            High 20th Percentile By Value:
-                      347.0 to 383.0. Units: 2
-
-            Top 10th Percentile By Unit:
-                      20.6666666667 to 383.0. Mean: 37.5660408567
-            Top 10th Percentile By Value:
-                      347.0 to 383.0. Units: 2
-
-            THE_FREQ:
-            Standard Deviation: 0.0335303369983
-            Bottom 10th Percentile By Unit:
-                      0.0 to 0.0242718446602. Mean: 0.0119266070533
-            Bottom 10th Percentile By Value:
-                      0.0 to 0.0499390986602. Units: 3446
-
-            Bottom 20th Percentile By Unit:
-                      0.0 to 0.0373831775701. Mean: 0.0216517624681
-            Bottom 20th Percentile By Value:
-                      0.05 to 0.0996884735202. Units: 5438
-
-            Low Twentieth Percentile By Unit:
-                      0.0373831775701 to 0.0550458715596. Mean: 0.0466783672449
-            Low 20th Percentile By Value:
-                      0.1 to 0.197530864198. Units: 1381
-
-            Mid Twentieth Percentile By Unit:
-                      0.0550847457627 to 0.0701754385965. Mean: 0.0623952424079
-            Mid 20th Percentile By Value:
-                      0.2 to 0.272727272727. Units: 26
-
-            High Twentieth Percentile By Unit:
-                      0.0701754385965 to 0.0900900900901. Mean: 0.0794093373281
-            High 20th Percentile By Value:
-                      0.3 to 0.4. Units: 0
-
-            Top Twentieth Percentile By Unit:
-                      0.0900900900901 to 0.5. Mean: 0.113656940348
-            High 20th Percentile By Value:
-                      0.5 to 0.5. Units: 1
-
-            Top 10th Percentile By Unit:
-                      0.106617647059 to 0.5. Mean: 0.129732409294
-            Top 10th Percentile By Value:
-                      0.5 to 0.5. Units: 1
-
-            LL_RANGE:
-            Standard Deviation: 70.983520752
-            Bottom 10th Percentile By Unit:
-                      0.0 to 12.0. Mean: 7.92711370262
-            Bottom 10th Percentile By Value:
-                      0.0 to 189.0. Units: 10126
-
-            Bottom 20th Percentile By Unit:
-                      0.0 to 15.0. Mean: 10.8969873664
-            Bottom 20th Percentile By Value:
-                      191.0 to 375.0. Units: 103
-
-            Low Twentieth Percentile By Unit:
-                      15.0 to 22.0. Mean: 18.6020408163
-            Low 20th Percentile By Value:
-                      379.0 to 751.0. Units: 39
-
-            Mid Twentieth Percentile By Unit:
-                      22.0 to 31.0. Mean: 26.5408163265
-            Mid 20th Percentile By Value:
-                      772.0 to 1071.0. Units: 14
-
-            High Twentieth Percentile By Unit:
-                      31.0 to 45.0. Mean: 37.4620991254
-            High 20th Percentile By Value:
-                      1176.0 to 1460.0. Units: 6
-
-            Top Twentieth Percentile By Unit:
-                      45.0 to 1891.0. Mean: 96.377184466
-            High 20th Percentile By Value:
-                      1578.0 to 1891.0. Units: 4
-
-            Top 10th Percentile By Unit:
-                      58.0 to 1891.0. Mean: 142.503401361
-            Top 10th Percentile By Value:
-                      1719.0 to 1891.0. Units: 2
-
-            COMMON_PERCENT:
-            Standard Deviation: 0.0760969688829
-            Bottom 10th Percentile By Unit:
-                      0.140221402214 to 0.359116022099. Mean: 0.317757020033
-            Bottom 10th Percentile By Value:
-                      0.140221402214 to 0.214285714286. Units: 31
-
-            Bottom 20th Percentile By Unit:
-                      0.140221402214 to 0.388535031847. Mean: 0.346607123731
-            Bottom 20th Percentile By Value:
-                      0.217391304348 to 0.289473684211. Units: 176
-
-            Low Twentieth Percentile By Unit:
-                      0.388535031847 to 0.428571428571. Mean: 0.409191146211
-            Low 20th Percentile By Value:
-                      0.289855072464 to 0.43908045977. Units: 4595
-
-            Mid Twentieth Percentile By Unit:
-                      0.428571428571 to 0.462857142857. Mean: 0.445066553997
-            Mid 20th Percentile By Value:
-                      0.439093484419 to 0.588235294118. Units: 5133
-
-            High Twentieth Percentile By Unit:
-                      0.462926509186 to 0.505050505051. Mean: 0.482335556696
-            High 20th Percentile By Value:
-                      0.588709677419 to 0.734375. Units: 330
-
-            Top Twentieth Percentile By Unit:
-                      0.505084745763 to 0.887372013652. Mean: 0.55450410582
-            High 20th Percentile By Value:
-                      0.738007380074 to 0.887372013652. Units: 27
-
-            Top 10th Percentile By Unit:
-                      0.5390625 to 0.887372013652. Mean: 0.588526048446
-            Top 10th Percentile By Value:
-                      0.821350762527 to 0.887372013652. Units: 7
         """
 
         metrics = cls.query.all()
@@ -3246,6 +2070,34 @@ class Metrics(db.Model):
         finaly word_list is a list of all the words in the text associated with
         the main metrics object.
 
+            >>> from server import app
+            >>> connect_to_db(app)
+            >>>
+            >>> main_metrics, compare_metrics = Metrics.query.all()[0:2]
+            >>> micro_lex = main_metrics._get_micro_lex_data()
+            >>> sentiment = main_metrics._get_sentiment_data()
+            >>> context = main_metrics._get_context_data()
+            >>> raw_words = Metrics._clean_word_list(main_metrics.poem.text)
+            >>> word_list = [w for w in raw_words if w.isalpha()]
+            >>>
+            >>> results = main_metrics._get_criteria(other_metric_obj=compare_metrics, micro_lex=micro_lex, sentiment=sentiment, word_list=word_list, context=context)
+            >>> results['o_context']
+            []
+            >>> results['o_macro']
+            [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+            >>> results['context']
+            []
+            >>> results['sentiment'][:4]
+            [0.5343915343915344, 0.5079365079365079, 0.05291005291005291, 0.010582010582010581]
+            >>> results['macro'][:5]
+            [0.3333333333333333, 3.0, 0.0, 0.7142857142857143, 0.6659692436447328]
+            >>> results['temp_micro'][:4]
+            [0.03355704697986577, 0.013422818791946308, 0.013422818791946308, 0.0]
+            >>> results['o_sentiment'][:4]
+            [0.4574468085106383, 0.3723404255319149, 0.010638297872340425, 0.031914893617021274]
+            >>> results['o_micro_lex'][:5]
+            [0.04054054054054054, 0.0, 0.05405405405405406, 0.013513513513513514, 0.0]
+
         This method is called by find_matches, and will not need to be called
         directly.
         """
@@ -3429,6 +2281,16 @@ class Metrics(db.Model):
     def _get_word_compare(word_list, other):
         """returns the percentage of words from self in other
 
+            >>> from server import app
+            >>> connect_to_db(app)
+            >>>
+            >>> metric1, metric2 = Metrics.query.all()[0:2]
+            >>> rough_word_list = Metrics._clean_word_list(metric1.poem.text)
+            >>> word_list = [w for w in rough_word_list if w.isalpha()]
+            >>>
+            >>> Metrics._get_word_compare(word_list, metric2)
+            (0.174496644295302, 0.3918918918918919)
+
         called my Metrics._calc_matches_ which is in turn caled by
         Metrics.find_matches, and will not need to be called directly.
         """
@@ -3527,6 +2389,23 @@ class Metrics(db.Model):
     def _get_macro_compare(self, other):
         """"returns tuple with [closeness of macro data], [ideal]
 
+            >>> from server import app
+            >>> connect_to_db(app)
+            >>>
+            >>> main_metric = Metrics.query.get(10)
+            >>> compare_metric = Metrics.query.get(12)
+            >>> compare = main_metric._get_macro_compare(compare_metric)
+            >>> compare[0][:5]
+            [0.3333333333333333, 3.0, 0.0, 0.7142857142857143, 0.6659692436447328]
+            >>> compare[0][5:10]
+            [0.5769230769230769, 0.5172413793103449, 0.56, 0.6857142857142857, 0.25]
+            >>> compare[0][10:15]
+            [0.75, 0.0, 0.4166666666666667, 0.3997488226059655, 0.36585365853658536]
+            >>> compare[0][15:]
+            [0.3409090909090909, 1.2727272727272727, 2.1818181818181817]
+            >>> compare[1] == [0.0 for i in range(18)]
+            True
+
         This function is called by Metrics._calc_matches_ and will not need to
         be called directly. Ideal is 1 for each item, since that is what
         we would receive if they had the same value.
@@ -3543,7 +2422,23 @@ class Metrics(db.Model):
         return (macro_compare, ideal)
 
     def _get_context_data(self):
-        """Returns a list w/ nested lists w/ context data for a poem"""
+        """Returns a list w/ nested lists w/ context data for a poem
+
+            >>> from server import app
+            >>> connect_to_db(app)
+            >>>
+            >>> metric = Metrics.query.get(10)
+            >>> results = metric._get_context_data()
+            >>> len(results['regions'])
+            2
+            >>> len(results['subjects'])
+            10
+            >>> results['terms']
+            set([<Term: Rhymed Stanza, ID: 1>])
+
+        This method is called as a part of Metrics.find_matches() and does not
+        need to be used directly.
+        """
 
         subjects = set(self.subjects)
         terms = set(self.terms)
@@ -3949,11 +2844,10 @@ class Metrics(db.Model):
         """returns a dict with fequency data for a given list of words
 
         i_freq is the number of times "i" occurs on it's own (i.e. not as part
-            of another word) as a percentage of overall words in the poem.
-        you_freq is the number of times "you" occurs on it's own as a percentage
-            of overall words in the poem.
-        the_freq, is_freq, and a_freq follow the same model, but for "the",
-            "is", and "a" respectively.
+        of another word) as a percentage of overall words in the poem. you_freq
+        is the number of times "you" occurs on it's own as a percentage of
+        overall words in the poem. the_freq, is_freq, and a_freq follow the same
+        model, but for "the", "is", and "a" respectively.
 
             >>> x = ['this', 'is', 'a', 'sample', 'text', '.', 'normally',\
                      'this', 'would', 'come', 'from', 'a', 'poem', '.',\
@@ -4055,17 +2949,17 @@ class Metrics(db.Model):
     def _get_alliteration_score(line_dict):
         """given a text, returns alliteration score as a float
 
-        >>> ldict = {'no_breaks': ['Here is some sample text to savor!',\
-                                   'I hope you have a healthy and happy day!']}
-        >>> Metrics._get_alliteration_score(ldict)
-        0.6428571428571429
+            >>> ldict = {'no_breaks': ['Here is some sample text to savor!',\
+                                       'I hope you have a healthy and happy day!']}
+            >>> Metrics._get_alliteration_score(ldict)
+            0.6428571428571429
 
         alternatively if we have not alliteration:
 
-        >>> ldict = {'no_breaks': ['Here you will find sample text.',\
-                                   'No alliteration present.']}
-        >>> Metrics._get_alliteration_score(ldict)
-        0.0
+            >>> ldict = {'no_breaks': ['Here you will find sample text.',\
+                                       'No alliteration present.']}
+            >>> Metrics._get_alliteration_score(ldict)
+            0.0
 
         Alliteration score is incremented every time multiple words in the
         same line start with the same letter. Final score is the alliteration
@@ -4198,6 +3092,7 @@ class Metrics(db.Model):
         called by Metrics._get_rhyme_score, which in turn is called within
         Metrics.get_metrics, and will not need to be used directly.
         """
+
         lines = line_dict["no_breaks"]
         end_words = []
         for line in lines:
@@ -4255,10 +3150,23 @@ class Metrics(db.Model):
 
     @staticmethod
     def _get_average_data(list_of_means, list_of_medians, list_of_modes, set_max=None):
-        """returns a dict w/ lists of of word length average data
+        """returns a dict w/ lists of of average data and labels
 
-        called by server.py and fed through to Chart.js to make a graph of
-        the spread of our wl_mean, wl_median, and wl_mode values.
+            >>> list_of_means = [1, 1, 3, 2, 2]
+            >>> list_of_medians = [1, 1, 1, 4, 2]
+            >>> list_of_modes = [1, 2, 3, 4]
+            >>> results = Metrics._get_average_data(list_of_means=list_of_means,\
+                                                    list_of_medians=list_of_medians,\
+                                                    list_of_modes=list_of_modes)
+            >>> expected = {'labels': [0.0, 1.0, 2.0, 3.0],\
+                            'median': [0, 3, 1, 0],\
+                            'mode': [0, 1, 1, 1],\
+                            'mean': [0, 2, 2, 1]}
+            >>> results == expected
+            True
+
+        called by other methods to get range data, which it then feeds to
+        Chart.js to make a graph of the spread of our mean, median, and mode values.
         """
 
         labels = []
@@ -4288,10 +3196,16 @@ class Metrics(db.Model):
 
     @staticmethod
     def _get_range_data(list_of_numbers, set_max=None):
-        """returns a dict w/ lists of of word length average data
+        """returns a dict w/ list of range data and labels
 
-        called by server.py and fed through to Chart.js to make a graph of
-        the spread of our wl_mean, wl_median, and wl_mode values.
+            >>> list_of_numbers = [1, 1, 2, 3, 4, 1, 4]
+            >>> results = Metrics._get_range_data(list_of_numbers)
+            >>> expected = {'range': [0, 3, 1, 1, 2], 'labels': [0.0, 1.0, 2.0, 3.0, 4.0]}
+            >>> results == expected
+            True
+
+        called by other methods to get range data, which it then feeds to
+        Chart.js to make a graph of the spread of range values.
         """
 
         labels = []
@@ -4316,8 +3230,27 @@ class Metrics(db.Model):
     def _get_percent_data(first_list_of_nums, second_list_of_nums=None, third_list_of_nums=None, set_max=None):
         """returns a dict w/ lists of of word length average data
 
-        called by server.py and fed through to Chart.js to make a graph of
-        the spread of our wl_mean, wl_median, and wl_mode values.
+            >>> list_of_nums = [0.111, 0.222, 0.333, 0.111]
+            >>> results = Metrics._get_percent_data(list_of_nums)
+            >>> results['labels'][0]
+            0.0
+            >>> results['first'][0]
+            0
+            >>> results['labels'][5]
+            '0.1 -- 0.125'
+            >>> results['first'][5]
+            2
+            >>> results['labels'][9]
+            '0.2 -- 0.225'
+            >>> results['first'][9]
+            1
+            >>> results['labels'][14]
+            '0.325 -- 0.35'
+            >>> results['first'][14]
+            1
+
+        called by other methods and fed through to Chart.js to make a graph of
+        the spread of data that is between zero and one.
         """
 
         nums = [0.000, 0.025, 0.050, 0.075, 0.100, 0.125, 0.150, 0.175, 0.200,
@@ -4328,15 +3261,20 @@ class Metrics(db.Model):
         if set_max:
             nums = [n for n in nums if n <= set_max]
 
-        labels = []
+        labels = [0.0]
         first_range_count = []
         second_range_count = []
         third_range_count = []
 
+        first_range_count.append(len([n for n in first_list_of_nums if n == 0]))
+        if second_list_of_nums:
+            second_range_count.append(len([n for n in second_list_of_nums if n == 0]))
+        if third_list_of_nums:
+            third_range_count.append(len([n for n in second_list_of_nums if n == 0]))
+
         for i in range(len(nums) - 1):
             num1 = nums[i]
             num2 = nums[i + 1]
-
             label = str(num1) + " -- " + str(num2)
             labels.append(label)
 
@@ -4366,10 +3304,29 @@ class Metrics(db.Model):
 
     @staticmethod
     def _get_small_percent_data(first_list_of_nums, second_list_of_nums=None, third_list_of_nums=None, set_max=None):
-        """returns a dict w/ lists of of word length average data
+        """returns dict w/ lists of labels and freq. of label value for each list
 
-        called by server.py and fed through to Chart.js to make a graph of
-        the spread of our wl_mean, wl_median, and wl_mode values.
+            >>> list_of_nums = [0.111, 0.222, 0.333, 0.111]
+            >>> results = Metrics._get_small_percent_data(list_of_nums, set_max=0.35)
+            >>> results['labels'][0]
+            0.0
+            >>> results['first'][0]
+            0
+            >>> results['labels'][12]
+            '0.11 -- 0.12'
+            >>> results['first'][12]
+            2
+            >>> results['labels'][23]
+            '0.22 -- 0.23'
+            >>> results['first'][23]
+            1
+            >>> results['labels'][-2]
+            '0.33 -- 0.34'
+            >>> results['first'][-2]
+            1
+
+        called by other methods and fed through to Chart.js to make a graph of
+        percent data that is toward the lower end with greater accuracy.
         """
 
         nums = [0.000, 0.010, 0.020, 0.030, 0.040, 0.050, 0.060, 0.070, 0.080,
@@ -4390,10 +3347,16 @@ class Metrics(db.Model):
 
             nums = [n for n in nums if n <= set_max]
 
-        labels = []
-        first_range_count = []
-        second_range_count = []
-        third_range_count = []
+        labels = [0.0]
+        first_count = []
+        second_count = []
+        third_count = []
+
+        first_count.append(len([n for n in first_list_of_nums if n == 0]))
+        if second_list_of_nums:
+            second_count.append(len([n for n in second_list_of_nums if n == 0]))
+        if third_list_of_nums:
+            third_count.append(len([n for n in second_list_of_nums if n == 0]))
 
         for i in range(len(nums) - 1):
             num1 = nums[i]
@@ -4403,31 +3366,39 @@ class Metrics(db.Model):
             labels.append(label)
 
             count1 = [n for n in first_list_of_nums if n >= num1 and n < num2]
-            first_range_count.append(len(count1))
+            first_count.append(len(count1))
             if second_list_of_nums:
                 count2 = [n for n in second_list_of_nums if n >= num1 and n < num2]
-                second_range_count.append(len(count2))
+                second_count.append(len(count2))
             if third_list_of_nums:
                 count3 = [n for n in third_list_of_nums if n >= num1 and n < num2]
-                third_range_count.append(len(count3))
+                third_count.append(len(count3))
 
-        if all([first_range_count, second_range_count, third_range_count]):
+        if all([first_count, second_count, third_count]):
             data = {"labels": labels,
-                    "first": first_range_count,
-                    "second": second_range_count,
-                    "third": third_range_count}
-        elif first_range_count and second_range_count:
+                    "first": first_count,
+                    "second": second_count,
+                    "third": third_count}
+        elif first_count and second_count:
             data = {"labels": labels,
-                    "first": first_range_count,
-                    "second": second_range_count}
+                    "first": first_count,
+                    "second": second_count}
         else:
             data = {"labels": labels,
-                    "first": first_range_count}
+                    "first": first_count}
 
         return data
 
     @staticmethod
     def get_obj_abs_data(metrics_obj_list):
+        """returns dict w/ list of labels and list of frequency of labels value
+
+        gathers all the object_percent data and the abs_percent_data from every
+        metrics objects in the list of metrics_objects, and feeds the resultant
+        lists of floats to Metrics._get_percent_data for a dictionary that can
+        then be given to Chart.js to graph the frequency of each value.
+        """
+
         obj = [m.object_percent for m in metrics_obj_list]
         abst = [m.abs_percent for m in metrics_obj_list]
 
@@ -4437,6 +3408,14 @@ class Metrics(db.Model):
 
     @staticmethod
     def get_common_data(metrics_obj_list):
+        """returns dict w/ list of labels and list of frequency of labels value
+
+        gathers all the common_percent data and the poem_percent_data from every
+        metrics objects in the list of metrics_objects, and feeds the resultant
+        lists of floats to Metrics._get_small_percent_data for a dictionary that
+        can then be given to Chart.js to graph the frequency of each value.
+        """
+
         standard = [m.common_percent for m in metrics_obj_list]
         specific = [m.poem_percent for m in metrics_obj_list]
 
@@ -4445,6 +3424,14 @@ class Metrics(db.Model):
 
     @staticmethod
     def get_gender_data(metrics_obj_list):
+        """returns dict w/ list of labels and list of frequency of labels value
+
+        gathers all the male_percent data and the female_percent_data from every
+        metrics objects in the list of metrics_objects, and feeds the resultant
+        lists of floats to Metrics._get_small_percent_data for a dictionary that
+        can then be given to Chart.js to graph the frequency of each value.
+        """
+
         male = [m.male_percent for m in metrics_obj_list]
         female = [m.female_percent for m in metrics_obj_list]
 
@@ -4454,6 +3441,14 @@ class Metrics(db.Model):
 
     @staticmethod
     def get_active_data(metrics_obj_list):
+        """returns dict w/ list of labels and list of frequency of labels value
+
+        gathers all the active_percent data and the passive_percent_data from every
+        metrics objects in the list of metrics_objects, and feeds the resultant
+        lists of floats to Metrics._get_small_percent_data for a dictionary that
+        can then be given to Chart.js to graph the frequency of each value.
+        """
+
         active = [m.active_percent for m in metrics_obj_list]
         passive = [m.passive_percent for m in metrics_obj_list]
 
@@ -4463,6 +3458,14 @@ class Metrics(db.Model):
 
     @staticmethod
     def get_pos_neg_data(metrics_obj_list):
+        """returns dict w/ list of labels and list of frequency of labels value
+
+        gathers all the positive percent data and the negative percent data from
+        every metrics objects in the list of metrics_objects, and feeds the
+        resultant lists of floats to Metrics._get_small_percent_data for a dict
+        that can then be given to Chart.js to graph the frequency of each value.
+        """
+
         pos = [m.positive for m in metrics_obj_list]
         neg = [m.negative for m in metrics_obj_list]
 
@@ -4472,6 +3475,14 @@ class Metrics(db.Model):
 
     @staticmethod
     def get_rhyme_rep_data(metrics_obj_list):
+        """returns dict w/ list of labels and list of frequency of labels value
+
+        gathers all the rhyme data and the end_repeat data from every metrics
+        object in the list of metrics objects, and feeds the resultant lists of
+        floats to Metrics._get_percent_data for a dict that can then be given to
+        Chart.js to graph the frequency of each value.
+        """
+
         rhyme = [m.rhyme for m in metrics_obj_list]
         end_repeat = [m.end_repeat for m in metrics_obj_list]
 
@@ -4480,12 +3491,29 @@ class Metrics(db.Model):
 
     @staticmethod
     def get_lex_data(metrics_obj_list):
+        """returns dict w/ list of labels and list of frequency of labels value
+
+        gathers the lexical diversity scores from every metrics object in the
+        list of metrics objects, and feeds the resultant lists of floats to
+        Metrics._get_percent_data for a dict that can then be given to Chart.js
+        to graph the frequency of each value.
+        """
+
         lex_div = [m.lex_div for m in metrics_obj_list]
 
         return Metrics._get_percent_data(first_list_of_nums=lex_div)
 
     @staticmethod
     def get_filler_data(metrics_obj_list):
+        """returns dict w/ list of labels and list of frequency of labels value
+
+        gathers the percent frequency scores for filler words (the_freq, a_freq,
+        and is_freq) from every metrics object in the list of metrics objects,
+        and feeds the resultant lists of floats to Metrics._get_small_percent_data
+        for a dict that can then be given to Chart.js to graph the frequency of
+        each value.
+        """
+
         the_freq = [m.the_freq for m in metrics_obj_list]
         a_freq = [m.a_freq for m in metrics_obj_list]
         is_freq = [m.is_freq for m in metrics_obj_list]
@@ -4497,6 +3525,15 @@ class Metrics(db.Model):
 
     @staticmethod
     def get_narrator_data(metrics_obj_list):
+        """returns dict w/ list of labels and list of frequency of labels value
+
+        gathers the percent frequency scores for narrator presence (i_freq and
+        you_freq) from every metrics object in the list of metrics objects, and
+        feeds the resultant lists of floats to Metrics._get_small_percent_data
+        for a dict that can then be given to Chart.js to graph the frequency of
+        each value.
+        """
+
         i_freq = [m.i_freq for m in metrics_obj_list]
         you_freq = [m.you_freq for m in metrics_obj_list]
 
@@ -4504,6 +3541,14 @@ class Metrics(db.Model):
 
     @staticmethod
     def get_alliteration_data(metrics_obj_list):
+        """returns dict w/ list of labels and list of frequency of labels value
+
+        gathers the alliteration scores for every metrics object in the list of
+        metrics objects, and feeds the resultant list of floats to
+        Metrics._get_small_percent_data for a dict that can then be given to
+        Chart.js to graph the frequency of each value.
+        """
+
         alliteration = [m.alliteration for m in metrics_obj_list]
 
         return Metrics._get_percent_data(alliteration)
@@ -4537,11 +3582,12 @@ class Metrics(db.Model):
 
     @staticmethod
     def get_pl_words_data(metrics_obj_list):
-        """returns a dict w/ lists of of word length average data
+        """returns a dict w/ lists of of poem length by words data
 
         called by server.py and fed through to Chart.js to make a graph of
-        the spread of our wl_mean, wl_median, and wl_mode values.
+        the spread of our pl_words values.
         """
+
         pl_words = [m.pl_words for m in metrics_obj_list]
 
         return Metrics._get_grouped_range(list_of_numbers=pl_words,
@@ -4549,22 +3595,34 @@ class Metrics(db.Model):
 
     @staticmethod
     def get_pl_lines_data(metrics_obj_list):
-        """returns a dict w/ lists of of word length average data
+        """returns a dict w/ lists of poem length by lines data
 
         called by server.py and fed through to Chart.js to make a graph of
-        the spread of our wl_mean, wl_median, and wl_mode values.
+        the spread of our pl_lines values.
         """
+
         pl_lines = [m.pl_lines for m in metrics_obj_list]
 
         return Metrics._get_range_data(list_of_numbers=pl_lines, set_max=101)
 
     @staticmethod
     def _get_grouped_range(list_of_numbers, set_max, range_num):
-        """returns a dict w/ lists of of word length average data
+        """returns dict w/ lists of labels w/ each set to range of scores
 
-        called by server.py and fed through to Chart.js to make a graph of
-        the spread of our wl_mean, wl_median, and wl_mode values.
+            >>> list_of_nums = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+            >>> results = Metrics._get_grouped_range(list_of_numbers=list_of_nums,\
+                                                     set_max=11, range_num=2)
+            >>> expected = {'range': [1, 2, 2, 2, 2],\
+                            'labels': ['0 -- 2', '2 -- 4', '4 -- 6', '6 -- 8', '8 -- 10']}
+            >>> results == expected
+            True
+
+        called by other methods to get a dictionary that can then be fed to
+        Chart.js to make a graph of the spread of range_data. Using this method
+        means that we count the frequency of values withint a range of range_num
+        rather than just the frequency of values incrementing by one.
         """
+
         labels = []
         range_count = []
         for i in range(0, set_max - range_num, range_num):
@@ -4582,11 +3640,12 @@ class Metrics(db.Model):
 
     @staticmethod
     def get_pl_char_data(metrics_obj_list):
-        """returns a dict w/ lists of of word length average data
+        """returns a dict w/ lists of poem length by character data
 
         called by server.py and fed through to Chart.js to make a graph of
-        the spread of our wl_mean, wl_median, and wl_mode values.
+        the spread of our pl_char values.
         """
+
         pl_char = [m.pl_char for m in metrics_obj_list]
 
         return Metrics._get_grouped_range(list_of_numbers=pl_char,
@@ -4597,7 +3656,7 @@ class Metrics(db.Model):
         """returns a dict w/ lists of of line length average data
 
         called by server.py and fed through to Chart.js to make a graph of
-        the spread of our wl_mean, wl_median, and wl_mode values.
+        the spread of our ll_mean, ll_median, and ll_mode values.
         """
 
         ll_mean = [m.ll_mean for m in metrics_obj_list]
@@ -4610,21 +3669,22 @@ class Metrics(db.Model):
 
     @staticmethod
     def get_ll_range_data(metrics_obj_list):
-        """returns a dict w/ lists of of word length average data
+        """returns a dict w/ lists of of line length range data
 
         called by server.py and fed through to Chart.js to make a graph of
-        the spread of our wl_mean, wl_median, and wl_mode values.
+        the spread of our ll_range values.
         """
+
         ll_range = [m.ll_range for m in metrics_obj_list]
 
         return Metrics._get_range_data(list_of_numbers=ll_range, set_max=101)
 
     @staticmethod
     def get_stanza_length_data(metrics_obj_list):
-        """returns a dict w/ lists of of line length average data
+        """returns a dict w/ lists of of stanza length average data
 
         called by server.py and fed through to Chart.js to make a graph of
-        the spread of our wl_mean, wl_median, and wl_mode values.
+        the spread of our sl_mean, sl_median, and sl_mode values.
         """
 
         sl_mean = [m.sl_mean for m in metrics_obj_list]
@@ -4638,29 +3698,40 @@ class Metrics(db.Model):
 
     @staticmethod
     def get_stanza_range_data(metrics_obj_list):
-        """returns a dict w/ lists of of word length average data
+        """returns a dict w/ lists of stanza range data
 
         called by server.py and fed through to Chart.js to make a graph of
-        the spread of our wl_mean, wl_median, and wl_mode values.
+        the spread of our sl_range values.
         """
+
         sl_range = [m.sl_range for m in metrics_obj_list]
 
         return Metrics._get_range_data(list_of_numbers=sl_range, set_max=51)
 
     @staticmethod
     def get_stanza_num_data(metrics_obj_list):
-        """returns a dict w/ lists of of word length average data
+        """returns a dict w/ labels for nums of stanzas and list of freq
 
         called by server.py and fed through to Chart.js to make a graph of
-        the spread of our wl_mean, wl_median, and wl_mode values.
+        the spread of our stanzas values.
         """
+
         stanzas = [m.stanzas for m in metrics_obj_list]
 
         return Metrics._get_range_data(list_of_numbers=stanzas, set_max=76)
 
     @staticmethod
     def get_single_graph_data(poems_list, name_of_context, name, poems_backref):
-        """"""
+        """for context w/name, returns list of tup(other context, # in poems list)
+
+        poems_list is a list of poem objects retrieved by called context.poems on
+        the main context item (whose name is the string in name). We also give
+        this method the string name of context (how to call the name from the item
+        i.e. for a Subject instance x, x.subject gives you the name of the subject),
+        and the name of the backref off poems that will give you all of the poem's
+        context items (i.e. for Poem instance x, x.subjects will give you all
+        connected subjects)
+        """
 
         connected_items = {}
 
@@ -4679,7 +3750,19 @@ class Metrics(db.Model):
 
     @staticmethod
     def get_context_graph_data(list_of_context_obj, name_of_context, metrics_backref):
-        """"""
+        """for context in list, returns list of dicts w/ information for Chart.js
+
+        list_of_context_obj is a list of context objects (Term, Region, or Subject)
+        -- for each of these, we create a dictionary with it's name, the total
+        number of poems associated, and identity string and a list of tuples (
+        other context item, # of poems shared). We also give this method the
+        string name of context (how to call the name from the item i.e. for a
+        Subject instance x, x.subject gives you the name of the subject), and
+        the name of the backref off poems that will give you all of the poem's
+        context items (i.e. for Poem instance x, x.subjects will give you all
+        connected subjects)
+        """
+
         final_data = []
 
         for item in list_of_context_obj:
@@ -4740,6 +3823,19 @@ class BestMatch(db.Model):
     match = db.relationship("Poem", backref="best_matched_for", foreign_keys="BestMatch.match_poem_id")
     method = db.relationship("Method", backref="best_matches")
 
+    def __repr__(self):
+        """sets what the display when we look at a Metrics object
+
+            >>> from server import app
+            >>> connect_to_db(app)
+            >>>
+            >>> example = BestMatch.query.get(1)
+            >>> example
+            <BestMatch: All My Pretty Ones to The Slow Pacific Swell>
+        """
+
+        return "<BestMatch: {} to {}>".format(self.poem.title, self.match.title)
+
 
 class Method(db.Model):
     """variations on the algorithm weighing the catagories differently"""
@@ -4753,8 +3849,22 @@ class Method(db.Model):
     sentiment = db.Column(db.Float, nullable=False)
     context = db.Column(db.Float)
 
+    def __repr__(self):
+        """sets what the display when we look at a Metrics object
+
+            >>> from server import app
+            >>> connect_to_db(app)
+            >>>
+            >>> example = Method.query.get('unwgt')
+            >>> example
+            <Method: unwgt>
+        """
+
+        return "<Method: {}>".format(self.method_code)
+
 
 class UserMetrics(Metrics):
+    """metrics object for user submitted poems -- not stored in the database"""
 
     def __init__(self, title, text):
         self.title = title
@@ -4762,6 +3872,17 @@ class UserMetrics(Metrics):
         self.poem_id = None
         self.poet_id = None
         self.get_metrics()
+
+    def __repr__(self):
+        """sets what the display when we look at a Metrics object
+
+            >>> text = "here is some sample text"
+            >>> example = UserMetrics(title="title", text=text)
+            >>> example
+            <UserMetrics: title>
+        """
+
+        return "<UserMetrics: {}>".format(self.title)
 
     def get_metrics(self):
         """calculates metrics data and stores it on the UserMetrics instance"""
@@ -4838,4 +3959,5 @@ if __name__ == "__main__":
     print "Connected to DB."
 
     import doctest
-    # doctest.testmod()
+    doctest.NORMALIZE_WHITESPACE = True
+    doctest.testmod()

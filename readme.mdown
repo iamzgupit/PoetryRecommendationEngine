@@ -1,0 +1,86 @@
+ReadMe: Poetry Recommendations
+==================================================
+
+#####  Welcome to the ReadMe for ReadMe: Poetry Recommendations!
+
+There is an almost unfathomably large amount of poetry out in the world, and finding a poem that hits the right notes for an individual reader can be daunting at best. ReadMe is designed to help make this task easier by providing poetry recommendations based on the poems you know that you enjoy, or, in the case of our Writer's Mode, help you grow your own writing by exposing you to great poems that are similar in style to your own.
+
+Our database contains over ten thousand poems which we sort through to find the best match. Each time you search for recommendations, ReadMe will provide five distinct poems for you to read -- each of which is based on a slightly different variation of our matching algorithm. In this way, if you provide feedback as to which match you think is the best, we can improve the algorithm to provide even better and more reliable recommendations.
+
+The data we gather on each poem is divided into four catagories:
+
+- Macro Lexical Data: This is the information about the shape and flow of the poem (how long is it, does it follow a strict form, etc.) There are traits you can see immediately upon viewing a poem.
+- Micro Lexical Data: This is the information about the way language is employed in the poem (does it have a rhyme scheme, does it use illiteration, is there a narrative presence and if so to what degree, etc.)
+- Sentiment Data: This is information about the sorts of language the poem uses (what percentage of the words in the poem are considered positive or negative? active or passive? etc.).
+- Context Data: This is information that was provided by The Poetry Foundation, where we got our database -- the Poetry Foundation has poems catagorized by Subject (i.e. Romance, Living, The Mind), Poetic Term (i.e. Metaphor, Free Verse), and Region (i.e. U.S., Western).
+
+Those interested in lexical analysis can view the data collected on individual poems, as well as across the corpus.
+
+The Algorithm
+----------------------------------
+ReadMe collects information on every poem in order make the best recommendations -- we split the types of information into four catagories as noted above. During the recommendation process, we compare all the collected data in order to find the most stylistically similar poems.
+
+The final recommendations you see each come from slight variations in how the algorithm weights the data coming in from each catagory -- one poem is the best recommendation if we value all data equally, one if we weight Macro Lexical Data as of greater importance, one if we weight Micro Lexical Data as of greater importance, and so on thrugh Sentiment Data and Context Data.
+
+We shuffle the results before displaying them in order to control for a bias caused by the position of the result, and ask users to let us know which poem they like best to help us narrow in on which catagories users find more important. User's do this by selecting a heart icon next to their favorite match, which logs an instance on their preference into our database (telling us which poem they liked best, which poem it was recommended based on, which weighting method was used, which order it was displayed on the page, and how good a match it was).
+
+
+Features
+----------------------------------
+
+- Typeahead recommends poem titles from the database as you type your search.
+- Search for any poem in the database and receive recommended poems.
+- Alter search algorithm to allow display of multiple poems by the same author, and/or other poems by the author of the poem that a user is searching with.
+- We recommend 5 poems for every search, and each of these employs a different weighting strategy for different sorts of data allowing for feedback to the system about which match readers like best, allowing us to hone in on meaningful data catagories.
+- Submit your own poetry for analysis by the same model.
+- View metrics for each poem, and relationships for all context data.
+- Chart.js graphs explain data layout across corpus.
+- Where applicable, links to Wikipedia page to learn more about a poet.
+- 48% test coverage
+
+Examples
+---------------------------------
+![screenshot of the results page for a poem](/static/Results_Screenshot.png)
+![screenshot of a term page](/static/Term_Screenshot.png)
+![screenshot of a macro graph](/static/Macro_Screenshot.png)
+
+
+Tech Stack
+--------------------------------
+- Python
+- Javascript
+- JQuery
+- Flask
+- Jinja
+- SQLite3
+- SQLAlchemy
+- Chart.js
+- AJAX/JSON
+- BeautifulSoup
+- WebScraping
+- Words API
+- Bootstrap
+- Twitter TypeAhead
+- HTML
+- CSS
+
+Outside Resources
+-----------------------------------------------
+All poetry is from [The Poetry Foundation](http://www.poetryfoundation.org/), and I used the [Harvard General Inquirer Catagories](http://www.wjh.harvard.edu/~inquirer/) for tagged words in order to collect sentiment data, as well as the [Corpus of Contemporary American English](http://corpus.byu.edu/coca/) for it's list of most common english language words in order to guage how unusual the language is in each poem. The [Words API](https://www.wordsapi.com/) is in place as a backup for finding rhymes in our poetry, but most of the word finding rhymes is done by scraping [Rhymer](http://www.rhymer.com/), an online rhyming dictionary.
+
+Running ReadMe
+--------------------------------------
+- Download all files, create a virtual environment, and pip install -r requirements.txt
+- using sqlite3, seed the database from the .sql file
+```python
+sqlite3 poetry.db < poetry.sql
+```
+- if you want to use the Words API as a backup method for rhyming words, you'll need
+to make an account with Mashape and get a production key, but the app will run
+without that (understand if you do this route, you won't have access to rhyme scores for new poems if Rhymer shuts down )
+- run the server
+
+
+The Author
+-------------------------------------------------
+ReadMe: Poetry Recommendations was created by Kendra Peterson, a software engineer and avid reader in California. Kendra completed the Software Engineering Felloship at Hackbright Academy and holds a degree in English Literature from Stanford University.

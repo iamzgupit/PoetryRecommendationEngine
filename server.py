@@ -1,3 +1,6 @@
+"""This runs the server for the webapp"""
+
+
 from flask import (Flask, render_template, redirect, jsonify,
                    request, session)
 # from flask_debugtoolbar import DebugToolbarExtension
@@ -489,6 +492,8 @@ def display_results():
 
 @app.route('/writer-mode/about')
 def about_your_poem():
+    """displays about page for user-submitted poem"""
+
     title = session.get("title")
     text = session.get("text")
 
