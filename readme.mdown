@@ -120,6 +120,6 @@ $ python server.py
 
 The Author
 -------------------------------------------------
-ReadMe: Poetry Recommendations was created by Kendra Peterson, a software engineer and avid reader in California. Kendra completed the Software Engineering Felloship at Hackbright Academy and holds a degree in English Literature from Stanford University.
+ReadMe: Poetry Recommendations was created by Kendra Peterson, a software engineer and avid reader in California. Kendra completed the Software Engineering Fellowship at Hackbright Academy and holds a degree in English Literature from Stanford University.
 
 Learn more about Kendra at her [LinkedIn](https://www.linkedin.com/in/kendramaepeterson).
