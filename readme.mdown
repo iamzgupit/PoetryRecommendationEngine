@@ -118,7 +118,7 @@ $ source secrets.sh
     <script src="../static/Chart.min.js"></script>
 ```
 
-        to
+to
 
 ```html
     <script src="https://cdnjs.com/libraries/chart.js"></script>
@@ -130,7 +130,7 @@ $ source secrets.sh
     <script src="../static/typeahead.js"></script>
 ```
 
-        to
+to
 
 ```html
     <script src="https://twitter.github.io/typeahead.js/releases/latest/typeahead.bundle.js">
@@ -143,7 +143,7 @@ $ source secrets.sh
     <script src="../static/jquery-2.1.4.min.js"></script>
 ```
 
-    to
+to
 
 
 ```html
@@ -156,7 +156,7 @@ $ source secrets.sh
     <link href="../static/bootstrap.min.css" rel="stylesheet">
 ```
 
-        to
+to
 
 
 ```html
