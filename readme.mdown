@@ -30,6 +30,8 @@ We shuffle the results before displaying them in order to control for a bias cau
 
 User feedback (selecting the best recommendation) allows us to adjust the weightings in our algorithm.
 
+I made a simpliefied pdf explanation of the flow which you can view [here](ReadMeAlgorithm.pdf).
+
 
 Features
 ----------------------------------
@@ -111,6 +113,49 @@ to make an account with [Mashape](https://www.mashape.com/) and get a production
 $ echo "export WORDS_PRODUCTION_KEY='your production key here'" > secrets.sh
 $ source secrets.sh
 ```
+- download Chart.js and save Chart.min.js to the static folder, or else go to templates/base.html and change:
+```html
+    <script src="../static/Chart.min.js"></script>
+```
+to
+```html
+    <script src="https://cdnjs.com/libraries/chart.js"></script>
+```
+
+- download typeahead.js and save the typeahead.js file to the static folder, or else go to templates/base.hthml and change:
+
+```html
+    <script src="../static/typeahead.js"></script>
+```
+to
+```html
+    <script src="https://twitter.github.io/typeahead.js/releases/latest/typeahead.bundle.js">
+    </script>
+```
+
+- download JQuery and save the jquery-2.1.4.min.js file to the static folder, or else go to templates/base.hthml and change:
+
+```html
+    <script src="../static/jquery-2.1.4.min.js"></script>
+```
+to
+
+```html
+    <script src="http://code.jquery.com/jquery.js"></script>
+```
+
+- download Bootstrap and save the bootstrap.min.css file to the static folder, or else go to templates/base.hthml and change:
+
+```html
+    <link href="../static/bootstrap.min.css" rel="stylesheet">
+```
+to
+
+```html
+    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css" rel="stylesheet">
+```
+
+
 - run the server
 ```python
 $ python server.py
