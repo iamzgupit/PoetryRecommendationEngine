@@ -9,12 +9,12 @@ There is an almost unfathomably large amount of poetry out in the world, and fin
 
 Our database contains over ten thousand poems. Each time you search for recommendations, ReadMe will provide five distinct poems for you to read, each based on a slightly different variation of our matching algorithm. In this way, when you indicate which recommendation you like best, we can improve the algorithm to provide even better and more reliable recommendations.
 
-The data we gather on each poem is divided into four catagories:
+The data we gather on each poem is divided into four categories:
 
 - Macro Lexical Data: This is the information about the shape and flow of the poem (how long is it, whether it follows a strict form, etc.) These are traits you can see immediately upon viewing a poem.
 - Micro Lexical Data: This is the information about the way language is employed in the poem (does it have a rhyme scheme, does it use alliteration, is there a narrative presence and if so to what degree, etc.)
 - Sentiment Data: This is information about the sorts of language the poem uses (what percentage of the words in the poem are considered positive or negative? active or passive? etc.).
-- Context Data: This is information that was provided by The Poetry Foundation, where we got our database -- the Poetry Foundation has poems catagorized by Subject (i.e. Romance, Living, The Mind), Poetic Term (i.e. Metaphor, Free Verse), and Region (i.e. U.S., Western).
+- Context Data: This is information that was provided by The Poetry Foundation, where we got our database -- the Poetry Foundation has poems categorized by Subject (i.e. Romance, Living, The Mind), Poetic Term (i.e. Metaphor, Free Verse), and Region (i.e. U.S., Western).
 
 Those interested in lexical analysis can view the data collected on individual poems, as well as across the corpus.
 
@@ -22,15 +22,15 @@ The Algorithm
 ----------------------------------
 ReadMe utilizes a handwritten clustering algorithm which allows for direct control and prioritization of different data points.
 
-ReadMe collects information on every poem in order make the best recommendations -- we split the types of information into four catagories as noted above. During the recommendation process, we compare all the collected data in order to find the most stylistically similar poems.
+ReadMe collects information on every poem in order make the best recommendations -- we split the types of information into four categories as noted above. During the recommendation process, we compare all the collected data in order to find the most stylistically similar poems.
 
-The final recommendations you see come from slight variations in how the algorithm weights the data coming in from each catagory -- one poem is the best recommendation if we value all data equally, one if we weight Macro Lexical Data as of greater importance, one if we weight Micro Lexical Data as of greater importance, and so on thrugh Sentiment Data and Context Data.
+The final recommendations you see come from slight variations in how the algorithm weights the data coming in from each category -- one poem is the best recommendation if we value all data equally, one if we weight Macro Lexical Data as of greater importance, one if we weight Micro Lexical Data as of greater importance, and so on through Sentiment Data and Context Data.
 
-We shuffle the results before displaying them in order to control for a bias caused by the position of the result, and ask users to let us know which poem they like best in order to narrow in on which catagories users find more important. Users do this by selecting a heart icon next to their favorite match, which logs an instance of the match into our database (telling us which poem they liked best, which poem it was recommended based on, which weighting method was used, which order it was displayed on the page, and how good a match it was).
+We shuffle the results before displaying them in order to control for a bias caused by the position of the result, and ask users to let us know which poem they like best in order to narrow in on which categories users find more important. Users do this by selecting a heart icon next to their favorite match, which logs an instance of the match into our database (telling us which poem they liked best, which poem it was recommended based on, which weighting method was used, which order it was displayed on the page, and how good a match it was).
 
 User feedback (selecting the best recommendation) allows us to adjust the weightings in our algorithm.
 
-I made a simpliefied pdf explanation of the flow which you can view [here](ReadMeAlgorithm.pdf).
+I made a simplified PDF explanation of the flow which you can view [here](ReadMeAlgorithm.pdf).
 
 
 Features
@@ -39,7 +39,7 @@ Features
 - Typeahead recommends poem titles from the database as you type your search.
 - Search for any poem in the database and receive recommended poems.
 - Alter search algorithm to allow display of multiple poems by the same author, and/or poems by the author of the main poem (the poem which we're using to find recommendations).
-- We recommend 5 poems for every search, and each of these employs a different weighting strategy, allowing for feedback to the system about which metrics users value. This is turn allows us to hone in on meaningful data catagories and adjust the algorithm accordingly.
+- We recommend 5 poems for every search, and each of these employs a different weighting strategy, allowing for feedback to the system about which metrics users value. This is turn allows us to hone in on meaningful data categories and adjust the algorithm accordingly.
 - Submit your own poetry for analysis by the same model.
 - View metrics for each poem, and relationships for all context (poetic term, region, and subject) data.
 - Chart.js graphs explain data layout across corpus.
@@ -49,9 +49,9 @@ Features
 Examples
 ---------------------------------
 
-Here you can see the results page for a search on "Meditation at 50 Yards, Moving Target" by Rita Dove. Rita Dove has a wikipedia page in her honor, so we show the picture of her with a link to read more about the author. 
+Here you can see the results page for a search on "Meditation at 50 Yards, Moving Target" by Rita Dove. Rita Dove has a Wikipedia page in her honor, so we show the picture of her with a link to read more about the author. 
 
-Below that, there are five poetry recommendations, all of which are active links to read the poem. Selecting the heart by one of these links will log your choice to our database to improve the algorith. As long as you are in the browser session, ReadMe will remember your choice for the best recommendation for any poem on which you have given feedback in that session. If you change your mind and select a new poem, it will log that as the best match and remember your most recent choice.
+Below that, there are five poetry recommendations, all of which are active links to read the poem. Selecting the heart by one of these links will log your choice to our database to improve the algorithm. As long as you are in the browser session, ReadMe will remember your choice for the best recommendation for any poem on which you have given feedback in that session. If you change your mind and select a new poem, it will log that as the best match and remember your most recent choice.
 
 Selecting 'See Stats' on any of these poems will allow you to view the metrics for that poem.
 
@@ -92,7 +92,7 @@ Tech Stack
 
 Outside Resources
 -----------------------------------------------
-All poetry is from [The Poetry Foundation](http://www.poetryfoundation.org/), and I used the [Harvard General Inquirer Catagories](http://www.wjh.harvard.edu/~inquirer/) for tagged words in order to collect sentiment data, as well as the [Corpus of Contemporary American English](http://corpus.byu.edu/coca/) for it's list of most common english language words in order to guage how unusual the language is in each poem. The [Words API](https://www.wordsapi.com/) is in place as a backup for finding rhymes in our poetry, but most of the word finding rhymes is done by scraping [Rhymer](http://www.rhymer.com/), an online rhyming dictionary.
+All poetry is from [The Poetry Foundation](http://www.poetryfoundation.org/), and I used the [Harvard General Inquirer Categories](http://www.wjh.harvard.edu/~inquirer/) for tagged words in order to collect sentiment data, as well as the [Corpus of Contemporary American English](http://corpus.byu.edu/coca/) for it's list of most common english language words in order to gauge how unusual the language is in each poem. The [Words API](https://www.wordsapi.com/) is in place as a backup for finding rhymes in our poetry, but most of the word finding rhymes is done by scraping [Rhymer](http://www.rhymer.com/), an online rhyming dictionary.
 
 Running ReadMe
 --------------------------------------
@@ -124,7 +124,7 @@ $ source secrets.sh
     <script src="https://cdnjs.com/libraries/chart.js"></script>
 ```
 
-- download typeahead.js and save the typeahead.js file to the static folder, or else go to templates/base.hthml and change:
+- download typeahead.js and save the typeahead.js file to the static folder, or else go to templates/base.html and change:
 
 ```html
     <script src="../static/typeahead.js"></script>
@@ -137,7 +137,7 @@ $ source secrets.sh
     </script>
 ```
 
-- download JQuery and save the jquery-2.1.4.min.js file to the static folder, or else go to templates/base.hthml and change:
+- download JQuery and save the jquery-2.1.4.min.js file to the static folder, or else go to templates/base.html and change:
 
 ```html
     <script src="../static/jquery-2.1.4.min.js"></script>
@@ -150,7 +150,7 @@ $ source secrets.sh
     <script src="http://code.jquery.com/jquery.js"></script>
 ```
 
-- download Bootstrap and save the bootstrap.min.css file to the static folder, or else go to templates/base.hthml and change:
+- download Bootstrap and save the bootstrap.min.css file to the static folder, or else go to templates/base.html and change:
 
 ```html
     <link href="../static/bootstrap.min.css" rel="stylesheet">
